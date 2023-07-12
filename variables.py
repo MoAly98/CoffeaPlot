@@ -17,6 +17,3 @@ plots_to_make.append(plots_1d_nom)
 
 plots_2d_nom = Plots(2, 'nominal_Loose')
 plots_to_make.append(plots_2d_nom)
-
-
-print("Hello from variables.py!", plots_to_make)

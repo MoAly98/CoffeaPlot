@@ -1,13 +1,10 @@
 import awkward as ak
 from coffea import processor
 import coffea
-#from coffea.hist import plotratio
 from coffea.nanoevents import  BaseSchema
 import hist
 from collections import defaultdict
-import matplotlib.pyplot as plt
 import uproot
-import mplhep as hep
 import numpy as np
 import pandas as pd
 #import seaborn as sns
@@ -22,20 +19,24 @@ from  samples import *
 from regions import *
 from rescalings import *
 from variables import *
+from utils import *
 
 PROCESS = True
 
+
+
 class MyProcessor(processor.ProcessorABC):
 
-    def __init__(self, plots_list):
+    def __init__(self, plots_list, plot_samples, plot_regions, plot_rescales):
         self.plots_list = plots_list
+        self.plot_samples = plot_samples
+        self.plot_regions = plot_regions
+        self.plot_rescales = plot_rescales
 
 
     def dd(self):
         return defaultdict(dict)
 
-    def deep_map(self):
-        return defaultdict(self.deep_map)
 
     def process(self, presel_events):
 
@@ -43,13 +44,13 @@ class MyProcessor(processor.ProcessorABC):
         output_2d = defaultdict(self.dd)
         dataset = presel_events.metadata['dataset']
 
-        for a_sample in plot_samples:
+        for a_sample in self.plot_samples:
             if dataset != a_sample.name: continue
 
             sample = a_sample
             break
 
-        affecting_rescales = [rescale for rescale in plot_rescales if sample.name in rescale.affect ] + [ Rescales('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) ]
+        affecting_rescales = [rescale for rescale in self.plot_rescales if sample.name in rescale.affect ] + [ Rescale('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) ]
         sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
 
         presel_events['weights'] = sample_weights
@@ -58,14 +59,14 @@ class MyProcessor(processor.ProcessorABC):
         # ====== Loop over 1D plots ====== #
 
         for plot in self.plots_list:
-            name          = plot.name
+            name           = plot.name
             regions_to_use = plot.regions
-            idxing        = plot.idx
-            binning       = plot.binning
-            label         = plot.label
-            histo_compute = plot.howto
+            idxing         = plot.idx
+            binning        = plot.binning
+            label          = plot.label
+            histo_compute  = plot.howto
 
-            for region_to_plot in plot_regions:
+            for region_to_plot in self.plot_regions:
 
                 if all(re.match(region_to_use, region_to_plot.name) is None and region_to_use != 'all' for region_to_use in regions_to_use): continue
 
@@ -103,7 +104,7 @@ class MyProcessor(processor.ProcessorABC):
                         # Fill the histogram
                         h.fill(data, weight = w)
                         # Save the histogram
-                        output_1d[region_to_plot.name][scaling.name][name]= h
+                        output_1d[region_to_plot.name][scaling.name][name] = h
 
                 else:
                     # TODO:: 2D
@@ -114,28 +115,30 @@ class MyProcessor(processor.ProcessorABC):
     def postprocess(self, accumulator):
 
         # ====== Loop over 1D plots ====== #
-        total_hists = defaultdict(self.deep_map)
+        total_hists = dd()
 
-        for dataset, dim_to_histo in accumulator.items():
-            regions_to_histo = dim_to_histo['1D']
-            for region, scaling_to_histo in regions_to_histo.items():
-                for scale, hnames_to_histo in scaling_to_histo.items():
-                    for name, histo in hnames_to_histo.items():
-                        total_hists['total']['1D'][region][scale][name] += histo
+        for dataset, dim_to_histos in accumulator.items():
+            regions_to_histos = dim_to_histos['1D']
+            for region, scaling_to_histos in regions_to_histos.items():
+                for scale, hnames_to_histos in scaling_to_histos.items():
+                    for hname, histo in hnames_to_histos.items():
+                        total_hists['total']['1D'][region][scale][hname] += histo
+                        accumulator[dataset]['1D'][region][scale][hname] = Histogram(hname, histo, self.plot_samples.get_sample(dataset), self.plot_regions.get_region(region), self.plot_rescales.get_rescale(scale))
+
+
 
         accumulator['total'] = dict(total_hists['total'])
 
-        reordered_map = defaultdict(self.deep_map)
-        for dataset, dim_to_histos in accumulator.items():
-            for dim, regions_to_histos in dim_to_histos.items():
-                for region, scalings_to_histos in regions_to_histos.items():
-                    for scaling, hnames_to_histos in scalings_to_histos.items():
-                        for hname, histo in hnames_to_histos.items():
-                            reordered_map[dim][region][name][scaling][dataset] = histo
 
-        accumulator = dict(reordered_map)
 
-        return dict(reordered)
+        sample_tot = Sample('tot', None, None, None, 'black', 'Total MC')
+        regions_to_histos = accumulator['total']['1D']
+        for region, scaling_to_histos in regions_to_histos.items():
+            for scale, hnames_to_histos in scaling_to_histos.items():
+                for hname, histo in hnames_to_histos.items():
+                    accumulator['total']['1D'][region][scale][hname] = Histogram(hname, histo, sample_tot, self.plot_regions.get_region(region), self.plot_rescales.get_rescale(scale))
+
+        return accumulator
 
 if __name__ == '__main__':
 
@@ -143,24 +146,33 @@ if __name__ == '__main__':
     for sample in plot_samples:
         fileset[sample.name] = sample.files
 
-
     tree_to_plot_list = {plots_list.tree: [] for plots_list in plots_to_make}
     for plots_list in plots_to_make:
-        tree_to_plot_list[plots_list.tree].extend(plots_list.to_plot)
+        tree_to_plot_list[plots_list.tree].extend(plots_list)
 
     executor = processor.FuturesExecutor(workers=8)
     #executor = processor.IterativeExecutor()
     for tree, plots_list in tree_to_plot_list.items():
-        dump_to = f"outputs/data/{tree}/"
+        dump_to = f"outputs/"
         os.makedirs(dump_to, exist_ok=True)
         if PROCESS:
             run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True, maxchunks=1)
-            coffea_out = run(fileset, tree, MyProcessor(plots_list))
+            coffea_out = run(fileset, tree, MyProcessor(plots_list, plot_samples, plot_regions, plot_rescales))
 
-            with open(f"{dump_to}data.pkl", "wb") as f:
+            reordered_map = defaultdict(deep_map)
+            for dataset, dim_to_histos in coffea_out.items():
+                for dim, regions_to_histos in dim_to_histos.items():
+                    for region, scalings_to_histos in regions_to_histos.items():
+                        for scaling, hnames_to_histos in scalings_to_histos.items():
+                            for hname, histo in hnames_to_histos.items():
+                                reordered_map[dim][region][hname][scaling][dataset] = histo
+
+            coffea_out = dict(reordered_map)
+
+            with open(f"{dump_to}/data/data___{tree}.pkl", "wb") as f:
                 pickle.dump(dict(coffea_out), f)
         else:
-            with open(f"{dump_to}data.pkl", "rb") as f:
+            with open(f"{dump_to}/data/data___{tree}.pkl", "rb") as f:
                 coffea_out = pickle.load(f)
 
         # ====== Loop over 1D plots ====== #
