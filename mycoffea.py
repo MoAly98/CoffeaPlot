@@ -1,0 +1,167 @@
+import awkward as ak
+from coffea import processor
+import coffea
+#from coffea.hist import plotratio
+from coffea.nanoevents import  BaseSchema
+import hist
+from collections import defaultdict
+import matplotlib.pyplot as plt
+import uproot
+import mplhep as hep
+import numpy as np
+import pandas as pd
+#import seaborn as sns
+import os
+from pprint import pprint
+import pickle
+os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
+
+
+from classes import *
+from  samples import *
+from regions import *
+from rescalings import *
+from variables import *
+
+PROCESS = True
+
+class MyProcessor(processor.ProcessorABC):
+
+    def __init__(self, plots_list):
+        self.plots_list = plots_list
+
+
+    def dd(self):
+        return defaultdict(dict)
+
+    def deep_map(self):
+        return defaultdict(self.deep_map)
+
+    def process(self, presel_events):
+
+        output_1d =  defaultdict(self.dd)
+        output_2d = defaultdict(self.dd)
+        dataset = presel_events.metadata['dataset']
+
+        for a_sample in plot_samples:
+            if dataset != a_sample.name: continue
+
+            sample = a_sample
+            break
+
+        affecting_rescales = [rescale for rescale in plot_rescales if sample.name in rescale.affect ] + [ Rescales('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) ]
+        sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
+
+        presel_events['weights'] = sample_weights
+        filt_sample = presel_events[sample.sel.evaluate(presel_events)] if sample.sel is not None else presel_events
+
+        # ====== Loop over 1D plots ====== #
+
+        for plot in self.plots_list:
+            name          = plot.name
+            regions_to_use = plot.regions
+            idxing        = plot.idx
+            binning       = plot.binning
+            label         = plot.label
+            histo_compute = plot.howto
+
+            for region_to_plot in plot_regions:
+
+                if all(re.match(region_to_use, region_to_plot.name) is None and region_to_use != 'all' for region_to_use in regions_to_use): continue
+
+                filt_reg = filt_sample[region_to_plot.sel.evaluate(filt_sample)]
+
+                if plot.dim  == 1:
+                    h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                else:
+                    # TODO:: 2D
+                    pass
+
+                # ================ Empty histogram for this region for this sample ===========
+                if ak.num(filt_reg['weights'], axis=0) == 0:
+                    for scaling in affecting_rescales:
+                        output_1d[region_to_plot.name][scaling.name][name] = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                        output_2d[region_to_plot.name][scaling.name][name] = None # Need empty 2D histo here
+                    return {dataset: {'1D': dict(output_1d)}}
+
+                # =============== Non empty histogram for this region for this sample ==========
+                if plot.dim == 1:
+
+                    for scaling in affecting_rescales:
+                        rescaled_weights = scaling.method.evaluate(filt_reg)
+
+                        if idxing == 'nonevent':
+                            assert len(histo_compute.args) == 1, "Composite variables are not supported when indexing by nonevent"
+
+                            w, arg = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute.args[0]])
+                            data = histo_compute.fn(arg)
+                            w = ak.flatten(w)
+                        else:
+                            data = histo_compute.evaluate(filt_reg)
+                            w = rescaled_weights
+
+                        # Fill the histogram
+                        h.fill(data, weight = w)
+                        # Save the histogram
+                        output_1d[region_to_plot.name][scaling.name][name]= h
+
+                else:
+                    # TODO:: 2D
+                    pass
+
+        return {dataset: {'1D': dict(output_1d)}}
+
+    def postprocess(self, accumulator):
+
+        # ====== Loop over 1D plots ====== #
+        total_hists = defaultdict(self.deep_map)
+
+        for dataset, dim_to_histo in accumulator.items():
+            regions_to_histo = dim_to_histo['1D']
+            for region, scaling_to_histo in regions_to_histo.items():
+                for scale, hnames_to_histo in scaling_to_histo.items():
+                    for name, histo in hnames_to_histo.items():
+                        total_hists['total']['1D'][region][scale][name] += histo
+
+        accumulator['total'] = dict(total_hists['total'])
+
+        reordered_map = defaultdict(self.deep_map)
+        for dataset, dim_to_histos in accumulator.items():
+            for dim, regions_to_histos in dim_to_histos.items():
+                for region, scalings_to_histos in regions_to_histos.items():
+                    for scaling, hnames_to_histos in scalings_to_histos.items():
+                        for hname, histo in hnames_to_histos.items():
+                            reordered_map[dim][region][name][scaling][dataset] = histo
+
+        accumulator = dict(reordered_map)
+
+        return dict(reordered)
+
+if __name__ == '__main__':
+
+    fileset = {}
+    for sample in plot_samples:
+        fileset[sample.name] = sample.files
+
+
+    tree_to_plot_list = {plots_list.tree: [] for plots_list in plots_to_make}
+    for plots_list in plots_to_make:
+        tree_to_plot_list[plots_list.tree].extend(plots_list.to_plot)
+
+    executor = processor.FuturesExecutor(workers=8)
+    #executor = processor.IterativeExecutor()
+    for tree, plots_list in tree_to_plot_list.items():
+        dump_to = f"outputs/data/{tree}/"
+        os.makedirs(dump_to, exist_ok=True)
+        if PROCESS:
+            run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True, maxchunks=1)
+            coffea_out = run(fileset, tree, MyProcessor(plots_list))
+
+            with open(f"{dump_to}data.pkl", "wb") as f:
+                pickle.dump(dict(coffea_out), f)
+        else:
+            with open(f"{dump_to}data.pkl", "rb") as f:
+                coffea_out = pickle.load(f)
+
+        # ====== Loop over 1D plots ====== #
+        pprint(coffea_out)
