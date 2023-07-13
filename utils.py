@@ -24,6 +24,7 @@ def get_blinding(s_h, b_h, threshold = 0.00333):
     bkg_vals    = b_h.values()
     sqrt_bkg    = np.sqrt(bkg_vals, out = np.full_like(bkg_vals, 0), where = bkg_vals>=0)
     s_over_b    = np.divide(signal_vals,  bkg_vals, out = np.full_like(bkg_vals, 0),  where = bkg_vals>0)
+    print(s_over_b)
     return s_over_b > threshold
 
 def compute_total_separation(signal_h, bkg_h):
@@ -55,3 +56,21 @@ def compute_total_significance(signal_h, bkg_h):
     signficance = sum(signal_vals)/sum(bkg_sqrt_vals) if sum(bkg_sqrt_vals) > 0 else 0
 
     return signficance
+
+def get_signif_per_bin(signal_h, bkg_h):
+
+    signal_vals  = signal_h.values()
+    signal_var   = signal_h.variances()
+    bkg_vals     = bkg_h.values()
+    bkg_var      = bkg_h.variances()
+
+
+    sqrt_bkg_vals = np.sqrt(bkg_vals,                      out=np.full_like(signal_h.axes.centers[0], 0), where=bkg_vals>0)
+    signficance   = np.divide(signal_vals, sqrt_bkg_vals,  out=np.full_like(signal_h.axes.centers[0], 0), where=sqrt_bkg_vals>0.001)
+
+    err1          = (1/4)*np.divide(bkg_var, bkg_vals**2,   out=np.full_like(signal_h.axes.centers[0], 1e3), where=bkg_vals>0.001)
+    err2          = np.divide(signal_var, signal_vals**2,   out=np.full_like(signal_h.axes.centers[0], 1e3), where=signal_vals>0.001)
+
+    signficance_err  = signficance*np.sqrt(err1+err2,      out=np.full_like(signal_h.axes.centers[0], 1e3), where=err1+err2>=0)
+
+    return signficance, signficance_err

@@ -113,7 +113,7 @@ class Region(object):
     def __init__(self, name, howto, target_sample = []):
         self.name = name
         self.sel = howto
-        self.target = target_sample
+        self.targets = target_sample
 
 class Regions(object):
     def __init__(self, to_plot = []):

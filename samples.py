@@ -43,21 +43,21 @@ samples_list = [
            ['410470_user*'],
            ttb_cut,
            mc_weight,
-           '#ffe119',
+           '#e6beff',
            r'$t\bar{t}+\geq1b$'),
 
     Sample('ttc',
            ['410470_user*'],
            ttc_cut,
            mc_weight,
-           '#4363d8',
+           '#000075',
            r'$t\bar{t}+\geq1c$'),
 
     Sample('ttlight',
            ['410470_user*'],
            ttl_cut,
            mc_weight,
-           '#f58231',
+           '#4363d8',
            r'$t\bar{t}+\geq0l$'),
 
     Sample('ttH',
@@ -104,7 +104,7 @@ samples_list = [
            ['410658_user*', '410659_user*'],
            leptight_cut,
            mc_weight,
-           '#e6beff',
+           '#f58231',
            't (t-chan)'),
 
     Sample('singletop_schannel',
@@ -153,7 +153,7 @@ samples_list = [
            ['data15*', 'data16*', 'data17*', 'data18*'],
            None,
            mm_weight,
-           '#000075',
+           '#ffe119',
            'Fakes'),
 
     Sample('Data',

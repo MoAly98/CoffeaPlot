@@ -10,7 +10,7 @@ import pandas as pd
 #import seaborn as sns
 import os
 from pprint import pprint
-import pickle
+import cloudpickle as pickle
 os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 
 
@@ -22,8 +22,9 @@ from variables import *
 from utils import *
 
 PROCESS = True
+DATA_NAME = 'Data'
 
-
+# TODO:: Histogram class
 
 class MyProcessor(processor.ProcessorABC):
 
@@ -50,7 +51,7 @@ class MyProcessor(processor.ProcessorABC):
             sample = a_sample
             break
 
-        affecting_rescales = [rescale for rescale in self.plot_rescales if sample.name in rescale.affect ] + [ Rescale('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) ]
+        self.plot_rescales.append(Rescale('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) )
         sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
 
         presel_events['weights'] = sample_weights
@@ -72,15 +73,10 @@ class MyProcessor(processor.ProcessorABC):
 
                 filt_reg = filt_sample[region_to_plot.sel.evaluate(filt_sample)]
 
-                if plot.dim  == 1:
-                    h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
-                else:
-                    # TODO:: 2D
-                    pass
 
                 # ================ Empty histogram for this region for this sample ===========
                 if ak.num(filt_reg['weights'], axis=0) == 0:
-                    for scaling in affecting_rescales:
+                    for scaling in self.plot_rescales:
                         output_1d[region_to_plot.name][scaling.name][name] = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
                         output_2d[region_to_plot.name][scaling.name][name] = None # Need empty 2D histo here
                     return {dataset: {'1D': dict(output_1d)}}
@@ -88,8 +84,18 @@ class MyProcessor(processor.ProcessorABC):
                 # =============== Non empty histogram for this region for this sample ==========
                 if plot.dim == 1:
 
-                    for scaling in affecting_rescales:
-                        rescaled_weights = scaling.method.evaluate(filt_reg)
+                    for scaling in self.plot_rescales:
+
+                        if plot.dim  == 1:
+                            h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                        else:
+                            # TODO:: 2D
+                            pass
+
+                        if sample.name in scaling.affect:
+                            rescaled_weights = scaling.method.evaluate(filt_reg)
+                        else:
+                            rescaled_weights = filt_reg['weights']
 
                         if idxing == 'nonevent':
                             assert len(histo_compute.args) == 1, "Composite variables are not supported when indexing by nonevent"
@@ -118,25 +124,25 @@ class MyProcessor(processor.ProcessorABC):
         total_hists = dd()
 
         for dataset, dim_to_histos in accumulator.items():
+            if dataset == DATA_NAME: continue
+
             regions_to_histos = dim_to_histos['1D']
+
             for region, scaling_to_histos in regions_to_histos.items():
                 for scale, hnames_to_histos in scaling_to_histos.items():
                     for hname, histo in hnames_to_histos.items():
+
                         total_hists['total']['1D'][region][scale][hname] += histo
                         accumulator[dataset]['1D'][region][scale][hname] = Histogram(hname, histo, self.plot_samples.get_sample(dataset), self.plot_regions.get_region(region), self.plot_rescales.get_rescale(scale))
 
-
-
         accumulator['total'] = dict(total_hists['total'])
-
-
 
         sample_tot = Sample('tot', None, None, None, 'black', 'Total MC')
         regions_to_histos = accumulator['total']['1D']
         for region, scaling_to_histos in regions_to_histos.items():
             for scale, hnames_to_histos in scaling_to_histos.items():
                 for hname, histo in hnames_to_histos.items():
-                    accumulator['total']['1D'][region][scale][hname] = Histogram(hname, histo, sample_tot, self.plot_regions.get_region(region), self.plot_rescales.get_rescale(scale))
+                    accumulator['total']['1D'][region][scale][hname] = Histogram(hname, histo, sample_tot, region, self.plot_rescales.get_rescale(scale))
 
         return accumulator
 
@@ -156,7 +162,7 @@ if __name__ == '__main__':
         dump_to = f"outputs/"
         os.makedirs(dump_to, exist_ok=True)
         if PROCESS:
-            run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True, maxchunks=1)
+            run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True)
             coffea_out = run(fileset, tree, MyProcessor(plots_list, plot_samples, plot_regions, plot_rescales))
 
             reordered_map = defaultdict(deep_map)
