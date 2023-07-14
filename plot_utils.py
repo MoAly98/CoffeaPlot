@@ -1,7 +1,9 @@
-import mplhep as hep
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import mplhep as mplhep
 plt.style.use(mplhep.style.ATLAS)
+plt.rcParams['axes.linewidth'] = 3
 
 def create_fig_with_n_panels(ncols, nrows, h_ratio = None):
     # now we make a figure
@@ -26,18 +28,36 @@ def plot_stack(stackables, data, axis, blind=None, title=''):
     colors = [stackable.sample.color for stackable in stackables]
     labels = [stackable.sample.label  for stackable in stackables]
     data_h = data.h
-    hep.histplot(histos, color = colors, label = labels, ax = axis, histtype='fill', stack=True, zorder=1)
-    axis.scatter(data_h.axes.centers[0][~blind], data_h.values()[~blind], color = 'black', marker='x', s=70, zorder=2)
+    mplhep.histplot(histos, color = colors, label = labels, ax = axis, histtype='fill', stack=True, zorder=1)
+    axis.scatter(data_h.axes.centers[0][~blind], data_h.values()[~blind], color = 'black', marker='x', s=70, zorder=2, label='Data')
+
+    if blind is not None:
+        rect = None
+        for bin_idx, bin_is_blinded in enumerate(blind):
+            if bin_is_blinded:
+                shade_x1, shade_x2 = data_h.axes.edges[0][bin_idx:bin_idx+2] # Last index is not inclusive
+
+                # Draw Rectangle
+                axis.axvspan(shade_x1, shade_x2, facecolor='blue', alpha=0.06, lw=0, zorder = 3)
+                # Draw Hatch
+                axis.axvspan(shade_x1, shade_x2, facecolor='none', edgecolor='grey', hatch="//", alpha=0.5, lw=1., zorder = 4, label = 'Blinded')
+
+
     axis.legend(bbox_to_anchor=(1.04, 1), loc="upper left", ncol=2)
     axis.set_ylabel("Number of Events")
 
+
     if any(any(h.values()>0) for h in histos) :
         axis.set_yscale("log")
+
     plt.setp(axis.get_xticklabels(), visible=False)
+
     # X-label
     axis.set_xlabel('')
+
     #Title
-    axis.set_title(title)
+    axis.set_title(title, pad=25)
+
 
 def plot_datamc(mc, data, blind, xlabel, axis):
 
@@ -95,7 +115,7 @@ def plot_separation(signal_histo, bkg_histos, axis, signal_color, signal_name):
     signal_copy *= 1/sum(signal_vals) if sum(signal_vals) > 0 else 0
     bkg_copy    *= 1/sum(bkg_vals)    if sum(bkg_vals)    > 0 else 0
 
-    hep.histplot([signal_copy, bkg_copy], color = [signal_color, 'black'], label = [signal_name, 'Total Background'], ax = axis)
+    mplhep.histplot([signal_copy, bkg_copy], color = [signal_color, 'black'], label = [signal_name, 'Total Background'], ax = axis)
 
     axis.legend(ncol=1, loc='best')
     axis.set_ylabel("a.u. (Normalised)")
@@ -113,7 +133,7 @@ def plot_signif_per_bin(signal_histo, signif, err, axis, last_ax):
     axis.errorbar(bincenters, signif, err, alpha=0.4, color = 'black', linestyle = 'None')
 
     # Signficance panel y-label
-    axis.set_ylabel(f"{signal_histo.sample.name}"+r"$/\sqrt{B}$", rotation=0, fontsize=20, labelpad=40, verticalalignment='center', loc='center')
+    axis.set_ylabel(f"{signal_histo.sample.name}"+r"$/\sqrt{B}$", rotation=0, fontsize=20, labelpad=50, verticalalignment='center', loc='center')
 
     # Signficance panel ylimits
     max_signif = signif.max()

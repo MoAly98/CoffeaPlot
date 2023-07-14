@@ -11,7 +11,8 @@ import os
 import pickle
 import numpy as np
 
-# TODO:: NOTMC fn to not add data total to mc sums
+# TODO:: NOT-MC fn to not add data/total to mc sums
+# TODO:: Class for Stack and Stackatino (Stack element)
 
 # Stuff user should give me?
 dump_to = f"outputs/"
@@ -101,7 +102,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                         signif, signif_err = get_signif_per_bin(target_histo.h, non_target_histo)
                         plot_signif_per_bin(target_histo, signif, signif_err, signif_axs[i], is_last_target)
 
-                    signif_fig.savefig(f"{plot_dir}/Significance/{tree}/{region.name}_{hname}.pdf", bbox_inches="tight")
+                    signif_fig.savefig(f"{plot_dir}/Significance/{tree}/{region.name}_{hname}_{rescale_name}.pdf", bbox_inches="tight")
 
                     plt.clf()
                     plt.close('all')

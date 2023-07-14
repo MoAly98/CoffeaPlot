@@ -24,15 +24,15 @@ from utils import *
 PROCESS = True
 DATA_NAME = 'Data'
 
-# TODO:: Histogram class
+# TODO:: Histograms class to support accumlation -- storage option
 
 class MyProcessor(processor.ProcessorABC):
 
-    def __init__(self, plots_list, plot_samples, plot_regions, plot_rescales):
-        self.plots_list = plots_list
-        self.plot_samples = plot_samples
-        self.plot_regions = plot_regions
-        self.plot_rescales = plot_rescales
+    def __init__(self, variables_list, samples_list, regions_list, rescales_list):
+        self.variables_list = variables_list
+        self.samples_list = samples_list
+        self.regions_list = regions_list
+        self.rescales_list = rescales_list
 
 
     def dd(self):
@@ -41,17 +41,18 @@ class MyProcessor(processor.ProcessorABC):
 
     def process(self, presel_events):
 
-        output_1d =  defaultdict(self.dd)
+        #output_1d =  defaultdict(self.dd)
+        accum = Histograms()
         output_2d = defaultdict(self.dd)
         dataset = presel_events.metadata['dataset']
 
-        for a_sample in self.plot_samples:
+        for a_sample in self.samples_list:
             if dataset != a_sample.name: continue
 
             sample = a_sample
             break
 
-        self.plot_rescales.append(Rescale('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) )
+        self.rescales_list.append(Rescale('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) )
         sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
 
         presel_events['weights'] = sample_weights
@@ -59,15 +60,15 @@ class MyProcessor(processor.ProcessorABC):
 
         # ====== Loop over 1D plots ====== #
 
-        for plot in self.plots_list:
-            name           = plot.name
-            regions_to_use = plot.regions
-            idxing         = plot.idx
-            binning        = plot.binning
-            label          = plot.label
-            histo_compute  = plot.howto
+        for variable in self.variables_list:
+            name           = variable.name
+            regions_to_use = variable.regions
+            idxing         = variable.idx
+            binning        = variable.binning
+            label          = variable.label
+            histo_compute  = variable.howto
 
-            for region_to_plot in self.plot_regions:
+            for region_to_plot in self.regions_list:
 
                 if all(re.match(region_to_use, region_to_plot.name) is None and region_to_use != 'all' for region_to_use in regions_to_use): continue
 
@@ -76,24 +77,24 @@ class MyProcessor(processor.ProcessorABC):
 
                 # ================ Empty histogram for this region for this sample ===========
                 if ak.num(filt_reg['weights'], axis=0) == 0:
-                    for scaling in self.plot_rescales:
-                        output_1d[region_to_plot.name][scaling.name][name] = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
-                        output_2d[region_to_plot.name][scaling.name][name] = None # Need empty 2D histo here
-                    return {dataset: {'1D': dict(output_1d)}}
+                    for rescaling in self.rescales_list:
+                        accum[Histogram(name, h, 'total', region_to_plot.name , rescaling.name)] =  hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                        accum[Histogram(name, h, 'total', region_to_plot.name , rescaling.name)] =  hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+
+                        # TODO:: Need to add 2D histo here
+                        # output_1d[region_to_plot.name][rescaling.name][name] = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                        # output_2d[region_to_plot.name][rescaling.name][name] = None # Need empty 2D histo here
+                    return accum
 
                 # =============== Non empty histogram for this region for this sample ==========
-                if plot.dim == 1:
+                if variable.dim == 1:
 
-                    for scaling in self.plot_rescales:
+                    for rescaling in self.rescales_list:
 
-                        if plot.dim  == 1:
-                            h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
-                        else:
-                            # TODO:: 2D
-                            pass
+                        h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
 
-                        if sample.name in scaling.affect:
-                            rescaled_weights = scaling.method.evaluate(filt_reg)
+                        if sample.name in rescaling.affect:
+                            rescaled_weights = rescaling.method.evaluate(filt_reg)
                         else:
                             rescaled_weights = filt_reg['weights']
 
@@ -110,46 +111,52 @@ class MyProcessor(processor.ProcessorABC):
                         # Fill the histogram
                         h.fill(data, weight = w)
                         # Save the histogram
-                        output_1d[region_to_plot.name][scaling.name][name] = h
+                        samp_histo_obj = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
+                        tot_histo_obj = Histogram(name, h.copy(), 'total', region_to_plot.name , rescaling.name)
+                        #output_1d[region_to_plot.name][rescaling.name][name] = h
+                        accum[samp_histo_obj] = samp_histo_obj.h
+                        accum[tot_histo_obj] = tot_histo_obj.h
 
                 else:
                     # TODO:: 2D
                     pass
 
-        return {dataset: {'1D': dict(output_1d)}}
+        return accum
 
     def postprocess(self, accumulator):
 
-        # ====== Loop over 1D plots ====== #
-        total_hists = dd()
 
-        for dataset, dim_to_histos in accumulator.items():
-            if dataset == DATA_NAME: continue
+        # # ====== Loop over 1D plots ====== #
+        # total_hists = dd()
 
-            regions_to_histos = dim_to_histos['1D']
+        # for dataset, dim_to_histos in accumulator.items():
+        #     if dataset == DATA_NAME: continue
 
-            for region, scaling_to_histos in regions_to_histos.items():
-                for scale, hnames_to_histos in scaling_to_histos.items():
-                    for hname, histo in hnames_to_histos.items():
+        #     regions_to_histos = dim_to_histos['1D']
 
-                        total_hists['total']['1D'][region][scale][hname] += histo
-                        accumulator[dataset]['1D'][region][scale][hname] = Histogram(hname, histo, self.plot_samples.get_sample(dataset), self.plot_regions.get_region(region), self.plot_rescales.get_rescale(scale))
+        #     for region, scaling_to_histos in regions_to_histos.items():
+        #         for scale, hnames_to_histos in scaling_to_histos.items():
+        #             for hname, histo in hnames_to_histos.items():
 
-        accumulator['total'] = dict(total_hists['total'])
+        #                 total_hists['total']['1D'][region][scale][hname] += histo
+        #                 accumulator[dataset]['1D'][region][scale][hname] = Histogram(hname, histo, self.samples_list.get_sample(dataset), self.regions_list.get_region(region), self.rescales_list.get_rescale(scale))
 
-        sample_tot = Sample('tot', None, None, None, 'black', 'Total MC')
-        regions_to_histos = accumulator['total']['1D']
-        for region, scaling_to_histos in regions_to_histos.items():
-            for scale, hnames_to_histos in scaling_to_histos.items():
-                for hname, histo in hnames_to_histos.items():
-                    accumulator['total']['1D'][region][scale][hname] = Histogram(hname, histo, sample_tot, region, self.plot_rescales.get_rescale(scale))
+        # accumulator['total'] = dict(total_hists['total'])
 
-        return accumulator
+        # sample_tot = Sample('tot', None, None, None, 'black', 'Total MC')
+        # regions_to_histos = accumulator['total']['1D']
+        # for region, scaling_to_histos in regions_to_histos.items():
+        #     for scale, hnames_to_histos in scaling_to_histos.items():
+        #         for hname, histo in hnames_to_histos.items():
+        #             accumulator['total']['1D'][region][scale][hname] = Histogram(hname, histo, sample_tot, region, self.rescales_list.get_rescale(scale))
+
+        # return accumulator
+        pass
 
 if __name__ == '__main__':
 
     fileset = {}
-    for sample in plot_samples:
+    for sample in samples_list:
         fileset[sample.name] = sample.files
 
     tree_to_plot_list = {plots_list.tree: [] for plots_list in plots_to_make}
@@ -163,17 +170,18 @@ if __name__ == '__main__':
         os.makedirs(dump_to, exist_ok=True)
         if PROCESS:
             run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True)
-            coffea_out = run(fileset, tree, MyProcessor(plots_list, plot_samples, plot_regions, plot_rescales))
+            coffea_out = run(fileset, tree, MyProcessor(plots_list, samples_list, regions_list, rescales_list))
 
-            reordered_map = defaultdict(deep_map)
-            for dataset, dim_to_histos in coffea_out.items():
-                for dim, regions_to_histos in dim_to_histos.items():
-                    for region, scalings_to_histos in regions_to_histos.items():
-                        for scaling, hnames_to_histos in scalings_to_histos.items():
-                            for hname, histo in hnames_to_histos.items():
-                                reordered_map[dim][region][hname][scaling][dataset] = histo
+            # reordered_map = defaultdict(deep_map)
+            # for dataset, dim_to_histos in coffea_out.items():
+            #     for dim, regions_to_histos in dim_to_histos.items():
+            #         for region, scalings_to_histos in regions_to_histos.items():
+            #             for scaling, hnames_to_histos in scalings_to_histos.items():
+            #                 for hname, histo in hnames_to_histos.items():
+            #                     reordered_map[dim][region][hname][scaling][dataset] = histo
 
-            coffea_out = dict(reordered_map)
+            coffea_out = dict(coffea_out.to_plot)
+
 
             with open(f"{dump_to}/data/data___{tree}.pkl", "wb") as f:
                 pickle.dump(dict(coffea_out), f)
@@ -183,3 +191,6 @@ if __name__ == '__main__':
 
         # ====== Loop over 1D plots ====== #
         pprint(coffea_out)
+        print(coffea_out[('new_bdt_tH', 'total', 'SR' , 'ProtNominal')].values())
+        print(coffea_out[('new_bdt_tH', 'tH',    'SR' , 'ProtNominal')].values())
+        print(coffea_out[('new_bdt_tH', 'tWH',   'SR' , 'ProtNominal')].values())

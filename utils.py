@@ -24,7 +24,6 @@ def get_blinding(s_h, b_h, threshold = 0.00333):
     bkg_vals    = b_h.values()
     sqrt_bkg    = np.sqrt(bkg_vals, out = np.full_like(bkg_vals, 0), where = bkg_vals>=0)
     s_over_b    = np.divide(signal_vals,  bkg_vals, out = np.full_like(bkg_vals, 0),  where = bkg_vals>0)
-    print(s_over_b)
     return s_over_b > threshold
 
 def compute_total_separation(signal_h, bkg_h):

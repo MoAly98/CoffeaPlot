@@ -2,6 +2,9 @@
 import os, re
 from glob import glob
 import awkward as ak
+from collections import MutableMapping
+from coffea.processor import AccumulatorABC
+
 
 LOOK_IN = ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
            '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
@@ -20,7 +23,7 @@ class Functor(object):
         data_args = [data[arg] for arg in self.args]
         return self.fn(*data_args)
 
-class Plot(object):
+class Variable(object):
     def __init__(self, name, howto, binning, label, regions=['.*'], idx_by = 'event'):
         self.name = name
         self.howto = howto
@@ -33,31 +36,34 @@ class Plot(object):
     def set_dim(self, dim):
         self.dim = dim
 
-class Plots(object):
+    def __eq__(self, other):
+        return self.name == other.name
+
+class Variables(object):
     def __init__(self, dim, tree, to_plot = []):
         if dim != 1 and dim != 2:
-            print("ERROR:: Supporting only 1D and 2D plots")
+            print("ERROR:: Supporting only 1D and 2D variables")
             exit()
         self.dim = dim
         self.tree = tree
-        for plot in to_plot:
-            plot.set_dim(self.dim)
+        for variable in to_plot:
+            variable.set_dim(self.dim)
 
         self.to_plot = to_plot
 
-    def append(self, plot_histo):
-        plot_histo.set_dim(self.dim)
-        self.to_plot.append(plot_histo)
+    def append(self, variable):
+        variable.set_dim(self.dim)
+        self.to_plot.append(variable)
 
-    def get_plot(self, name):
-        for plot in self.to_plot:
-            if plot.name == name:
-                return plot
+    def get_variable(self, name):
+        for variable in self.to_plot:
+            if variable.name == name:
+                return variable
         return None
 
     def __iter__(self):
-        for plot in self.to_plot:
-            yield plot
+        for variable in self.to_plot:
+            yield variable
 
 class Sample(object):
     def __init__(self, name, regexes, cut_howto, weight_howto, color, label):
@@ -78,6 +84,9 @@ class Sample(object):
 
         self.color = color
         self.label = label
+
+    def __eq__(self, other):
+        return self.name == other.name
 
     def create_fileset(self, regexes):
         # Collect Regexes
@@ -115,6 +124,10 @@ class Region(object):
         self.sel = howto
         self.targets = target_sample
 
+    def __eq__(self, other):
+        return self.name == other.name
+
+
 class Regions(object):
     def __init__(self, to_plot = []):
         self.to_plot   = to_plot
@@ -139,6 +152,10 @@ class Rescale(object):
         self.method = howto
         assert isinstance(self.method, Functor), "Rescale howto must be a functor"
         assert 'weights' in self.method.args, "A branch called weights must be in data and passed to functor for rescaling"
+
+    def __eq__(self, other):
+        return self.name == other.name
+
 
 class Rescales(object):
     def __init__(self, to_plot = []):
@@ -168,5 +185,94 @@ class Histogram(object):
         self.rescale = rescale
         self.label = None
 
+
     def set_label(self, label):
         self.label = label
+
+    def __eq__(self, other):
+        return (self.name == other.name) and (self.sample == other.sample) and (self.region == other.region) and (self.rescale == other.rescale)
+
+    def __add__(self, other):
+
+        if self == other:
+            self.h + other.h
+
+        return self
+
+class Histograms(AccumulatorABC):
+    def __init__(self):
+        # Initialize any necessary data structures or variables for your accumulator
+        self.to_plot = {}
+
+    def add(self, other):
+        # Implement the addition logic to combine histograms
+        for key, value in other.to_plot.items():
+            if key in self.to_plot:
+                # Add the histograms together or define your own custom logic
+                self.to_plot[key] += value
+            else:
+                # Initialize the histogram in the accumulator if it doesn't exist
+                self.to_plot[key] = value
+
+    def identity(self):
+        # Create and return a new instance of the accumulator
+        return Histograms()
+
+    def clone(self):
+        # Create a copy of the accumulator
+        acc = MyAccumulator()
+        acc.histograms = self.to_plot.copy()
+        return acc
+
+    def __setitem__(self, histo, h ):
+        key = (histo.name, histo.sample, histo.region, histo.rescale)
+        self.to_plot[key] = h
+
+
+# class Histograms(dict):
+#     def __init__(self, to_plot = {}):
+#         self.to_plot = to_plot
+
+#     def identity(self):
+#         ret = Histograms()
+#         for key, value in self.to_plot.items():
+#             ret.to_plot[key] = value.identity()
+#         return ret
+
+#     def add(self, other):
+#         if isinstance(other, MutableMapping):
+#             for key, value in other.to_plot.items():
+#                 if key not in self.to_plot:
+#                     self.to_plot[key] = value
+#                 else:
+#                     self.to_plot[key] += value
+#         else:
+#             raise ValueError
+
+#     def append(self, histo):
+#         key = (histo.name, histo.sample, histo.region, histo.rescale)
+#         self.to_plot[key] = histo
+
+
+
+    # def get_histogram(self, name, sample_name, region_name, rescale_name):
+    #     return self.to_plot.get((name, sample_name, region_name, rescale_name), None)
+
+    # def __getitem__(self, key):
+    #     return self.to_plot[key]
+    # def __setitem__(self, key, value):
+    #     self.to_plot[key] = value
+    # def __delitem__(self, key):
+    #     del self.to_plot[key]
+    # def __len__(self):
+    #     return len(self.to_plot)
+    # def __iter__(self):
+    #     return iter(self.to_plot)
+    # def __repr__(self):
+    #     return repr(self.to_plot)
+
+    # def items(self):
+    #     return self.to_plot.items()
+
+    # # def __add__(self, other):
+    # #     return self.to_plot + other.to_plot
