@@ -205,6 +205,12 @@ class Histogram(object):
             self.h += other.h
         return self
 
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
     def __repr__(self):
         return f'{self.name}__{self.sample}__{self.region}__{self.rescale}'
 
