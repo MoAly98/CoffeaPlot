@@ -65,7 +65,7 @@ class Variables(object):
             yield variable
 
 class Sample(object):
-    def __init__(self, name, stype, regexes, cut_howto, weight_howto, color, label):
+    def __init__(self, name, stype, regexes, cut_howto, weight_howto, color, label, category = None):
 
         # Sample name
         self.name = name
@@ -74,6 +74,9 @@ class Sample(object):
         assert stype.upper() in ['BKG','SIG','DATA'], "ERROR:: Sample type must be BKG, SIG, or DATA (case in-sensitive)"
 
         self.type = stype.upper()
+
+        # Sample category
+        self.category = category
 
         # Get files for sample
         if regexes is not None:
