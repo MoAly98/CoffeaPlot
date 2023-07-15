@@ -7,7 +7,7 @@ class CoffeaPlot(object):
 
 class StylableObject(object):
 
-    VALID_STYLE_SETTINGS = ["linestyle", "linewidth", "color", "edgecolor", "markersize", "maker", "fill", "alpha", "hatch"]
+    VALID_STYLE_SETTINGS = ["linestyle", "linewidth", "color", "edgecolor", "markersize", "marker", "fill", "alpha", "hatch"]
 
     def __init__(self, **styling):
         for style in styling:
@@ -44,7 +44,7 @@ class DistWithUncObjects(object):
     ALLOW_ERROR_TYPES = ["none", "stat", "syst", "stat"]
     SUPPORT_ERROR_TYPES = ["none", "stat"]
 
-    def __init__(self, bar_type, error_type = 'stat'):
+    def __init__(self, bar_type, error_type = 'stat', blinder = None):
         self.bar_type = bar_type
         self.error_type = error_type
 
@@ -56,6 +56,8 @@ class DistWithUncObjects(object):
             raise ValueError(f"Invalid stack error type: {error_type}")
         if error_type not in self.SUPPORT_ERROR_TYPES:
             raise NotImplementedError(f"Unsupported stack error type: {error_type}")
+
+        self.blinder = blinder
 
 class RatioPlots(object):
     '''
@@ -80,7 +82,7 @@ class RatioPlot(DistWithUncObjects):
 
 
 class RatioItem(StylableObject):
-    def __init__(self, numerator, denominator, bar_type, label = None, error_type = 'stat', **styling):
+    def __init__(self, numerator, denominator, label = None, ylabel = '', **styling):
 
         '''
         Create a RatioItem object.
@@ -152,3 +154,17 @@ class VSpanBox(SpanBox):
 
     def draw(self, ax):
         ax.axhspan(*self.pos, **self.styling)
+
+
+class Blinder(object):
+    def __init__(self, signal_h, background_h, threshold):
+        self.sig = signal_h
+        self.bkg = background_h
+        self.threshold = threshold
+
+    def get_blinding(self):
+        signal_vals = self.sig.values()
+        bkg_vals    = self.bkg.values()
+        sqrt_bkg    = np.sqrt(bkg_vals, out = np.full_like(bkg_vals, 0), where = bkg_vals>=0)
+        s_over_sqrtb    = np.divide(signal_vals,  bkg_vals, out = np.full_like(bkg_vals, 0),  where = bkg_vals>0)
+        return s_over_sqrtb > threshold
