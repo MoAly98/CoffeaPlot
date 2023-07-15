@@ -56,7 +56,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
         os.makedirs(f"{plot_dir}/Tables/{tree}/",       exist_ok=True)
         os.makedirs(f"{plot_dir}/Significance/{tree}/", exist_ok=True)
         os.makedirs(f"{plot_dir}/Separation/{tree}/",   exist_ok=True)
-        os.makedirs(f"{plot_dir}/DataMC/{tree}/",       exist_ok=True)
+        os.makedirs(f"{plot_dir}/data_over_mc/{tree}/",       exist_ok=True)
         os.makedirs(f"{plot_dir}/Normalised/{tree}/",   exist_ok=True)
 
 
@@ -64,7 +64,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
         stacks = []
         data_stacks = []
-        datamc_ratios = []
+        data_over_mc_ratios = []
         signif_ratios = []
         for region in regions_list:
             log.info(f"Setting up region {region.name}")
@@ -82,8 +82,8 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
                     # ============== Create 1x Stack per region, rescaling, variable ============== #
                     stack        = Stack(bar_type = 'stepfilled', error_type = 'stat')
-                    data_stack   = Stack(bar_type = 'point', error_type = 'stat')
-                    datamc_ratio = RatioPlot(bar_type = 'step', error_type = 'stat')
+                    data_stack   = Stack(bar_type = 'points', error_type = 'stat')
+                    data_over_mc_ratio = RatioPlot(bar_type = 'step', error_type = 'stat')
                     signif_ratio = RatioPlot(bar_type = 'stepfilled', error_type = 'stat')
 
                     # ============== Group together samples in different ways ============== #
@@ -124,18 +124,24 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                             log.error("Sample type not recognised", sample.type)
 
                     if data is None:
+                        # TODO:: Allow Asimov/CustomAsimov where data is set to MC or customMC
                         log.error("No data sample found")
 
                     # ============== Total Histo ============== #
                     total_histogram =  histograms[(variable.name, 'total', region.name, rescale.name)]
+                    total_histogram.label = 'Total'
 
                     # ============== Backgrounds Histo ============== #
                     backgrounds_histograms = [histograms[(variable.name, background.name, region.name, rescale.name)] for background in backgrounds]
                     tot_backgrounds_histogram = sum(backgrounds_histograms)
+                    tot_backgrounds_histogram.name = 'background'
+                    tot_backgrounds_histogram.label = 'Background'
 
                     # ============== Signal Histo ============== #
                     signals_histograms = [histograms[(variable.name, signal.name, region.name, rescale.name)] for signal in signals]
                     tot_signals_histogram = sum(signals_histograms)
+                    tot_signals_histogram.name = 'signal'
+                    tot_signals_histogram.label = 'Signal'
 
                     # ============== Data Histo ============== #
                     data_histogram  =  histograms[(variable.name, data.name,  region.name, rescale.name)]
@@ -144,20 +150,25 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     data_stackicino = Stackatino([data_histogram], label = data.name, color = 'black')
                     data_stack.append(data_stackicino)
 
-                    # ============== Set up a DataMC ratio plot ============== #
-                    datamc_ratioitem = RatioItem(data_histogram, total_histogram, label = None, ylabel = 'Data/MC', marker = 'o', color = 'black')
-                    datamc_ratio.append(datamc_ratioitem)
+                    # ============== Set up a data_over_mc ratio plot ============== #
+                    data_over_mc_ratioitem = DataOverMC(data_histogram, total_histogram, label = None, ylabel = 'Data/MC', marker = 'o', color = 'black')
+                    data_over_mc_ratio.append(data_over_mc_ratioitem)
+                    print(data_over_mc_ratioitem.err())
 
                     # TODO:: somehow allow user to ask for more data/mc style plots (e.g. MC subtraction, one specific MC, .. )
 
                     # ============== Set up significance ratio plots ============== #
                     for target in region_targets:
                         target_histogram = histograms[(variable.name, target.name, region.name, rescale.name)]
-                        signif_ratioitem = RatioItem(target_histogram, tot_backgrounds_histogram, ylabel = rf'{target.name}/$\sqrt(B)$', color = target.color, alpha = 0.8)
+                        signif_ratioitem = Significance(target_histogram, tot_backgrounds_histogram, ylabel = rf'{target.name}/$\sqrt(B)$', color = target.color, alpha = 0.8)
+                        print(signif_ratioitem.err())
                         signif_ratio.append(signif_ratioitem)
 
                     # ============== Blinding ============== #
-                    stack.blinder = Blinder(tot_signals_histogram, tot_backgrounds_histogram, threshold = 0.00333)
+                    blinder = Blinder(tot_signals_histogram, tot_backgrounds_histogram, threshold = 0.00333)
+                    data_stack.blinder = blinder
+                    data_over_mc_ratio.blinder = blinder
+
                     # ============== Make a Stackatino for each category ============== #
                     for category, samples in category_to_samples.items():
                         log.info(f"Setting up category {category}")
@@ -171,27 +182,21 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     # ============== Append each Stack to corresponding list of Stacks ============== #
                     stacks.append(stack)
                     data_stacks.append(data_stack)
-                    datamc_ratios.append(datamc_ratio)
+                    data_over_mc_ratios.append(data_over_mc_ratio)
                     signif_ratios.append(signif_ratio)
 
         # ====== How many plots to make? ====== #
-        num_plots = len(stacks) # x2 for DataMC and Significance
+        num_plots = len(stacks) # x2 for data_over_mc and Significance
 
         # ======= Now we make 2 StackPlots per region, rescaling, variable ======= #
-        # One for DataMC, one for Significance
+        # One for data_over_mc, one for Significance
 
         # ====== Loop over stacks ========= #
         for plot_idx in range(num_plots):
-            pass
-
-
-
-
-
-
-
-
-
+            mc_stack = stacks[plot_idx]
+            data_stack = data_stacks[plot_idx]
+            data_over_mc_ratio = data_over_mc_ratios[plot_idx]
+            signif_ratio = signif_ratios[plot_idx]
 
 
 
@@ -258,7 +263,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
         #             plt.close('all')
 
         #             # ====== Make stacked histogram with data/mc ratio per bin in secondary panels ====== #
-        #             datamc_fig, datamc_main_ax, datamc_ax  = create_fig_with_n_panels(1, 2, h_ratio=[1,0.2])
+        #             data_over_mc_fig, data_over_mc_main_ax, data_over_mc_ax  = create_fig_with_n_panels(1, 2, h_ratio=[1,0.2])
 
                     # for sample_name, dim_to_histos in samples_to_histos.items():
                     #     histos_1d = dim_to_histos['1D']

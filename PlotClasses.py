@@ -1,3 +1,7 @@
+import numpy as np
+import hist
+from classes import Histogram
+
 class CoffeaPlot(object):
     '''
     This class can create the figure, the axes, handle Stacks and RatioPlots and Box
@@ -95,6 +99,79 @@ class RatioItem(StylableObject):
 
         StylableObject.__init__(self, **styling)
 
+    def get_ratio(self):
+        numerator_vals = self.numerator.values()
+        denominator_vals = self.denominator.values()
+
+        return  np.divide(numerator_vals, denominator_vals,  out=np.full_like(denominator_vals, 0), where= (denominator_vals>1e-4))
+
+class DataOverMC(RatioItem):
+    def __init__(self, data, mc, label = None, ylabel = 'Data/MC', **styling):
+        RatioItem.__init__(self, data, mc, label, ylabel, **styling)
+
+    def data_err(self):
+        # Data Points
+        data = self.numerator.values()
+        data_variances = self.numerator.variances()
+        mc = self.denominator.values()
+
+        err_data    = np.sqrt(data_variances, out = np.full_like(data_variances, 0), where = (data_variances >=0))
+        err         = np.divide(err_data, mc, out = np.full_like(err_data,1e3), where = (mc > 0))
+
+        return err
+
+    def mc_err(self):
+
+        mc = self.denominator.values()
+        mc_variances = self.denominator.variances()
+
+        # MC Uncertainty band
+        err_mc      = np.sqrt(mc_variances, out = np.full_like(mc_variances, 0), where = (mc_variances >=0))
+        err = np.divide(err_mc, mc, out = np.full_like(mc, 1e3), where = (mc > 0))
+
+        return err
+
+    def err(self):
+        # Need to keep track of this when plotting!
+        return self.data_err(), self.mc_err()
+
+class Significance(RatioItem):
+
+    def __init__(self, signal, bkg, label = None, ylabel = '', **styling):
+
+        #========= Save the background for error computation =========#
+        self.bkg = bkg
+
+        bkg_vals = bkg.values()
+        bkg_variances = bkg.variances()
+        sqrt_bkg_vals = np.sqrt(bkg_vals, out=np.full_like(bkg_vals, 0), where=(bkg_vals>0) )
+        sqrt_bkg_variances = np.divide(bkg_variances, 4*sqrt_bkg_vals, out=np.full_like(bkg_vals, 0), where=(bkg_vals>0) )
+
+        sqrt_bkg_h = hist.Hist.new.Var(bkg.h.axes[0].edges, name = bkg.name, label=bkg.label, flow=True).Weight()
+        sqrt_bkg_h[...] = np.stack([sqrt_bkg_vals, sqrt_bkg_variances], axis=-1)
+
+        sqrt_bkg_histo = Histogram(bkg.name, sqrt_bkg_h, bkg.sample, bkg.region, bkg.rescale)
+
+        better_ylabel = fr'{signal.sample}/$\sqrt(B)$'
+
+        RatioItem.__init__(self, signal, sqrt_bkg_histo, label, better_ylabel, **styling)
+
+    def err(self):
+
+        signficance   = self.get_ratio()
+
+        signal_vals      = self.numerator.values()
+        signal_variances = self.numerator.variances()
+
+        bkg_vals    = self.bkg.values()
+        bkg_variances    = self.bkg.variances()
+
+        err_part1   = (1/4)*np.divide(bkg_variances, bkg_vals**2,  out=np.full_like(signal_vals, 1e3), where=(bkg_vals>1e-4))
+        err_part2   = np.divide(signal_variances, signal_vals**2,  out=np.full_like(signal_vals, 1e3), where=(signal_vals>1e-4))
+
+        err  = signficance*np.sqrt(err_part1+err_part2, out=np.full_like(signal_vals, 1e3), where=(err_part1+err_part2>=0))
+
+        return err
 
 class Stack(DistWithUncObjects):
     '''

@@ -184,21 +184,32 @@ class Rescales(object):
 
 class Histogram(object):
 
-    def __init__(self, name, histo, sample, region, rescale):
+    def __init__(self, name, histo, sample, region, rescale, label = None):
 
         self.name   = name
         self.h = histo
         self.sample = sample
         self.region = region
         self.rescale = rescale
-        self.label = None
+        self.label = label
 
 
     def set_label(self, label):
         self.label = label
 
+    def variances(self):
+        return self.h.variances()
+
+    def values(self):
+        return self.h.values()
+
     def __eq__(self, other):
         return (self.name == other.name) and (self.sample == other.sample) and (self.region == other.region) and (self.rescale == other.rescale)
+
+    def cross_sample_add(self, other):
+        if self.region == other.region and self.name == other.name and self.rescale == other.rescale:
+            self.h += other.h
+        return self
 
     def __add__(self, other):
         if self == other:
@@ -206,10 +217,15 @@ class Histogram(object):
         return self
 
     def __radd__(self, other):
+        '''
+        Required for use of sum() function. This
+        will add histogramsa cross sample borders
+        to be used in plotting.
+        '''
         if other == 0:
             return self
         else:
-            return self.__add__(other)
+            return self.cross_sample_add(other)
 
     def __repr__(self):
         return f'{self.name}__{self.sample}__{self.region}__{self.rescale}'
