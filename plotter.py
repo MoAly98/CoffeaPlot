@@ -8,7 +8,7 @@ from utils import *
 from plot_utils import *
 from PlotClasses import *
 from logger import ColoredLogger as logger
-import os
+import os, re
 import pickle
 import numpy as np
 from collections import defaultdict
@@ -63,6 +63,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
         # ====== Loop over 1D plots ====== #
 
         stacks = []
+        data_stacks = []
         datamc_ratios = []
         signif_ratios = []
         for region in regions_list:
@@ -80,9 +81,10 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     log.info(f"Setting up rescale {rescale.name}")
 
                     # ============== Create 1x Stack per region, rescaling, variable ============== #
-                    stack = Stack(bar_type = 'stepfilled', error_type = 'stat')
+                    stack        = Stack(bar_type = 'stepfilled', error_type = 'stat')
+                    data_stack   = Stack(bar_type = 'point', error_type = 'stat')
                     datamc_ratio = RatioPlot(bar_type = 'step', error_type = 'stat')
-                    signif_ratio = RatioPlot(bar_type = 'step', error_type = 'stat')
+                    signif_ratio = RatioPlot(bar_type = 'stepfilled', error_type = 'stat')
 
                     # ============== Group together samples in different ways ============== #
                     category_to_samples = defaultdict(list)
@@ -90,7 +92,6 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     backgrounds = []
                     signals = []
                     region_targets = []
-
                     data = None
 
                     for sample in samples_list:
@@ -101,12 +102,18 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                             category_to_samples[sample.name].append(sample)
 
                         # ============== Group samples by type ============== #
+                        if any(re.match(region_target_name, sample.name) for region_target_name in region_targets_names):
+                            log.info(f"Adding sample {sample.name} to region {region.name} targets")
+                            region_targets.append(sample)
+
                         if sample.type == 'BKG':
                             log.info(f"Adding sample {sample.name} to backgrounds")
                             backgrounds.append(sample)
+
                         elif sample.type == 'SIG':
                             log.info(f"Adding sample {sample.name} to signals")
                             signals.append(sample)
+
                         elif sample.type == 'DATA':
                             log.info(f"Settiing sample {sample.name} as data")
                             if data is None:
@@ -116,6 +123,41 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                         else:
                             log.error("Sample type not recognised", sample.type)
 
+                    if data is None:
+                        log.error("No data sample found")
+
+                    # ============== Total Histo ============== #
+                    total_histogram =  histograms[(variable.name, 'total', region.name, rescale.name)]
+
+                    # ============== Backgrounds Histo ============== #
+                    backgrounds_histograms = [histograms[(variable.name, background.name, region.name, rescale.name)] for background in backgrounds]
+                    tot_backgrounds_histogram = sum(backgrounds_histograms)
+
+                    # ============== Signal Histo ============== #
+                    signals_histograms = [histograms[(variable.name, signal.name, region.name, rescale.name)] for signal in signals]
+                    tot_signals_histogram = sum(signals_histograms)
+
+                    # ============== Data Histo ============== #
+                    data_histogram  =  histograms[(variable.name, data.name,  region.name, rescale.name)]
+
+                    # ============== Data Stack ============== #
+                    data_stackicino = Stackatino([data_histogram], label = data.name, color = 'black')
+                    data_stack.append(data_stackicino)
+
+                    # ============== Set up a DataMC ratio plot ============== #
+                    datamc_ratioitem = RatioItem(data_histogram, total_histogram, label = None, ylabel = 'Data/MC', marker = 'o', color = 'black')
+                    datamc_ratio.append(datamc_ratioitem)
+
+                    # TODO:: somehow allow user to ask for more data/mc style plots (e.g. MC subtraction, one specific MC, .. )
+
+                    # ============== Set up significance ratio plots ============== #
+                    for target in region_targets:
+                        target_histogram = histograms[(variable.name, target.name, region.name, rescale.name)]
+                        signif_ratioitem = RatioItem(target_histogram, tot_backgrounds_histogram, ylabel = rf'{target.name}/$\sqrt(B)$', color = target.color, alpha = 0.8)
+                        signif_ratio.append(signif_ratioitem)
+
+                    # ============== Blinding ============== #
+                    stack.blinder = Blinder(tot_signals_histogram, tot_backgrounds_histogram, threshold = 0.00333)
                     # ============== Make a Stackatino for each category ============== #
                     for category, samples in category_to_samples.items():
                         log.info(f"Setting up category {category}")
@@ -126,11 +168,20 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
                         stack.append(stackatinos)
 
-                    # ============== Append Stack to list of Stacks ============== #
+                    # ============== Append each Stack to corresponding list of Stacks ============== #
                     stacks.append(stack)
+                    data_stacks.append(data_stack)
+                    datamc_ratios.append(datamc_ratio)
+                    signif_ratios.append(signif_ratio)
+
+        # ====== How many plots to make? ====== #
+        num_plots = len(stacks) # x2 for DataMC and Significance
+
+        # ======= Now we make 2 StackPlots per region, rescaling, variable ======= #
+        # One for DataMC, one for Significance
 
         # ====== Loop over stacks ========= #
-        for stack in stacks:
+        for plot_idx in range(num_plots):
             pass
 
 
