@@ -11,8 +11,15 @@ import os
 import pickle
 import numpy as np
 
-# TODO:: NOT-MC fn to not add data/total to mc sums
+# TODO:: Specify type of sample
 # TODO:: Class for Stack and Stackatino (Stack element)
+# TODO:: Specify Normalised Signal
+# TODO:: Specify fraction of plot used by ratio plot
+# TODO:: Specify ratio plot limits
+# TODO:: Specify figure size
+# TODO:: Specify ylabel
+# TODO:: Specify legend location
+# TODO:: Sample categories
 
 # Stuff user should give me?
 dump_to = f"outputs/"
@@ -44,6 +51,9 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
 
         # ====== Loop over 1D plots ====== #
+
+        for hist_key, hist in coffea_out.items():
+
 
         histos_1d  = coffea_out['1D']
         for region_name, hnames_to_histos in histos_1d.items():

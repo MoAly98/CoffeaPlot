@@ -26,25 +26,28 @@ ttl_cut = Functor( lambda x, y: (tight_lepton(x)) & (xxx_is_light(y)), ['leptons
 samples = [
 
     Sample('tH',
-            ['346676*'],
+           'SIG',
+           ['346676*'],
            leptight_cut,
            mc_weight,
            '#e6194b',
            'tHjb'),
 
     Sample('tWH',
+            'SIG',
            ['346678*'],
            leptight_cut,
            mc_weight,
            '#3cb44b',
            'tWH'),
 
-    # Sample('ttb',
-    #        ['410470_user*'],
-    #        ttb_cut,
-    #        mc_weight,
-    #        '#e6beff',
-    #        r'$t\bar{t}+\geq1b$'),
+    Sample('ttb',
+           'BKG',
+           ['410470_user*'],
+           ttb_cut,
+           mc_weight,
+           '#e6beff',
+           r'$t\bar{t}+\geq1b$'),
 
     # Sample('ttc',
     #        ['410470_user*'],
@@ -156,12 +159,13 @@ samples = [
     #        '#ffe119',
     #        'Fakes'),
 
-    # Sample('Data',
-    #        ['data15*', 'data16*', 'data17*', 'data18*'],
-    #        leptight_cut,
-    #        None,
-    #        '#808080',
-    #        'Data'),
+    Sample('Data',
+           'DATA',
+           ['data15*', 'data16*', 'data17*', 'data18*'],
+           leptight_cut,
+           None,
+           '#808080',
+           'Data'),
 ]
 
 

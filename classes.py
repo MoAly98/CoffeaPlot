@@ -2,7 +2,6 @@
 import os, re
 from glob import glob
 import awkward as ak
-from collections import MutableMapping
 from coffea.processor import AccumulatorABC
 
 
@@ -66,9 +65,15 @@ class Variables(object):
             yield variable
 
 class Sample(object):
-    def __init__(self, name, regexes, cut_howto, weight_howto, color, label):
+    def __init__(self, name, stype, regexes, cut_howto, weight_howto, color, label):
 
+        # Sample name
         self.name = name
+
+        # Sample type
+        assert stype.upper() in ['BKG','SIG','DATA'], "ERROR:: Sample type must be BKG, SIG, or DATA (case in-sensitive)"
+
+        self.type = stype.upper()
 
         # Get files for sample
         if regexes is not None:
@@ -193,11 +198,15 @@ class Histogram(object):
         return (self.name == other.name) and (self.sample == other.sample) and (self.region == other.region) and (self.rescale == other.rescale)
 
     def __add__(self, other):
-
         if self == other:
-            self.h + other.h
-
+            self.h += other.h
         return self
+
+    def __repr__(self):
+        return f'{self.name}__{self.sample}__{self.region}__{self.rescale}'
+
+    def __str__(self):
+            return f'Hist: {self.name}, Sample: {self.sample}, Region: {self.region}, Rescale: {self.rescale}'
 
 class Histograms(AccumulatorABC):
     def __init__(self):
@@ -228,51 +237,4 @@ class Histograms(AccumulatorABC):
         key = (histo.name, histo.sample, histo.region, histo.rescale)
         self.to_plot[key] = h
 
-
-# class Histograms(dict):
-#     def __init__(self, to_plot = {}):
-#         self.to_plot = to_plot
-
-#     def identity(self):
-#         ret = Histograms()
-#         for key, value in self.to_plot.items():
-#             ret.to_plot[key] = value.identity()
-#         return ret
-
-#     def add(self, other):
-#         if isinstance(other, MutableMapping):
-#             for key, value in other.to_plot.items():
-#                 if key not in self.to_plot:
-#                     self.to_plot[key] = value
-#                 else:
-#                     self.to_plot[key] += value
-#         else:
-#             raise ValueError
-
-#     def append(self, histo):
-#         key = (histo.name, histo.sample, histo.region, histo.rescale)
-#         self.to_plot[key] = histo
-
-
-
-    # def get_histogram(self, name, sample_name, region_name, rescale_name):
-    #     return self.to_plot.get((name, sample_name, region_name, rescale_name), None)
-
-    # def __getitem__(self, key):
-    #     return self.to_plot[key]
-    # def __setitem__(self, key, value):
-    #     self.to_plot[key] = value
-    # def __delitem__(self, key):
-    #     del self.to_plot[key]
-    # def __len__(self):
-    #     return len(self.to_plot)
-    # def __iter__(self):
-    #     return iter(self.to_plot)
-    # def __repr__(self):
-    #     return repr(self.to_plot)
-
-    # def items(self):
-    #     return self.to_plot.items()
-
-    # # def __add__(self, other):
-    # #     return self.to_plot + other.to_plot
+#TODO:: Systematics?

@@ -41,10 +41,9 @@ class MyProcessor(processor.ProcessorABC):
 
     def process(self, presel_events):
 
-        #output_1d =  defaultdict(self.dd)
         accum = Histograms()
-        output_2d = defaultdict(self.dd)
         dataset = presel_events.metadata['dataset']
+
 
         for a_sample in self.samples_list:
             if dataset != a_sample.name: continue
@@ -82,8 +81,7 @@ class MyProcessor(processor.ProcessorABC):
                         accum[Histogram(name, h, 'total', region_to_plot.name , rescaling.name)] =  hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
 
                         # TODO:: Need to add 2D histo here
-                        # output_1d[region_to_plot.name][rescaling.name][name] = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
-                        # output_2d[region_to_plot.name][rescaling.name][name] = None # Need empty 2D histo here
+
                     return accum
 
                 # =============== Non empty histogram for this region for this sample ==========
@@ -110,12 +108,13 @@ class MyProcessor(processor.ProcessorABC):
 
                         # Fill the histogram
                         h.fill(data, weight = w)
+
                         # Save the histogram
                         samp_histo_obj = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
                         tot_histo_obj = Histogram(name, h.copy(), 'total', region_to_plot.name , rescaling.name)
-                        #output_1d[region_to_plot.name][rescaling.name][name] = h
-                        accum[samp_histo_obj] = samp_histo_obj.h
-                        accum[tot_histo_obj] = tot_histo_obj.h
+
+                        accum[samp_histo_obj] = samp_histo_obj
+                        accum[tot_histo_obj] = tot_histo_obj
 
                 else:
                     # TODO:: 2D
@@ -124,33 +123,6 @@ class MyProcessor(processor.ProcessorABC):
         return accum
 
     def postprocess(self, accumulator):
-
-
-        # # ====== Loop over 1D plots ====== #
-        # total_hists = dd()
-
-        # for dataset, dim_to_histos in accumulator.items():
-        #     if dataset == DATA_NAME: continue
-
-        #     regions_to_histos = dim_to_histos['1D']
-
-        #     for region, scaling_to_histos in regions_to_histos.items():
-        #         for scale, hnames_to_histos in scaling_to_histos.items():
-        #             for hname, histo in hnames_to_histos.items():
-
-        #                 total_hists['total']['1D'][region][scale][hname] += histo
-        #                 accumulator[dataset]['1D'][region][scale][hname] = Histogram(hname, histo, self.samples_list.get_sample(dataset), self.regions_list.get_region(region), self.rescales_list.get_rescale(scale))
-
-        # accumulator['total'] = dict(total_hists['total'])
-
-        # sample_tot = Sample('tot', None, None, None, 'black', 'Total MC')
-        # regions_to_histos = accumulator['total']['1D']
-        # for region, scaling_to_histos in regions_to_histos.items():
-        #     for scale, hnames_to_histos in scaling_to_histos.items():
-        #         for hname, histo in hnames_to_histos.items():
-        #             accumulator['total']['1D'][region][scale][hname] = Histogram(hname, histo, sample_tot, region, self.rescales_list.get_rescale(scale))
-
-        # return accumulator
         pass
 
 if __name__ == '__main__':
@@ -164,33 +136,24 @@ if __name__ == '__main__':
         tree_to_plot_list[plots_list.tree].extend(plots_list)
 
     executor = processor.FuturesExecutor(workers=8)
-    #executor = processor.IterativeExecutor()
+
     for tree, plots_list in tree_to_plot_list.items():
-        dump_to = f"outputs/"
+        dump_to = f"outputs/data/"
         os.makedirs(dump_to, exist_ok=True)
         if PROCESS:
             run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True)
             coffea_out = run(fileset, tree, MyProcessor(plots_list, samples_list, regions_list, rescales_list))
 
-            # reordered_map = defaultdict(deep_map)
-            # for dataset, dim_to_histos in coffea_out.items():
-            #     for dim, regions_to_histos in dim_to_histos.items():
-            #         for region, scalings_to_histos in regions_to_histos.items():
-            #             for scaling, hnames_to_histos in scalings_to_histos.items():
-            #                 for hname, histo in hnames_to_histos.items():
-            #                     reordered_map[dim][region][hname][scaling][dataset] = histo
-
             coffea_out = dict(coffea_out.to_plot)
 
-
-            with open(f"{dump_to}/data/data___{tree}.pkl", "wb") as f:
+            with open(f"{dump_to}/data___{tree}.pkl", "wb") as f:
                 pickle.dump(dict(coffea_out), f)
         else:
-            with open(f"{dump_to}/data/data___{tree}.pkl", "rb") as f:
+            with open(f"{dump_to}/data___{tree}.pkl", "rb") as f:
                 coffea_out = pickle.load(f)
 
         # ====== Loop over 1D plots ====== #
         pprint(coffea_out)
-        print(coffea_out[('new_bdt_tH', 'total', 'SR' , 'ProtNominal')].values())
-        print(coffea_out[('new_bdt_tH', 'tH',    'SR' , 'ProtNominal')].values())
-        print(coffea_out[('new_bdt_tH', 'tWH',   'SR' , 'ProtNominal')].values())
+        print(coffea_out[('new_bdt_tH', 'total', 'SR' , 'ProtNominal')].h.values())
+        print(coffea_out[('new_bdt_tH', 'tH',    'SR' , 'ProtNominal')].h.values())
+        print(coffea_out[('new_bdt_tH', 'tWH',   'SR' , 'ProtNominal')].h.values())
