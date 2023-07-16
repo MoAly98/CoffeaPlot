@@ -25,7 +25,8 @@ PROCESS = True
 DATA_NAME = 'Data'
 
 # TODO:: Histograms class to support accumlation -- storage option
-
+# TODO:: Add 2D histograms
+# TODO:: Manually store under and overflow bins in Histogram object, and add them to main histo if requsted, handling error addition
 class MyProcessor(processor.ProcessorABC):
 
     def __init__(self, variables_list, samples_list, regions_list, rescales_list):
@@ -77,8 +78,9 @@ class MyProcessor(processor.ProcessorABC):
                 # ================ Empty histogram for this region for this sample ===========
                 if ak.num(filt_reg['weights'], axis=0) == 0:
                     for rescaling in self.rescales_list:
-                        accum[Histogram(name, h, 'total', region_to_plot.name , rescaling.name)] =  hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
-                        accum[Histogram(name, h, 'total', region_to_plot.name , rescaling.name)] =  hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                        h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                        accum[Histogram(name, h, dataset, region_to_plot.name , rescaling.name)] = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
+                        accum[Histogram(name, h.copy(), 'total', region_to_plot.name , rescaling.name)] = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
 
                         # TODO:: Need to add 2D histo here
 
@@ -111,8 +113,10 @@ class MyProcessor(processor.ProcessorABC):
 
                         # Save the histogram
                         samp_histo_obj = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
-                        tot_histo_obj = Histogram(name, h.copy(), 'total', region_to_plot.name , rescaling.name)
-
+                        if sample.type != 'DATA':
+                            tot_histo_obj = Histogram(name, h.copy(), 'total', region_to_plot.name , rescaling.name)
+                        else:
+                            tot_histo_obj = Histogram(name, 0, 'total', region_to_plot.name , rescaling.name)
                         accum[samp_histo_obj] = samp_histo_obj
                         accum[tot_histo_obj] = tot_histo_obj
 
@@ -138,7 +142,7 @@ if __name__ == '__main__':
     executor = processor.FuturesExecutor(workers=8)
 
     for tree, plots_list in tree_to_plot_list.items():
-        dump_to = f"outputs/data/"
+        dump_to = f"outputs/data-test/"
         os.makedirs(dump_to, exist_ok=True)
         if PROCESS:
             run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True)
@@ -157,3 +161,4 @@ if __name__ == '__main__':
         print(coffea_out[('new_bdt_tH', 'total', 'SR' , 'ProtNominal')].h.values())
         print(coffea_out[('new_bdt_tH', 'tH',    'SR' , 'ProtNominal')].h.values())
         print(coffea_out[('new_bdt_tH', 'tWH',   'SR' , 'ProtNominal')].h.values())
+        print(coffea_out[('new_bdt_tH', 'Data',   'SR' , 'ProtNominal')].h.values())

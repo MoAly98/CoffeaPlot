@@ -4,6 +4,7 @@ from matplotlib.patches import Patch
 import mplhep as mplhep
 plt.style.use(mplhep.style.ATLAS)
 plt.rcParams['axes.linewidth'] = 3
+plt.rcParams.update({'font.size': 20})
 
 def create_fig_with_n_panels(ncols, nrows, h_ratio = None):
     # now we make a figure
@@ -18,7 +19,6 @@ def create_fig_with_n_panels(ncols, nrows, h_ratio = None):
         rat_ax = fig.add_subplot(gs[i+1, 0], sharex=ax)
         rat_axes.append(rat_ax)
 
-    plt.rcParams.update({'font.size': 20})
     return fig, ax, rat_axes
 
 def plot_stack(stackables, data, axis, blind=None, title=''):
