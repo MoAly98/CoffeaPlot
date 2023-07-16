@@ -193,9 +193,21 @@ class Histogram(object):
         self.rescale = rescale
         self.label = label
 
+        self.stylish_sample = None
+        self.stylish_region = None
+        self.stylish_rescale = None
 
     def set_label(self, label):
         self.label = label
+
+    def set_stylish_sample(self, sample):
+        self.stylish_sample = sample
+
+    def set_stylish_region(self, region):
+        self.stylish_region = region
+
+    def set_stylish_rescale(self, rescale):
+        self.stylish_rescale = rescale
 
     def variances(self):
         return self.h.variances()
@@ -207,14 +219,19 @@ class Histogram(object):
         return (self.name == other.name) and (self.sample == other.sample) and (self.region == other.region) and (self.rescale == other.rescale)
 
     def cross_sample_add(self, other):
+        print(self.region, other.region)
+        print(self.name, other.name)
+        print(self.rescale, other.rescale)
         if self.region == other.region and self.name == other.name and self.rescale == other.rescale:
+
             self.h += other.h
         return self
 
     def __add__(self, other):
-        if self == other:
+        if self.name == other.name:
             self.h += other.h
         return self
+
 
     def __radd__(self, other):
         '''
@@ -223,9 +240,9 @@ class Histogram(object):
         to be used in plotting.
         '''
         if other == 0:
-            return self
+            return Histogram(self.name, self.h.copy(), 'TempSample', self.region, self.rescale)
         else:
-            return self.cross_sample_add(other)
+            return self.__add__(other)
 
     def __repr__(self):
         return f'{self.name}__{self.sample}__{self.region}__{self.rescale}'
@@ -259,7 +276,11 @@ class Histograms(AccumulatorABC):
         return acc
 
     def __setitem__(self, histo, h ):
-        key = (histo.name, histo.sample, histo.region, histo.rescale)
+
+        if isinstance(histo, Histogram):
+            key = (histo.name, histo.sample, histo.region, histo.rescale)
+        else:
+            key = histo
         self.to_plot[key] = h
 
 #TODO:: Systematics?
