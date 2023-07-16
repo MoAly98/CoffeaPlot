@@ -110,9 +110,6 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                             if sample.category is not None:
                                 category_to_samples[sample.category].append(sample)
                             else:
-                                # if sample.name == 'tWH':
-                                #     print(sample.label, histograms[(variable.name, sample.name, region.name, rescale.name)].h.values())
-
                                 category_to_samples[sample.label].append(sample)
 
                         # ============== Group samples by type ============== #
@@ -163,10 +160,12 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
                     # ============== Data Histo ============== #
                     data_histogram  =  histograms[(variable.name, data.name,  region.name, rescale.name)]
+                    data.stylish_sample = sample.label
                     data_histogram.label = variable_label
 
                     # ============== Data Stack ============== #
                     data_stackicino = Stackatino([data_histogram], label = data.name, color = 'black', fill = None, marker='o', markersize=12)
+                    data_stackicino.sum_histograms()
                     data_stack.append(data_stackicino)
 
                     # ============== Set up a data_over_mc ratio plot ============== #
@@ -196,6 +195,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                             histogram.label = variable_label
                             stackatino.append(histogram)
 
+                        stackatino.sum_histograms()
                         stack.append(stackatino)
 
                     # ============== Append each Stack to corresponding list of Stacks ============== #

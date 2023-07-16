@@ -83,7 +83,7 @@ class CoffeaPlot(object):
         for i, stack in enumerate(self.stacks):
 
 
-            sorted_stackatinos = sorted(stack.stackatinos, key=lambda stackatino: stackatino.sum_histograms().sum.values().sum(), reverse=True)
+            sorted_stackatinos = sorted(stack.stackatinos, key=lambda stackatino: stackatino.sum.values().sum(), reverse=True)
 
             styles = defaultdict(list)
             histograms, colors, labels = [], [], []
