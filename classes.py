@@ -218,15 +218,6 @@ class Histogram(object):
     def __eq__(self, other):
         return (self.name == other.name) and (self.sample == other.sample) and (self.region == other.region) and (self.rescale == other.rescale)
 
-    def cross_sample_add(self, other):
-        print(self.region, other.region)
-        print(self.name, other.name)
-        print(self.rescale, other.rescale)
-        if self.region == other.region and self.name == other.name and self.rescale == other.rescale:
-
-            self.h += other.h
-        return self
-
     def __add__(self, other):
         if self.name == other.name:
             self.h += other.h
