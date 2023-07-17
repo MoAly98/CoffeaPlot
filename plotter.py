@@ -12,6 +12,7 @@ import os, re
 import pickle
 import numpy as np
 from collections import defaultdict
+from copy import copy, deepcopy
 
 # TODO:: Specify type of sample
 # TODO:: Class for Stack and Stackatino (Stack element)
@@ -29,14 +30,11 @@ from collections import defaultdict
 # TODO:: User config parsing
 # TODO:: FilterNones function to get only settings that have been specified by user
 # TODO:: NoStack option for doing normal comparison plots
+# TODO:: Data/MC multiple ratio panels?
+
 log = logger()
 # Stuff user should give me?
 dump_to = f"outputs/"
-
-BLIND_ON = ['tH','tWH']
-log.info(f"Blinding using {BLIND_ON}")
-DATA_NAME = 'Data'
-log.info(f"Assuming data sample is called {DATA_NAME}")
 
 # Stuff i do not need from user
 data_dir = f"{dump_to}/data-test/"
@@ -53,7 +51,6 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
         tree = file.split('___')[1].split('.')[0]
 
-
         with open(f"{data_dir}/{file}", "rb") as f:
             histograms = pickle.load(f)
 
@@ -61,15 +58,17 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
         os.makedirs(f"{plot_dir}/Tables/{tree}/",       exist_ok=True)
         os.makedirs(f"{plot_dir}/Significance/{tree}/", exist_ok=True)
         os.makedirs(f"{plot_dir}/Separation/{tree}/",   exist_ok=True)
-        os.makedirs(f"{plot_dir}/data_over_mc/{tree}/",       exist_ok=True)
-        os.makedirs(f"{plot_dir}/Normalised/{tree}/",   exist_ok=True)
+        os.makedirs(f"{plot_dir}/data_over_mc/{tree}/", exist_ok=True)
+        os.makedirs(f"{plot_dir}/MC_v_MC/{tree}/",      exist_ok=True)
 
 
         # ====== Loop over 1D plots ====== #
 
         stacks = []
+        mcmcs = []
         data_stacks = []
         data_over_mc_ratios = []
+        mc_over_mc_ratios = []
         signif_ratios = []
         for region in regions_list:
             log.info(f"Setting up region {region.name}")
@@ -90,9 +89,10 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
                     combo_dict = {'region':region.name, 'rescale':rescale.name, 'variable':variable.name}
                     # ============== Create 1x Stack per region, rescaling, variable ============== #
-                    stack        = Stack(stackatinos = [], bar_type = 'stepfilled', error_type = 'stat', combo = combo_dict)
-                    data_stack   = Stack(stackatinos = [],bar_type = 'points', error_type = 'stat', combo = combo_dict)
+                    stack              = Stack(stackatinos = [], bar_type = 'stepfilled', error_type = 'stat', combo = combo_dict)
+                    data_stack         = Stack(stackatinos = [], bar_type = 'points', error_type = 'stat', combo = combo_dict)
                     data_over_mc_ratio = RatioPlot(ratio_items = [], bar_type = 'points', error_type = 'stat', combo = combo_dict)
+                    mc_over_mc_ratio   = RatioPlot(ratio_items = [], bar_type = 'step', error_type = 'stat', combo = combo_dict)
                     signif_ratios_for_one_stack = []
 
                     # ============== Group together samples in different ways ============== #
@@ -102,6 +102,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     signals = []
                     region_targets = []
                     data = None
+                    refMC = None
 
                     for sample in samples_list:
                         # ============== Group samples from same category ============== #
@@ -116,6 +117,12 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                         if any(re.match(region_target_name, sample.name) for region_target_name in region_targets_names):
                             log.info(f"Adding sample {sample.name} to region {region.name} targets")
                             region_targets.append(sample)
+
+                        if sample.ref == True:
+                            if refMC is None:
+                                refMC = sample
+                            else:
+                                log.error("More than one reference MC sample found")
 
                         if sample.type == 'BKG':
                             log.info(f"Adding sample {sample.name} to backgrounds")
@@ -172,6 +179,15 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     data_over_mc_ratioitem = DataOverMC(data_histogram, total_histogram, label = None, marker = 'o', color = 'black', markersize=12)
                     data_over_mc_ratio.append(data_over_mc_ratioitem)
 
+                    # ============== Set up a mc_over_mc ratio plot ============== #
+                    if refMC is not None:
+                        refMC_histogram = histograms[(variable.name, refMC.name, region.name, rescale.name)]
+                        for sample in backgrounds+signals:
+                            altMC_histogram = histograms[(variable.name, sample.name, region.name, rescale.name)]
+                            mc_over_mc_ratioitem = RatioItem(altMC_histogram, refMC_histogram, label = None, color = sample.color)
+                            mc_over_mc_ratio.append(mc_over_mc_ratioitem)
+
+
                     # ============== Set up significance ratio plots ============== #
                     for target in region_targets:
 
@@ -214,13 +230,18 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     stacks.append(stack)
                     data_stacks.append(data_stack)
                     data_over_mc_ratios.append(data_over_mc_ratio)
+                    if refMC is not None:
+                        mc_over_mc_ratios.append(mc_over_mc_ratio)
                     signif_ratios.append(signif_ratios_for_one_stack)
 
         # ====== How many plots to make? ====== #
         num_plots = len(stacks) # x2 for data_over_mc and Significance
 
-        # ======= Now we make 2 StackPlots per region, rescaling, variable ======= #
-        # One for data_over_mc, one for Significance
+        # ======= Now we make 4 CoffeaPlots per region, rescaling, variable ======= #
+        # 1. Stack with Data/MC
+        # 2. Stack with significance
+        # 3. Non-stack with MC/MC (Normalised or Not depending on config)
+        # 4. Separation Plots
 
         # ====== Loop over stacks ========= #
         for plot_idx in range(num_plots):
@@ -228,6 +249,8 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
             data_stack = data_stacks[plot_idx]
             data_over_mc_ratio = data_over_mc_ratios[plot_idx]
             signif_ratio = signif_ratios[plot_idx]
+            if len(mc_over_mc_ratios) > 0:
+                mc_over_mc_ratio = mc_over_mc_ratios[plot_idx]
 
             relevant_combo = mc_stack.combo
 
@@ -268,76 +291,24 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
             stack_with_signif = CoffeaPlot([mc_stack, data_stack], signif_ratio, **stack_signif_settings)
             stack_with_signif.plot()
-        # histos_1d  = coffea_out['1D']
-        # for region_name, hnames_to_histos in histos_1d.items():
-        #     region = plot_regions.get_region(region_name)
-        #     if region is None: print("ERROR:: Region not found", region_name); exit(1)
-        #     region_targets = region.targets
-        #     if region_targets == []: region_targets = BLIND_ON
-        #     num_significance_panels = len(region_targets) + 1 # Main plot + 1 per target
 
+            mcmc_settings = {
+                'figure_size': (24, 18),
+                'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
+                'experiment': 'ATLAS',
+                'lumi': 139,
+                'com': 13,
+                'plot_status': 'Internal',
+                'outfile': f"{plot_dir}/MC_v_MC/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
+                'main_yrange': None,
+                'main_ylog': None,
+                'main_ylabel': 'Fraction of Total Events/bin',
+                'main_ynorm': True,
+                'ratio_ylabel': 'Alt/Ref'
+            }
 
-        #     for hname, rescalings_to_histos in hnames_to_histos.items():
-        #         for plots_list in plots_to_make:
-        #             if plots_list.tree != tree: continue
-        #             if plots_list.dim != 1:     continue
-        #             xlabel = plots_list.get_plot(hname).label
-
-
-        #         for rescale_name, samples_to_histos in rescalings_to_histos.items():
-        #             rescale = plot_rescales.get_rescale(rescale_name)
-        #             if rescale is None: print("ERROR:: Rescale not found", rescale_name); exit(1)
-
-        #             # ====== Update samples for all histograms to use lateset colors and labels ====== #
-        #             for sample_name, histo in samples_to_histos.items():
-        #                 if sample_name == 'total': continue
-        #                 sample = plot_samples.get_sample(sample_name)
-        #                 if sample is None : print("ERROR:: Sample not found", sample_name); exit(1)
-
-        #                 histo.sample = sample
-
-        #             signal_for_blinding       = sum(samples_to_histos[blinding_signal].h for blinding_signal in BLIND_ON)
-        #             backgrounds_for_blinding  = sum([histo.h for sample, histo in samples_to_histos.items() if sample not in BLIND_ON and sample != DATA_NAME and sample != 'total'])
-        #             blind_bool                = get_blinding(signal_for_blinding, backgrounds_for_blinding)
-
-        #             # ====== Make stacked histogram with significance per bin in secondary panels ====== #
-
-        #             signif_fig, signif_main_ax, signif_axs = create_fig_with_n_panels(1, num_significance_panels)
-
-        #             data_h = samples_to_histos[DATA_NAME]
-
-        #             to_stack = []
-        #             for sample_name, histo in samples_to_histos.items():
-        #                 histo.set_label(xlabel)
-        #                 if sample_name == DATA_NAME: continue
-        #                 if sample_name == 'total': continue
-        #                 to_stack.append(histo)
-
-        #             plot_stack(to_stack, data_h, signif_main_ax, blind_bool, title = f'Region = {region.name} and Rescaling = {rescale.name}')
-
-        #             for i, target in enumerate(region_targets):
-        #                 is_last_target = (i == len(signif_axs) - 1)
-        #                 target_histo = samples_to_histos[target]
-
-        #                 non_target_histo  = sum([histo.h for sample, histo in samples_to_histos.items() if sample != target and sample != DATA_NAME])
-
-        #                 # We compute signficance per bin and plot it
-        #                 signif, signif_err = get_signif_per_bin(target_histo.h, non_target_histo)
-        #                 plot_signif_per_bin(target_histo, signif, signif_err, signif_axs[i], is_last_target)
-
-        #             signif_fig.savefig(f"{plot_dir}/Significance/{tree}/{region.name}_{hname}_{rescale_name}.pdf", bbox_inches="tight")
-
-        #             plt.clf()
-        #             plt.close('all')
-
-        #             # ====== Make stacked histogram with data/mc ratio per bin in secondary panels ====== #
-        #             data_over_mc_fig, data_over_mc_main_ax, data_over_mc_ax  = create_fig_with_n_panels(1, 2, h_ratio=[1,0.2])
-
-                    # for sample_name, dim_to_histos in samples_to_histos.items():
-                    #     histos_1d = dim_to_histos['1D']
-
-                    #     sample = plot_samples.get_sample(sample_name)
-                    #     if sample_name == 'total':
-                    #         sample = Sample('tot', None, None, None, 'black', 'Total MC')
-
-
+            mcmc_stack = deepcopy(mc_stack)
+            mcmc_stack.stack = False
+            mcmc_stack.bar_type = 'step'
+            mcmc_plot = CoffeaPlot(mcmc_stack, mc_over_mc_ratio, **mcmc_settings)
+            mcmc_plot.plot()
