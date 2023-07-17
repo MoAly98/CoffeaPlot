@@ -174,9 +174,21 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
 
                     # ============== Set up significance ratio plots ============== #
                     for target in region_targets:
-                        signif_ratio = RatioPlot(ratio_items = [], bar_type = 'stepfilled', error_type = 'stat', combo = combo_dict)
+
+                        signif_ratio = RatioPlot(ratio_items = [], bar_type = 'stepfilled', error_type = 'stat', ylabel=f'{target.name}/'+r'$\sqrt{B}$', combo = combo_dict)
+
+                        # Targer Histogram
                         target_histogram = histograms[(variable.name, target.name, region.name, rescale.name)]
-                        signif_ratioitem = Significance(target_histogram, tot_backgrounds_histogram, color = target.color, alpha = 0.8)
+
+                        # Backgrounds to this target (AllMC - Target)
+                        background_to_this_target_histograms = [histograms[(variable.name, sample.name, region.name, rescale.name)] for sample in backgrounds+signals if sample.name != target.name]
+                        background_to_this_target_histogram = sum(background_to_this_target_histograms)
+                        background_to_this_target_histogram.sample         = f'background_to_{target.name}'
+                        background_to_this_target_histogram.stylish_sample = 'Background'
+                        background_to_this_target_histogram.label = variable_label
+
+                        # Create a Ratio Item.
+                        signif_ratioitem = Significance(target_histogram, background_to_this_target_histogram, color = target.color, alpha = 0.8)
                         signif_ratio.append(signif_ratioitem)
                         signif_ratios_for_one_stack.append(signif_ratio)
 
@@ -226,7 +238,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                 'lumi': 139,
                 'com': 13,
                 'plot_status': 'Internal',
-                'outfile': f"{plot_dir}/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
+                'outfile': f"{plot_dir}/data_over_mc/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
                 'ratio_yrange': (0.5, 1.5),
                 'ratio_ylabel': 'Data/MC',
                 'ratio_ylog': False,
@@ -238,7 +250,24 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
             stack_with_datamc = CoffeaPlot([mc_stack, data_stack], data_over_mc_ratio, **stack_data_over_mc_settings)
             stack_with_datamc.plot()
 
+            stack_signif_settings = {
+                'figure_size': (24, 18),
+                'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
+                'experiment': 'ATLAS',
+                'lumi': 139,
+                'com': 13,
+                'plot_status': 'Internal',
+                'outfile': f"{plot_dir}/Significance/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
+                'ratio_yrange': None,
+                'ratio_ylabel': None,
+                'ratio_ylog': False,
+                'main_yrange': None,
+                'main_ylog': True,
+                'main_ylabel': 'Number of Events',
+            }
 
+            stack_with_signif = CoffeaPlot([mc_stack, data_stack], signif_ratio, **stack_signif_settings)
+            stack_with_signif.plot()
         # histos_1d  = coffea_out['1D']
         # for region_name, hnames_to_histos in histos_1d.items():
         #     region = plot_regions.get_region(region_name)

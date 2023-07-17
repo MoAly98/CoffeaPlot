@@ -10,6 +10,7 @@ plt.rcParams['axes.linewidth'] = 3
 plt.rcParams.update({'font.size': 20})
 plt.rcParams['xtick.major.pad']='10'
 plt.rcParams['ytick.major.pad']='10'
+plt.rcParams['text.latex.preamble'] = r'\centering'
 
 class CoffeaPlot(object):
     '''
@@ -82,18 +83,18 @@ class CoffeaPlot(object):
         max_bin_contents = []
         for i, stack in enumerate(self.stacks):
 
-
             sorted_stackatinos = sorted(stack.stackatinos, key=lambda stackatino: stackatino.sum.values().sum(), reverse=True)
 
             styles = defaultdict(list)
-            histograms, colors, labels = [], [], []
+            histograms, labels = [], []
             for stackatino in sorted_stackatinos:
                 histograms.append(stackatino.sum.h)
                 for key, value in stackatino.styling.items():
                     styles[key].append(value)
 
-                #colors.append(stackatino.color())
                 labels.append(stackatino.label)
+
+            # Dummy:: See plotter TODO
             nostack = False
             if not nostack:
                 max_bin_contents.append(max(sum(histogram for histogram in histograms).values()))
@@ -120,11 +121,14 @@ class CoffeaPlot(object):
 
             mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=True, **styles)
 
+
+
+        main_ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left", ncol=2)
+
+
         if len(self.ratio_plots) != 0:
             plt.setp(main_ax.get_xticklabels(), visible=False)
             main_ax.set_xlabel('')
-
-            main_ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left", ncol=2)
 
         if self.main_ylabel is not None:
             main_ax.set_ylabel(self.main_ylabel)
@@ -192,10 +196,10 @@ class CoffeaPlot(object):
             else:
                 ratio_ax.set_xlabel(ratio_plot.ratio_items[0].numerator.label)
 
+            if ratio_plot.ylabel is not None:
+                ratio_ax.set_ylabel(ratio_plot.ylabel, loc='center', verticalalignment='center', labelpad=20)
             if self.ratio_ylabel is not None:
-                ratio_ax.set_ylabel(self.ratio_ylabel, loc='center', labelpad=20)
-
-
+                ratio_ax.set_ylabel(self.ratio_ylabel, loc='center', verticalalignment='center', rotation=0, labelpad=20)
 
         plt.savefig(self.outfile, bbox_inches='tight')
         plt.close('all')
@@ -245,7 +249,7 @@ class DistWithUncObjects(object):
 
     TO_MPL = {'stepfilled': 'fill', 'points': 'errorbar', 'step': 'step'}
 
-    def __init__(self, bar_type, error_type = 'stat', blinder = None, combo = None):
+    def __init__(self, bar_type, error_type = 'stat', ylabel = None, blinder = None, combo = None):
 
 
         if bar_type not in self.ALLOW_BAR_TYPES:
@@ -259,6 +263,8 @@ class DistWithUncObjects(object):
 
         self.bar_type = self.TO_MPL[bar_type]
         self.error_type = error_type
+
+        self.ylabel = ylabel
 
         self.blinder = blinder
 
@@ -284,7 +290,7 @@ class RatioPlots(object):
     pass
 
 class RatioPlot(DistWithUncObjects):
-    def __init__(self, ratio_items, bar_type = 'step', error_type = 'stat', blinder = None, combo = None):
+    def __init__(self, ratio_items, bar_type = 'step', error_type = 'stat', ylabel=None, blinder = None, combo = None):
 
         '''
         Create a RatioPlot object.
@@ -293,7 +299,7 @@ class RatioPlot(DistWithUncObjects):
         '''
         self.ratio_items = []
 
-        DistWithUncObjects.__init__(self, bar_type, error_type, blinder=blinder, combo=combo)
+        DistWithUncObjects.__init__(self, bar_type, error_type, ylabel=ylabel, blinder=blinder, combo=combo)
 
     def append(self, ratio_item):
         self.ratio_items.append(ratio_item)
@@ -393,11 +399,11 @@ class Stack(DistWithUncObjects):
     A COLLECTION OF Stackatinos.
     '''
 
-    def __init__(self, stackatinos, bar_type = 'filled', error_type = 'stat', blinder = None, combo = None):
+    def __init__(self, stackatinos, bar_type = 'filled', error_type = 'stat', ylabel=None, blinder = None, combo = None):
 
         # List of stackatinos
         self.stackatinos = stackatinos
-        DistWithUncObjects.__init__(self, bar_type, error_type, blinder=blinder, combo=combo)
+        DistWithUncObjects.__init__(self, bar_type, error_type, ylabel=ylabel, blinder=blinder, combo=combo)
 
     def append(self, stackatino):
         self.stackatinos.append(stackatino)
