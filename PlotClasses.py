@@ -52,13 +52,12 @@ class CoffeaPlot(object):
         self.ratio_yrange = None
         self.ratio_ylog   = None
         self.ratio_ylabel = None
-        #self.ratio_blinder = None
 
         # ========== Main Plot =========== #
         self.main_yrange = None
         self.main_ylog   = None
         self.main_ylabel = None
-       # self.main_blinder = None
+        self.main_ynorm = None
 
         # ========== Set plot settings ============= #
 
@@ -88,18 +87,29 @@ class CoffeaPlot(object):
             styles = defaultdict(list)
             histograms, labels = [], []
             for stackatino in sorted_stackatinos:
-                histograms.append(stackatino.sum.h)
+                if self.main_ynorm is None:
+                    histograms.append(stackatino.sum.h)
+                else:
+                    if self.main_ylog is not None:
+                        print("WARNING:: Cannot set log scale when normalizing to unity")
+                        self.main_ylog = None
+
+                    histograms.append(stackatino.sum.h/stackatino.sum.h.values().sum())
+
                 for key, value in stackatino.styling.items():
                     styles[key].append(value)
+
 
                 labels.append(stackatino.label)
 
             # Dummy:: See plotter TODO
-            nostack = False
-            if not nostack:
-                max_bin_contents.append(max(sum(histogram for histogram in histograms).values()))
+            if self.main_ynorm is None:
+                if not stack.stack:
+                    max_bin_contents.append(max(sum(histogram for histogram in histograms).values()))
+                else:
+                    max_bin_contents.append(max(max(histogram.values()) for histogram in histograms))
             else:
-                max_bin_contents.append(max(max(histogram.values()) for histogram in histograms))
+                max_bin_contents.append(1)
 
 
             if stack.blinder is not None:
@@ -118,8 +128,7 @@ class CoffeaPlot(object):
                     else:
                         label = None
                     VSpanBox((shade_x1, shade_x2), facecolor='none', edgecolor='grey', hatch="//", alpha=0.5, linewidth=0, label = label).draw(main_ax)
-
-            mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=True, **styles)
+            mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=stack.stack, **styles)
 
 
 
@@ -136,13 +145,14 @@ class CoffeaPlot(object):
         if self.main_ylog is not None:
             main_ax.set_yscale('log')
 
+
         if self.main_yrange is not None:
             main_ax.set_ylim(self.main_yrange)
         else:
             if self.main_ylog is not None:
                 main_ax.set_ylim(1., max(max_bin_contents)*20)
             else:
-                main_ax.set_ylim(0., max(max_bin_contents)*2.)
+                main_ax.set_ylim(0., max(max_bin_contents)*1.25)
 
         # COM notworking
         mplhep.atlas.label(self.plot_status, data=True, lumi=self.lumi, com=self.com, ax = main_ax, fontsize=29)
@@ -181,7 +191,7 @@ class CoffeaPlot(object):
                     ratio_vals[blinding_bool] = 1e6
                     ratio_err[blinding_bool] = 0
 
-                mplhep.histplot(ratio_vals, bins=bin_edges, yerr=ratio_err, label = ratio_item.label, ax = ratio_ax, histtype=ratio_plot.bar_type, stack=False, **ratio_item.styling)
+                mplhep.histplot(ratio_vals, bins=bin_edges, yerr=ratio_err, label = ratio_item.label, ax = ratio_ax, histtype=ratio_plot.bar_type, stack=ratio_plot.stack, **ratio_item.styling)
 
                 if isinstance(ratio_item, DataOverMC):
                     mc_err = ratio_item.mc_err()
@@ -199,7 +209,7 @@ class CoffeaPlot(object):
             if ratio_plot.ylabel is not None:
                 ratio_ax.set_ylabel(ratio_plot.ylabel, loc='center', verticalalignment='center', labelpad=20)
             if self.ratio_ylabel is not None:
-                ratio_ax.set_ylabel(self.ratio_ylabel, loc='center', verticalalignment='center', rotation=0, labelpad=20)
+                ratio_ax.set_ylabel(self.ratio_ylabel, loc='center', verticalalignment='center', labelpad=20)
 
         plt.savefig(self.outfile, bbox_inches='tight')
         plt.close('all')
@@ -249,7 +259,7 @@ class DistWithUncObjects(object):
 
     TO_MPL = {'stepfilled': 'fill', 'points': 'errorbar', 'step': 'step'}
 
-    def __init__(self, bar_type, error_type = 'stat', ylabel = None, blinder = None, combo = None):
+    def __init__(self, bar_type, error_type = 'stat', stack=True, ylabel = None, blinder = None, combo = None):
 
 
         if bar_type not in self.ALLOW_BAR_TYPES:
@@ -263,6 +273,7 @@ class DistWithUncObjects(object):
 
         self.bar_type = self.TO_MPL[bar_type]
         self.error_type = error_type
+        self.stack = stack
 
         self.ylabel = ylabel
 
@@ -283,14 +294,8 @@ class PlotIdentifier(object):
         self.region = identifier_dict['region']
         self.rescale = identifier_dict['rescale']
 
-class RatioPlots(object):
-    '''
-    A colleciton of ratio plots, when one wants multiple ratio panels.
-    '''
-    pass
-
 class RatioPlot(DistWithUncObjects):
-    def __init__(self, ratio_items, bar_type = 'step', error_type = 'stat', ylabel=None, blinder = None, combo = None):
+    def __init__(self, ratio_items, bar_type = 'step', error_type = 'stat', stack=False, ylabel=None, blinder = None, combo = None):
 
         '''
         Create a RatioPlot object.
@@ -299,7 +304,7 @@ class RatioPlot(DistWithUncObjects):
         '''
         self.ratio_items = []
 
-        DistWithUncObjects.__init__(self, bar_type, error_type, ylabel=ylabel, blinder=blinder, combo=combo)
+        DistWithUncObjects.__init__(self, bar_type, error_type, stack=stack, ylabel=ylabel, blinder=blinder, combo=combo)
 
     def append(self, ratio_item):
         self.ratio_items.append(ratio_item)
@@ -325,6 +330,21 @@ class RatioItem(StylableObject):
         ratio_vals = np.divide(numerator_vals, denominator_vals,  out=np.full_like(denominator_vals, 0), where= (denominator_vals>1e-4))
 
         return ratio_vals
+
+    def err(self):
+        ratio_vals = self.get_ratio_vals()
+        numerator_vals = self.numerator.values()
+        numerator_variances = self.numerator.variances()
+
+        denominator_vals = self.denominator.values()
+        denominator_variances = self.denominator.variances()
+
+        err_part1 = np.divide(numerator_variances, numerator_vals**2, out=np.full_like(numerator_variances, 0), where=(numerator_vals>1e-4))
+        err_part2 = np.divide(denominator_variances**2 * denominator_vals, denominator_vals**4, out=np.full_like(numerator_variances, 0), where=(denominator_vals>1e-4))
+
+        err = ratio_vals*np.sqrt(err_part1 + err_part2, out=np.full_like(numerator_variances, 0), where=(numerator_vals>1e-4) & (denominator_vals>1e-4))
+
+        return err
 
 class DataOverMC(RatioItem):
     def __init__(self, data, mc, label = None, ylabel = 'Data/MC', **styling):
@@ -399,11 +419,11 @@ class Stack(DistWithUncObjects):
     A COLLECTION OF Stackatinos.
     '''
 
-    def __init__(self, stackatinos, bar_type = 'filled', error_type = 'stat', ylabel=None, blinder = None, combo = None):
+    def __init__(self, stackatinos, bar_type = 'filled', error_type = 'stat', stack=True, ylabel=None, blinder = None, combo = None):
 
         # List of stackatinos
         self.stackatinos = stackatinos
-        DistWithUncObjects.__init__(self, bar_type, error_type, ylabel=ylabel, blinder=blinder, combo=combo)
+        DistWithUncObjects.__init__(self, bar_type, error_type, stack=stack, ylabel=ylabel, blinder=blinder, combo=combo)
 
     def append(self, stackatino):
         self.stackatinos.append(stackatino)
