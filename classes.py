@@ -65,7 +65,7 @@ class Variables(object):
             yield variable
 
 class Sample(object):
-    def __init__(self, name, stype, regexes, cut_howto, weight_howto, color, label, category = None):
+    def __init__(self, name, stype, regexes, cut_howto, weight_howto, color, label, category = None, UseAsRef = False):
 
         # Sample name
         self.name = name
@@ -90,8 +90,17 @@ class Sample(object):
         # Set sample weight
         self.weight = weight_howto
 
+        # Sample color
         self.color = color
+
+        # Sample label
         self.label = label
+
+        # Use as reference sample
+        if UseAsRef:
+            assert self.type != 'DATA', "ERROR:: DATA samples cannot be used as reference MC samples"
+
+        self.ref = UseAsRef
 
     def __eq__(self, other):
         return self.name == other.name
