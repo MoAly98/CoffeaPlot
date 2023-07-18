@@ -64,8 +64,7 @@ class CoffeaPlot(object):
         for key, value in settings.items():
             setattr(self, key, value)
 
-
-        # TODO:: Add support for rebinning by specifying how to merge bins
+        # NotImplemented
         self.new_edges = None
 
     def plot(self):
@@ -102,7 +101,6 @@ class CoffeaPlot(object):
 
                 labels.append(stackatino.label)
 
-            # Dummy:: See plotter TODO
             if self.main_ynorm is None:
                 if not stack.stack:
                     max_bin_contents.append(max(sum(histogram for histogram in histograms).values()))

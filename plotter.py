@@ -14,23 +14,7 @@ import numpy as np
 from collections import defaultdict
 from copy import copy, deepcopy
 
-# TODO:: Specify type of sample
-# TODO:: Class for Stack and Stackatino (Stack element)
-# TODO:: Specify Normalised Signal
-# TODO:: Specify fraction of plot used by ratio plot
-# TODO:: Specify ratio plot limits
-# TODO:: Specify figure size
-# TODO:: Specify legend location
-# TODO:: Sample categories
-# TODO:: Nominal rescale should be added in __init__ using regex for affected samples and processor should use regex match
-# TODO:: Other variations of Data/MC ratio plot: DATA - MC, DATA - BKG... (to replace data/mc? or just add more?)
-# TODO:: somehow allow user to ask for more customised data/mc plots (e.g. MC subtraction, one specific MC, .. )
-# TODO:: User to specify yrange/ylog/ylabel  in config for Significance and DatMC (and any other "ratio" plot added later) -- property of CoffeaPlot
-# TODO:: Need to account for allowing multiple ratio plots -- check that for each stack if we have a list of RatioPlot objects...
-# TODO:: User config parsing
 # TODO:: FilterNones function to get only settings that have been specified by user
-# TODO:: NoStack option for doing normal comparison plots
-# TODO:: Data/MC multiple ratio panels?
 
 log = logger()
 # Stuff user should give me?
@@ -143,7 +127,6 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                             log.error("Sample type not recognised", sample.type)
 
                     if data is None:
-                        # TODO:: Allow Asimov/CustomAsimov where data is set to MC or customMC
                         log.error("No data sample found")
 
                     # ============== Total Histo ============== #

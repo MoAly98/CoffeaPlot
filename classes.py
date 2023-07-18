@@ -282,5 +282,3 @@ class Histograms(AccumulatorABC):
         else:
             key = histo
         self.to_plot[key] = h
-
-#TODO:: Systematics?

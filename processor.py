@@ -24,9 +24,7 @@ from utils import *
 PROCESS = True
 DATA_NAME = 'Data'
 
-# TODO:: Histograms class to support accumlation -- storage option
-# TODO:: Add 2D histograms
-# TODO:: Manually store under and overflow bins in Histogram object, and add them to main histo if requsted, handling error addition
+
 class MyProcessor(processor.ProcessorABC):
 
     def __init__(self, variables_list, samples_list, regions_list, rescales_list):
