@@ -86,7 +86,7 @@ class CoffeaPlot(object):
             styles = defaultdict(list)
             histograms, labels = [], []
             for stackatino in sorted_stackatinos:
-                if self.main_ynorm is None:
+                if self.main_ynorm is None or not self.main_ynorm:
                     histograms.append(stackatino.sum.h)
                 else:
                     if self.main_ylog is not None:
@@ -101,7 +101,7 @@ class CoffeaPlot(object):
 
                 labels.append(stackatino.label)
 
-            if self.main_ynorm is None:
+            if self.main_ynorm is None or not self.main_ynorm:
                 if not stack.stack:
                     max_bin_contents.append(max(sum(histogram for histogram in histograms).values()))
                 else:
@@ -130,7 +130,7 @@ class CoffeaPlot(object):
 
 
 
-        main_ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left", ncol=2)
+        main_ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left", ncol=2, fontsize=26)
 
 
         if len(self.ratio_plots) != 0:
@@ -178,6 +178,9 @@ class CoffeaPlot(object):
 
             for ratio_item in ratio_plot.ratio_items:
 
+                if self.main_ynorm is not None:
+                    ratio_item.numerator.h *= 1/ratio_item.numerator.h.values().sum()
+                    ratio_item.denominator.h *= 1/ratio_item.denominator.h.values().sum()
 
                 bin_centers = ratio_item.numerator.h.axes[0].centers
                 bin_edges   = ratio_item.numerator.h.axes[0].edges
@@ -208,6 +211,9 @@ class CoffeaPlot(object):
                 ratio_ax.set_ylabel(ratio_plot.ylabel, loc='center', verticalalignment='center', labelpad=20)
             if self.ratio_ylabel is not None:
                 ratio_ax.set_ylabel(self.ratio_ylabel, loc='center', verticalalignment='center', labelpad=20)
+
+            if self.ratio_yrange is not None:
+                ratio_ax.set_ylim(self.ratio_yrange)
 
         plt.savefig(self.outfile, bbox_inches='tight')
         plt.close('all')
