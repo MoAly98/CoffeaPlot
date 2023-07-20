@@ -1,5 +1,6 @@
 
 from classes import *
+from classes import _DummySample
 from  samples import *
 from regions import *
 from rescalings import *
@@ -21,9 +22,9 @@ log = logger()
 dump_to = f"outputs/"
 
 # Stuff i do not need from user
-data_dir = f"{dump_to}/data-test/"
+data_dir = f"{dump_to}/data-test4/"
 log.info(f"Reading plots from {data_dir}")
-plot_dir = f"{dump_to}/plots/"
+plot_dir = f"{dump_to}/plots-test4"#/normalised/"
 log.info(f"Dumping plots to {plot_dir}")
 
 
@@ -127,11 +128,12 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                             log.error("Sample type not recognised", sample.type)
 
                     if data is None:
-                        log.error("No data sample found")
+                        log.warning("No data sample found, using total MC as data")
+                        data =  _DummySample('total', label='Data')
 
                     # ============== Total Histo ============== #
                     total_histogram =  histograms[(variable.name, 'total', region.name, rescale.name)]
-                    total_histogram.stylish_sample= 'Total'
+                    total_histogram.stylish_sample = 'Total'
                     total_histogram.label = variable_label
 
                     # ============== Backgrounds Histo ============== #
@@ -142,15 +144,23 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     tot_backgrounds_histogram.label = variable_label
 
                     # ============== Signal Histo ============== #
-                    signals_histograms = [histograms[(variable.name, signal.name, region.name, rescale.name)] for signal in signals]
-                    tot_signals_histogram = sum(signals_histograms)
-                    tot_signals_histogram.sample = 'signal'
-                    tot_signals_histogram.stylish_sample = 'Signal'
-                    tot_signals_histogram.label = variable_label
+                    if signals != []:
+                        signals_histograms = [histograms[(variable.name, signal.name, region.name, rescale.name)] for signal in signals]
+                        tot_signals_histogram = sum(signals_histograms)
+                        tot_signals_histogram.sample = 'signal'
+                        tot_signals_histogram.stylish_sample = 'Signal'
+                        tot_signals_histogram.label = variable_label
+                    else:
+                        log.warning("No signal samples found, setting signal histogram to 0")
+                        tot_signals_histogram = deepcopy(tot_backgrounds_histogram)
+                        tot_signals_histogram *= 0
+                        tot_signals_histogram.sample = 'signal'
+                        tot_signals_histogram.stylish_sample = 'Signal'
+                        tot_signals_histogram.label = variable_label
 
                     # ============== Data Histo ============== #
                     data_histogram  =  histograms[(variable.name, data.name,  region.name, rescale.name)]
-                    data.stylish_sample = sample.label
+                    data.stylish_sample = data.label
                     data_histogram.label = variable_label
 
                     # ============== Data Stack ============== #
@@ -167,7 +177,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                         refMC_histogram = histograms[(variable.name, refMC.name, region.name, rescale.name)]
                         for sample in backgrounds+signals:
                             altMC_histogram = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                            mc_over_mc_ratioitem = RatioItem(altMC_histogram, refMC_histogram, label = None, color = sample.color)
+                            mc_over_mc_ratioitem = RatioItem(altMC_histogram, refMC_histogram, label = None, color = sample.color, linewidth=3)
                             mc_over_mc_ratio.append(mc_over_mc_ratioitem)
 
 
@@ -200,7 +210,7 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                     for category, cat_samples in category_to_samples.items():
                         log.info(f"Setting up category {category}")
                         # Why does new instance reset histograms without setting an arg?
-                        stackatino = Stackatino(histograms = [], label = category, color = cat_samples[0].color)
+                        stackatino = Stackatino(histograms = [], label = category, color = cat_samples[0].color, linewidth=3)
                         for cat_sample in cat_samples:
                             histogram = histograms[(variable.name, cat_sample.name, region.name, rescale.name)]
                             histogram.label = variable_label
@@ -275,6 +285,21 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
             stack_with_signif = CoffeaPlot([mc_stack, data_stack], signif_ratio, **stack_signif_settings)
             stack_with_signif.plot()
 
+            # mcmc_settings = {
+            #     'figure_size': (24, 18),
+            #     'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
+            #     'experiment': 'ATLAS',
+            #     'lumi': 139,
+            #     'com': 13,
+            #     'plot_status': 'Internal',
+            #     'outfile': f"{plot_dir}/MC_v_MC/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
+            #     'main_yrange': None,
+            #     'main_ylog': None,
+            #     'main_ylabel': 'Fraction of Total Events/bin',
+            #     'main_ynorm': True,
+            #     'ratio_ylabel': 'Alt/Ref'
+            # }
+
             mcmc_settings = {
                 'figure_size': (24, 18),
                 'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
@@ -285,10 +310,12 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                 'outfile': f"{plot_dir}/MC_v_MC/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
                 'main_yrange': None,
                 'main_ylog': None,
-                'main_ylabel': 'Fraction of Total Events/bin',
-                'main_ynorm': True,
-                'ratio_ylabel': 'Alt/Ref'
+                'main_ylabel': 'Number of Events',
+                'main_ynorm': None,
+                'ratio_ylabel': 'Alt/Ref',
+                'ratio_yrange': (0.8, 1.2),
             }
+
 
             mcmc_stack = deepcopy(mc_stack)
             mcmc_stack.stack = False

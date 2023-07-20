@@ -65,13 +65,13 @@ class Variables(object):
             yield variable
 
 class Sample(object):
-    def __init__(self, name, stype, regexes, cut_howto, weight_howto, color, label, category = None, UseAsRef = False):
+    def __init__(self, name, stype = None, regexes = None, cut_howto = None, weight_howto = None, color = None, label = None, category = None, UseAsRef = False):
 
         # Sample name
         self.name = name
 
         # Sample type
-        assert stype.upper() in ['BKG','SIG','DATA'], "ERROR:: Sample type must be BKG, SIG, or DATA (case in-sensitive)"
+        assert stype.upper() in ['BKG','SIG','DATA',  '___DUMMY___'], "ERROR:: Sample type must be BKG, SIG, or DATA (case in-sensitive)"
 
         self.type = stype.upper()
 
@@ -83,7 +83,7 @@ class Sample(object):
             self.files = self.create_fileset(regexes)
             assert self.files != [], f'NO files found for sample {self.name} with any regexes: {regex}'
         else:
-            self.files = None
+            self.files = []
         # Set sample cuts
         self.sel = cut_howto
 
@@ -116,7 +116,14 @@ class Sample(object):
         for wild in to_glob:
             globbed.extend(glob(wild))
 
+
         return globbed
+
+class _DummySample(Sample):
+    def __init__(self, name, stype = None, regexes = None, cut_howto = None, weight_howto = None, color = None, label = None, category = None, UseAsRef = False):
+        super().__init__(name, "___DUMMY___", regexes, cut_howto, weight_howto, color, label, category, UseAsRef)
+
+
 
 class Samples(object):
     def __init__(self, to_plot = []):
@@ -227,8 +234,21 @@ class Histogram(object):
     def __eq__(self, other):
         return (self.name == other.name) and (self.sample == other.sample) and (self.region == other.region) and (self.rescale == other.rescale)
 
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            self.h *= other
+        elif isinstance(other, Histogram):
+            if self.name == other.name:
+                self.h *= other.h
+        return self
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
     def __add__(self, other):
         if self.name == other.name:
+            if (self.sample != other.sample and (self.sample != '___DUMMY___' and other.sample != '___DUMMY___')) or self.region != other.region or self.rescale != other.rescale:
+                print("BAD!! Adding histograms", self.sample, other.sample, self.region, other.region, self.rescale, other.rescale)
             self.h += other.h
         return self
 
@@ -240,7 +260,7 @@ class Histogram(object):
         to be used in plotting.
         '''
         if other == 0:
-            return Histogram(self.name, self.h.copy(), 'TempSample', self.region, self.rescale)
+            return Histogram(self.name, self.h.copy(), '___DUMMY___', self.region, self.rescale)
         else:
             return self.__add__(other)
 
