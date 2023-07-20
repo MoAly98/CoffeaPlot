@@ -11,6 +11,7 @@ import pandas as pd
 import os
 from pprint import pprint
 import cloudpickle as pickle
+from copy import deepcopy
 os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 
 
@@ -22,8 +23,6 @@ from variables import *
 from utils import *
 
 PROCESS = True
-DATA_NAME = 'Data'
-
 
 class MyProcessor(processor.ProcessorABC):
 
@@ -75,13 +74,6 @@ class MyProcessor(processor.ProcessorABC):
 
                 # ================ Empty histogram for this region for this sample ===========
                 if ak.num(filt_reg['weights'], axis=0) == 0:
-                    for rescaling in self.rescales_list:
-                        h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
-                        accum[Histogram(name, h, dataset, region_to_plot.name , rescaling.name)] = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
-                        accum[Histogram(name, h.copy(), 'total', region_to_plot.name , rescaling.name)] = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
-
-                        # TODO:: Need to add 2D histo here
-
                     return accum
 
                 # =============== Non empty histogram for this region for this sample ==========
@@ -112,7 +104,7 @@ class MyProcessor(processor.ProcessorABC):
                         # Save the histogram
                         samp_histo_obj = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
                         if sample.type != 'DATA':
-                            tot_histo_obj = Histogram(name, h.copy(), 'total', region_to_plot.name , rescaling.name)
+                            tot_histo_obj = Histogram(name, deepcopy(h), 'total', region_to_plot.name , rescaling.name)
                         else:
                             tot_histo_obj = Histogram(name, 0, 'total', region_to_plot.name , rescaling.name)
                         accum[samp_histo_obj] = samp_histo_obj
@@ -140,7 +132,7 @@ if __name__ == '__main__':
     executor = processor.FuturesExecutor(workers=8)
 
     for tree, plots_list in tree_to_plot_list.items():
-        dump_to = f"outputs/data-test/"
+        dump_to = f"outputs/data-test4/"
         os.makedirs(dump_to, exist_ok=True)
         if PROCESS:
             run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True)
@@ -156,7 +148,18 @@ if __name__ == '__main__':
 
         # ====== Loop over 1D plots ====== #
         pprint(coffea_out)
-        print(coffea_out[('new_bdt_tH', 'total', 'SR' , 'ProtNominal')].h.values())
-        print(coffea_out[('new_bdt_tH', 'tH',    'SR' , 'ProtNominal')].h.values())
-        print(coffea_out[('new_bdt_tH', 'tWH',   'SR' , 'ProtNominal')].h.values())
-        print(coffea_out[('new_bdt_tH', 'Data',   'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'total', 'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'tH',    'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'tWH',   'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'Data',   'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'ttb', 'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'ttb_hdamp_m3top',    'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('alt_bdt_ttb', 'ttb',   'CR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('alt_bdt_ttb', 'ttb_hdamp_m3top',   'CR' , 'ProtNominal')].h.values())
+
+        # print(coffea_out[('new_bdt_tH', 'ttlight', 'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'ttlight_aMCH7',    'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('new_bdt_tH', 'ttlight_PH7',    'SR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('alt_bdt_ttb', 'ttlight',   'CR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('alt_bdt_ttb', 'ttlight_aMCH7',   'CR' , 'ProtNominal')].h.values())
+        # print(coffea_out[('alt_bdt_ttb', 'ttlight_PH7',   'CR' , 'ProtNominal')].h.values())
