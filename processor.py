@@ -8,7 +8,7 @@ import uproot
 import numpy as np
 import pandas as pd
 #import seaborn as sns
-import os
+import os, re
 from pprint import pprint
 import cloudpickle as pickle
 from copy import deepcopy
@@ -83,7 +83,7 @@ class MyProcessor(processor.ProcessorABC):
 
                         h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
 
-                        if sample.name in rescaling.affect:
+                        if re.match(rescaling.affect, sample.name) is not None:
                             rescaled_weights = rescaling.method.evaluate(filt_reg)
                         else:
                             rescaled_weights = filt_reg['weights']
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     executor = processor.FuturesExecutor(workers=8)
 
     for tree, plots_list in tree_to_plot_list.items():
-        dump_to = f"outputs/data-test4/"
+        dump_to = f"outputs/data-test5/"
         os.makedirs(dump_to, exist_ok=True)
         if PROCESS:
             run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True)
@@ -148,18 +148,3 @@ if __name__ == '__main__':
 
         # ====== Loop over 1D plots ====== #
         pprint(coffea_out)
-        # print(coffea_out[('new_bdt_tH', 'total', 'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('new_bdt_tH', 'tH',    'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('new_bdt_tH', 'tWH',   'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('new_bdt_tH', 'Data',   'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('new_bdt_tH', 'ttb', 'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('new_bdt_tH', 'ttb_hdamp_m3top',    'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('alt_bdt_ttb', 'ttb',   'CR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('alt_bdt_ttb', 'ttb_hdamp_m3top',   'CR' , 'ProtNominal')].h.values())
-
-        # print(coffea_out[('new_bdt_tH', 'ttlight', 'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('new_bdt_tH', 'ttlight_aMCH7',    'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('new_bdt_tH', 'ttlight_PH7',    'SR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('alt_bdt_ttb', 'ttlight',   'CR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('alt_bdt_ttb', 'ttlight_aMCH7',   'CR' , 'ProtNominal')].h.values())
-        # print(coffea_out[('alt_bdt_ttb', 'ttlight_PH7',   'CR' , 'ProtNominal')].h.values())
