@@ -68,7 +68,8 @@ class ColoredLogger(logging.Logger):
         else:
             self.FORMAT = "[$BOLD%(module)-s:%(levelname)-s$RESET]  %(message)s"
         self.COLOR_FORMAT = formatter_message(self.FORMAT, True)
-        logging.Logger.__init__(self, name, logging.INFO)                
+
+        logging.Logger.__init__(self, name, logging.INFO)
 
         color_formatter = ColoredFormatter(self.COLOR_FORMAT)
 
@@ -78,6 +79,8 @@ class ColoredLogger(logging.Logger):
         self.addHandler(console)
         self.addHandler(ShutdownHandler())
         return
+
+
 
 logging.setLoggerClass(ColoredLogger)
 

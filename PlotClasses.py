@@ -59,6 +59,8 @@ class CoffeaPlot(object):
         self.main_ylabel = None
         self.main_ynorm = None
 
+        self.main_xlim = None
+
         # ========== Set plot settings ============= #
 
         for key, value in settings.items():
@@ -126,7 +128,7 @@ class CoffeaPlot(object):
                     else:
                         label = None
                     VSpanBox((shade_x1, shade_x2), facecolor='none', edgecolor='grey', hatch="//", alpha=0.5, linewidth=0, label = label).draw(main_ax)
-            mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=stack.stack, **styles)
+            mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=stack.stack, flow='hint', **styles)
 
 
 
@@ -152,6 +154,10 @@ class CoffeaPlot(object):
             else:
                 main_ax.set_ylim(0., max(max_bin_contents)*1.25)
 
+        if self.main_xlim is not None:
+            main_ax.set_xlim(self.main_xlim)
+        else:
+            main_ax.set_xlim(histograms[0].axes[0].edges[0], histograms[0].axes[0].edges[-1])
         # COM notworking
         mplhep.atlas.label(self.plot_status, data=True, lumi=self.lumi, com=self.com, ax = main_ax, fontsize=29)
 
@@ -160,6 +166,8 @@ class CoffeaPlot(object):
 
         for i, ratio_plot in enumerate(self.ratio_plots):
             ratio_ax = rat_axes[i]
+
+            if len(ratio_plot.ratio_items) == 0:    continue
 
             if ratio_plot.blinder is not None:
                 blinded_bins = ratio_plot.blinder.get_blinded_bins()
