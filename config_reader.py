@@ -1,7 +1,5 @@
 import yaml
 from schema import Schema, And, Use, Optional, Or
-from config_helper import helpers
-
 from pprint import pprint
 
 def functor_input(inlist):
@@ -15,11 +13,9 @@ def functor_input(inlist):
     return [inlist[0], second_element]
 
 def string_to_list(value):
-    print(type(value))
     if not isinstance(value, str) and not isinstance(value, list):
         raise SchemaError("Expecting a string or list of strings here")
     if isinstance(value, str):
-        print([value])
         return [value]
     return value
 
@@ -42,8 +38,11 @@ def validate(indict):
                         'general':
                             {
                                 'dumpdir': str,
-                                'ntuplesdirs': [str],
-                                'mcweight': Or(str, float, int, [str, [str]]), # Name of branch, value, or functor args
+                                'trees': Use(string_to_list),
+                                Optional('ntuplesdirs'. default = None): Use(string_to_list),
+                                Optional('mcweight', default = None): Or(str, Use(float), Use(functor_input)), # Name of branch, value, or functor args
+                                Optional('inputhistos', default = None): str,
+                                Optional('helpers', default = None): Use(string_to_list),
                                 Optional('runprocessor', default = False): bool,
                                 Optional('runplotter',   default = False): bool,
                                 Optional('skipnomrescale', default = False): bool,
@@ -57,7 +56,7 @@ def validate(indict):
                                         {
                                             'name': str,
                                             'method':  Or(str, Use(functor_input)), # Name of branch, or functor args
-                                            'binning': Or((Use(float), Use(float), Use(float)), [Use(float)]),
+                                            'binning': Or(And(str, lambda x: len(x.strip().split(',') == 3)), [Use(float)]),
                                             Optional('label', default = None): str,
                                         }
                                     ],
@@ -71,7 +70,8 @@ def validate(indict):
                                     'ntuplesrgxs': Or(str, [str]),
                                     Optional('selection', default = None): Use(functor_input),
                                     Optional('ntuplesdirs', default = None): [str],
-                                    Optional('weight', default = None): Or(str, [str, Or(str, [str])]),
+                                    Optional('weight', default = None): Or(str, Use(float), Use(functor_input)),
+                                    Optional('ignoremcweight', default = False): bool,
                                     Optional('refmc', default = False): bool,
                                     Optional('label', default = None): str,
                                     Optional('color', default = None): str,
@@ -94,7 +94,7 @@ def validate(indict):
                             [
                                 {
                                     'name': str,
-                                    'method': Use(functor_input),
+                                    'method': Or(float, Use(functor_input)),
                                     Optional('label', default = None): str,
                                     Optional('affects', default = None): Or(str, [str]),
                                 }
@@ -107,12 +107,8 @@ def validate(indict):
     return validated
 
 def process(cfgp):
-    with open(cfgp, "r") as f:  validated = validate(f)
+    with open(f'config.yaml','r') as f:
+        output = yaml.safe_load(f)
+        validated = validate(output)
+
     return validated
-
-
-with open(f'config.yaml','r') as f:
-    output = yaml.safe_load(f)
-    validated = validate(output)
-
-pprint(validated)

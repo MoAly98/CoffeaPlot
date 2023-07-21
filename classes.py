@@ -3,6 +3,8 @@ import os, re
 from glob import glob
 import awkward as ak
 from coffea.processor import AccumulatorABC
+from logger import ColoredLogger as logger
+
 
 
 LOOK_IN = ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
@@ -65,7 +67,7 @@ class Variables(object):
             yield variable
 
 class Sample(object):
-    def __init__(self, name, stype = None, regexes = None, cut_howto = None, weight_howto = None, color = None, label = None, category = None, UseAsRef = False):
+    def __init__(self, name, stype = None, regexes = None, cut_howto = None, mc_weight = None, weight_howto = None, ignore_mcweight = None, color = None, label = None, category = None, UseAsRef = False, direcs = None):
 
         # Sample name
         self.name = name
@@ -89,6 +91,14 @@ class Sample(object):
 
         # Set sample weight
         self.weight = weight_howto
+        if self.type == 'DATA':
+            self.mc_weight = None
+        else:
+            self.mc_weight = mc_weight
+
+        self.ignore_mcweight = ignore_mcweight
+        if self.ignore_mcweight:
+            self.mc_weight = None
 
         # Sample color
         self.color = color
@@ -101,6 +111,9 @@ class Sample(object):
             assert self.type != 'DATA', "ERROR:: DATA samples cannot be used as reference MC samples"
 
         self.ref = UseAsRef
+
+        if direcs is not None:
+            raise NotImplementedError("Specifying NTuple directories per sample is not implemented yet")
 
     def __eq__(self, other):
         return self.name == other.name
@@ -302,3 +315,116 @@ class Histograms(AccumulatorABC):
         else:
             key = histo
         self.to_plot[key] = h
+
+
+class CoffeaPlotSettings(object):
+
+    log = logger()
+
+    def __init__(self, ):
+
+        self.dumpdir = None
+        self.ntuplesdirs = None
+        self.trees = None
+        self.mcweight = None
+        self.samples_list = None
+        self.regions_list = None
+        self.variables_list = None
+        self.rescales_list = None
+
+        # Optional
+        self.inputhistos = None
+        self.helpers = None
+        self.runprocessor = None
+        self.runplotter = None
+        self.skipnomrescale = None
+        self.loglevel = None
+
+        # Processed attributes
+        self.functions = None
+
+    def setup_helpers(self):
+
+        # Set up logger
+        log = logger()
+        log.info("Setting up helper functions")
+
+        # =========== Set up helpers =========== #
+        helpers = self.helpers
+        functions = {}
+        if helpers is not None:
+            for i, helper in enumerate(helpers):
+                logger.debug(f"Importing helper functions from {helper}")
+                spec = importlib.util.spec_from_file_location(f'my_module_{i}', helper)
+                my_helper = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(my_helper)
+
+                methods = dict((x, y) for x, y in getmembers(my_helper, isfunction))
+                functions.update(methods)
+
+        self.functions = functions
+
+    def setup_inputpaths(self):
+
+        # Set up logger
+        log = logger()
+        log.info("Running checks on input paths")
+
+        # =========== Checks on input direcotries =========== #
+        if self.ntuplesdirs is not None:
+            if not os.path.exist(self.ntuplesdirs):
+                log.error(f'Ntuple directory {self.ntuplesdirs} does not exist')
+
+        if self.inputhistos is not None:
+            if not os.path.exist(self.inputhistos):
+                log.error(f'Input histogram file {self.inputhistos} does not exist')
+
+            if self.runprocessor:
+                log.warning(f'You provided a histogram file {self.inputhistos} but you are running the processor. The histogram file will be ignored')
+                self.inputhistos = None
+
+    def setup_outpaths(self):
+
+        # Set up logger
+        log = logger()
+        log.info("Preparing output paths")
+
+        # =========== Prepare output directory =========== #
+        os.makedirs(self.dumpdir, exist_ok=True)
+
+        for tree in self.trees:
+            # ==== Data ==== #
+            os.makedirs(f'{self.dumpdir}/data/{tree}', exist_ok=True)
+            # ==== Plots ==== #
+            os.makedirs(f'{self.dumpdir}/plots/{tree}', exist_ok=True)
+            os.makedirs(f'{self.dumpdir}/plots/{tree}/Significance', exist_ok=True)
+            os.makedirs(f'{self.dumpdir}/plots/{tree}/DataMC', exist_ok=True)
+            os.makedirs(f'{self.dumpdir}/plots/{tree}/MCMC', exist_ok=True)
+            os.makedirs(f'{self.dumpdir}/plots/{tree}/Separation', exist_ok=True)
+            # === Tables === #
+            os.makedirs(f'{self.dumpdir}/tables/{tree}', exist_ok=True)
+
+
+    def setup_mcweights(self):
+
+        # Set up logger
+        log = logger()
+        log.info("Setting up MC weights")
+
+        # =========== Set up MC weight =========== #
+        general_mcweight_functor = None
+        if self.mcweight is not None:
+            if isinstance(self.mcweight, list):
+                # Weight is a functor
+                log.debug(f"MC weight is a functor: {self.mcweight}")
+                general_mcweight_functor = Functor(functions[self.mcweight[0]], self.mcweight[1])
+            elif isinstance(self.mcweight, str):
+                # Weight is a branch name
+                log.debug(f"MC weight is a branch name: {self.mcweight}")
+                general_mcweight_functor = Functor(lambda w: w, [self.mcweight])
+            else:
+                # Weight is a float
+                log.debug(f"MC weight is a float: {self.mcweight}")
+                general_mcweight_functor = Functor(lambda w: w*self.mcweight, ['weights'])
+
+        self.mcweight = general_mcweight_functor

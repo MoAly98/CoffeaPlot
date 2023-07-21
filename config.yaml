@@ -1,13 +1,15 @@
 General:
   DumpDir: "/outputs/TestConfig/"
+  Helpers: 'config_helper.py'
+  Trees: 'nominal_Loose'
   RunProcessor: True
-  LogLevel: 3 # 0: ERRORS, 1: WARNINGS, 2: INFO (default), 3: DEBUG
+  LogLevel: 2 # 0: ERRORS, 1: WARNINGS, 2: INFO (default), 3: DEBUG
   NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
                 '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
                 '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
                 '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
   MCWeight:
-    - 'mc_weight'
+    - 'MC_weight'
     - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
   SkipNomRescale: False # Nominal re-scaling should be added automatically by default
 
@@ -44,7 +46,7 @@ Variables:
       - Name: njets
         Label: '$N_{jets}$'
         Method: 'njets'
-        Binning: [0, 1, 2, 3, 4, 5]
+        Binning: 0,5,6
 samples:
   - Name: tH
     Label: 'tHjb'
@@ -293,7 +295,10 @@ samples:
     Label: 'Fakes'
     Type: 'BKG'
     NtuplesRgxs: ['data15*', 'data16*', 'data17*', 'data18*']
-    Weight: mm_weight
+    Weight:
+      - MM_weight
+      - ['mm_weight']
+    IgnoreMCweight: True
     Color: '#ffe119'
     RefMC: False
 
