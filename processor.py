@@ -1,25 +1,26 @@
-import awkward as ak
+# Coffea imports
 from coffea import processor
-import coffea
 from coffea.nanoevents import  BaseSchema
-import hist
-from collections import defaultdict
+
+# IO and Processing imports
+import awkward as ak
 import uproot
 import numpy as np
-import pandas as pd
-#import seaborn as sns
+
+# Histogramming imports
+import hist
+
+# Standard Python imports
 import os, re
 from pprint import pprint
 import cloudpickle as pickle
 from copy import deepcopy
+from collections import defaultdict
+
 os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 
 
-from classes import *
-from  samples import *
-from regions import *
-from rescalings import *
-from variables import *
+from classes import Histogram, Histograms
 
 PROCESS = True
 
@@ -31,16 +32,13 @@ class MyProcessor(processor.ProcessorABC):
         self.regions_list = regions_list
         self.rescales_list = rescales_list
 
-
     def dd(self):
         return defaultdict(dict)
-
 
     def process(self, presel_events):
 
         accum = Histograms()
         dataset = presel_events.metadata['dataset']
-
 
         for a_sample in self.samples_list:
             if dataset != a_sample.name: continue
@@ -48,7 +46,6 @@ class MyProcessor(processor.ProcessorABC):
             sample = a_sample
             break
 
-        self.rescales_list.append(Rescale('ProtNominal', [sample.name], Functor(lambda w: w, ['weights']) ) )
         sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
 
         presel_events['weights'] = sample_weights
