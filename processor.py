@@ -1,6 +1,5 @@
 # Coffea imports
 from coffea import processor
-from coffea.nanoevents import  BaseSchema
 
 # IO and Processing imports
 import awkward as ak
@@ -12,25 +11,23 @@ import hist
 
 # Standard Python imports
 import os, re
-from pprint import pprint
-import cloudpickle as pickle
 from copy import deepcopy
 from collections import defaultdict
 
 os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 
-
+# CoffeaPlot imports
 from classes import Histogram, Histograms
 
 PROCESS = True
 
-class MyProcessor(processor.ProcessorABC):
+class CoffeaPlotProcessor(processor.ProcessorABC):
 
-    def __init__(self, variables_list, samples_list, regions_list, rescales_list):
+    def __init__(self, variables_list, CoffeaPlotSettings):
         self.variables_list = variables_list
-        self.samples_list = samples_list
-        self.regions_list = regions_list
-        self.rescales_list = rescales_list
+        self.samples_list = CoffeaPlotSettings.samples_list
+        self.regions_list = CoffeaPlotSettings.regions_list
+        self.rescales_list = CoffeaPlotSettings.rescales_list
 
     def dd(self):
         return defaultdict(dict)
@@ -79,7 +76,7 @@ class MyProcessor(processor.ProcessorABC):
 
                         h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
 
-                        if re.match(rescaling.affect, sample.name) is not None:
+                        if any(re.match(affected_sample, sample.name) is not None for affected_sample in rescaling.affects):
                             rescaled_weights = rescaling.method.evaluate(filt_reg)
                         else:
                             rescaled_weights = filt_reg['weights']
@@ -114,33 +111,3 @@ class MyProcessor(processor.ProcessorABC):
 
     def postprocess(self, accumulator):
         pass
-
-if __name__ == '__main__':
-
-    fileset = {}
-    for sample in samples_list:
-        fileset[sample.name] = sample.files
-
-    tree_to_plot_list = {plots_list.tree: [] for plots_list in plots_to_make}
-    for plots_list in plots_to_make:
-        tree_to_plot_list[plots_list.tree].extend(plots_list)
-
-    executor = processor.FuturesExecutor(workers=8)
-
-    for tree, plots_list in tree_to_plot_list.items():
-        dump_to = f"outputs/data-test5/"
-        os.makedirs(dump_to, exist_ok=True)
-        if PROCESS:
-            run = processor.Runner(executor=executor, metadata_cache={}, schema=BaseSchema, skipbadfiles=True)
-            coffea_out = run(fileset, tree, MyProcessor(plots_list, samples_list, regions_list, rescales_list))
-
-            coffea_out = dict(coffea_out.to_plot)
-
-            with open(f"{dump_to}/data___{tree}.pkl", "wb") as f:
-                pickle.dump(dict(coffea_out), f)
-        else:
-            with open(f"{dump_to}/data___{tree}.pkl", "rb") as f:
-                coffea_out = pickle.load(f)
-
-        # ====== Loop over 1D plots ====== #
-        pprint(coffea_out)

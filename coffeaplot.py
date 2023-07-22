@@ -5,14 +5,18 @@ a configuration file, and then the script takes care of the rest.
 '''
 # =========== Import statements =========== #
 # Import python packages
-
 import os
 import numpy as np
+from coffea import processor
+from coffea.nanoevents import  BaseSchema
+from pprint import pprint
+import cloudpickle as pickle
+
 # Import coffeaplot packages
 from config_reader import process
 from logger import ColoredLogger as logger
 from classes import CoffeaPlotSettings as CPS, Sample, Region, Rescale, Variable, Variables, Functor
-
+from processor import CoffeaPlotProcessor
 
 # ========================================= #
 # =========== Helper functions =========== #
@@ -83,6 +87,7 @@ def parse_general(general_cfg: dict):
     Settings.runplotter   = general_cfg['runplotter']
     Settings.skipnomrescale = general_cfg['skipnomrescale']
     Settings.loglevel     = general_cfg['loglevel']
+    Settings.nworkers  = general_cfg['nworkers']
 
     # Setup helper modules
     Settings.setup_helpers()
@@ -335,7 +340,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
     for tree in CoffeaPlotSettings.trees:
         variables_1d = Variables(1, tree, variables_1d_list)
         variables_2d = Variables(2, tree, variables_2d_list)
-        variables_list.append(variables_1d_list)
+        variables_list.append(variables_1d)
 
     CoffeaPlotSettings.variables_list = variables_list
 
@@ -343,6 +348,14 @@ def parse_rescales(rescales_cfg, CoffeaPlotSettings):
 
     # =========== Set up rescales =========== #
     rescales_list = []
+
+    # Add nominal rescale if not skipped by user
+    if not CoffeaPlotSettings.skipnomrescale:
+        rescales_list.append(Rescale(name = 'Nominal',
+                                     affected_samples_names = ['.*'],
+                                     howto = Functor(lambda w: w, ['weights']),
+                                     label = 'Nominal'))
+
     for rescale in rescales_cfg:
 
         rescale_name = rescale['name']
@@ -364,18 +377,12 @@ def parse_rescales(rescales_cfg, CoffeaPlotSettings):
                                      howto = Functor(CoffeaPlotSettings.functions[rescale['method'][0]], rescale['method'][1]),
                                      label = rescale['label']))
 
-    # Add nominal rescale if not skipped by user
-    if not CoffeaPlotSettings.skipnomrescale:
-        rescales_list.append(Rescale(name = 'Nominal',
-                                     affected_samples_names = ['.*'],
-                                     howto = Functor(lambda w: w, ['weights']),
-                                     label = 'Nominal'))
+
 
     CoffeaPlotSettings.rescales_list = rescales_list
 
 
 def main():
-
 
 
     cfgp = 'config.yaml'
@@ -388,6 +395,7 @@ def main():
 
     CoffeaPlotSettings = parse_general(validated['general'])
     CoffeaPlotSettings.setup_inputpaths()
+    CoffeaPlotSettings.setup_outpaths()
     CoffeaPlotSettings.setup_helpers()
     CoffeaPlotSettings.setup_mcweights()
 
@@ -396,6 +404,39 @@ def main():
     parse_variables(validated['variables'], CoffeaPlotSettings)
     parse_rescales(validated['rescales'], CoffeaPlotSettings)
 
+    fileset = {}
+    for sample in CoffeaPlotSettings.samples_list:
+        fileset[sample.name] = sample.files
+
+    # Should probably unpack this to make trees unrelated to variables
+    tree_to_variable_list = {tree: [] for tree in CoffeaPlotSettings.trees}
+
+    for vars_list in CoffeaPlotSettings.variables_list:
+        tree_to_variable_list[vars_list.tree].extend(vars_list)
+
+    if CoffeaPlotSettings.nworkers != 0:
+        executor = processor.FuturesExecutor(workers=CoffeaPlotSettings.nworkers)
+    else:
+        executor = processor.IterativeExecutor()
+
+    for tree, vars_list in tree_to_variable_list.items():
+
+        datadir = CoffeaPlotSettings.tree_to_dir[tree]['datadir']
+        if CoffeaPlotSettings.runprocessor:
+
+            run = processor.Runner(executor=executor, schema=BaseSchema, skipbadfiles=True)
+            out = run(fileset, tree, CoffeaPlotProcessor(vars_list, CoffeaPlotSettings))
+
+            out = dict(out.to_plot)
+
+            with open(f"{datadir}/data___{tree}.pkl", "wb") as f:
+                pickle.dump(out, f)
+        else:
+            with open(f"{datadir}/data___{tree}.pkl", "rb") as f:
+                out = pickle.load(f)
+
+        # ====== Loop over 1D plots ====== #
+        pprint(out)
 
 
 

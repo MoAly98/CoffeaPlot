@@ -147,7 +147,7 @@ class Region(object):
 class Rescale(object):
     def __init__(self, name, affected_samples_names, howto, label = None):
         self.name   = name
-        self.affect = affected_samples_names
+        self.affects = affected_samples_names
         self.method = howto
         assert isinstance(self.method, Functor), "Rescale howto must be a functor"
         assert 'weights' in self.method.args, "A branch called weights must be in data and passed to functor for rescaling"
@@ -289,6 +289,9 @@ class CoffeaPlotSettings(object):
 
         # Processed attributes
         self.functions = None
+        self.tree_to_dir = None
+
+
 
     def setup_helpers(self):
 
@@ -341,17 +344,40 @@ class CoffeaPlotSettings(object):
         # =========== Prepare output directory =========== #
         os.makedirs(self.dumpdir, exist_ok=True)
 
+        self.tree_to_dir = { tree: {
+                                'datadir': None,
+                                'mcmcdir': None,
+                                'datamcdir': None,
+                                'separationdir': None,
+                                'significancedir': None,
+                                'tablesdir': None,
+                                }
+                        for tree in self.trees
+                        }
+
         for tree in self.trees:
             # ==== Data ==== #
-            os.makedirs(f'{self.dumpdir}/data/{tree}', exist_ok=True)
+            datadir = f'{self.dumpdir}/data/'
+            self.tree_to_dir[tree]['datadir'] = datadir
+            os.makedirs(datadir, exist_ok=True)
+
             # ==== Plots ==== #
-            os.makedirs(f'{self.dumpdir}/plots/{tree}', exist_ok=True)
-            os.makedirs(f'{self.dumpdir}/plots/{tree}/Significance', exist_ok=True)
-            os.makedirs(f'{self.dumpdir}/plots/{tree}/DataMC', exist_ok=True)
-            os.makedirs(f'{self.dumpdir}/plots/{tree}/MCMC', exist_ok=True)
-            os.makedirs(f'{self.dumpdir}/plots/{tree}/Separation', exist_ok=True)
+            significancedir = f'{self.dumpdir}/plots/{tree}/Significance'
+            self.tree_to_dir[tree]['significancedir'] = significancedir
+            os.makedirs(significancedir, exist_ok=True)
+
+            mcmcdir = f'{self.dumpdir}/plots/{tree}/MCMC'
+            self.tree_to_dir[tree]['mcmcdir'] = mcmcdir
+            os.makedirs(mcmcdir, exist_ok=True)
+
+            datamcdir = f'{self.dumpdir}/plots/{tree}/DataMC'
+            self.tree_to_dir[tree]['datamcdir'] = datamcdir
+            os.makedirs(datamcdir, exist_ok=True)
+
             # === Tables === #
-            os.makedirs(f'{self.dumpdir}/tables/{tree}', exist_ok=True)
+            tablesdir = f'{self.dumpdir}/tables/{tree}'
+            self.tree_to_dir[tree]['tablesdir'] = tablesdir
+            os.makedirs(tablesdir, exist_ok=True)
 
 
     def setup_mcweights(self):

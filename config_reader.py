@@ -92,7 +92,7 @@ def validate(indict):
                                 }
                             ],
 
-                        Optional('rescales', default = None):
+                        Optional('rescales', default = []):
                             [
                                 {
                                     'name': str,

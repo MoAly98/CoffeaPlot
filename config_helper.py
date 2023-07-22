@@ -1,4 +1,5 @@
 from classes import Functor
+import awkward as ak
 
 # ===== Weights ===== #
 
