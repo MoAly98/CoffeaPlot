@@ -10,8 +10,8 @@ CR_ttb_fn =    lambda njets, nbjets, njets_CBT4, njets_CBT5, njets_CBT123, tau_p
 regions = [
 
     Region('PR', Functor(PR_fn, ['njets','nbjets','njets_CBT4', 'njets_CBT5', 'njets_CBT123', 'tau_pt','nfwdjets'])),
-    Region('SR', Functor(SR_fn, ['njets','nbjets','njets_CBT4', 'njets_CBT5', 'njets_CBT123', 'tau_pt','nfwdjets']), ['tH', 'tWH']),
-    Region('CR', Functor(CR_ttb_fn, ['njets','nbjets','njets_CBT4', 'njets_CBT5', 'njets_CBT123', 'tau_pt','nfwdjets']), ['ttb']),
+    Region('SR', Functor(SR_fn, ['njets','nbjets','njets_CBT4', 'njets_CBT5', 'njets_CBT123', 'tau_pt','nfwdjets']), ['ttb', 'ttc']),
+    Region('CR', Functor(CR_ttb_fn, ['njets','nbjets','njets_CBT4', 'njets_CBT5', 'njets_CBT123', 'tau_pt','nfwdjets']), ['ttb', 'ttc']),
 
 ]
 

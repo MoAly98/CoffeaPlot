@@ -5,8 +5,6 @@ from  samples import *
 from regions import *
 from rescalings import *
 from variables import *
-from utils import *
-from plot_utils import *
 from PlotClasses import *
 from logger import ColoredLogger as logger
 import os, re
@@ -22,9 +20,9 @@ log = logger()
 dump_to = f"outputs/"
 
 # Stuff i do not need from user
-data_dir = f"{dump_to}/data-test4/"
+data_dir = f"{dump_to}/data-test5/"
 log.info(f"Reading plots from {data_dir}")
-plot_dir = f"{dump_to}/plots-test4"#/normalised/"
+plot_dir = f"{dump_to}/plots-test5_ttb_1bB_4v5FS"#/normalised/"
 log.info(f"Dumping plots to {plot_dir}")
 
 
@@ -310,10 +308,10 @@ for (root, _, files) in os.walk(f'{data_dir}', topdown=True):
                 'outfile': f"{plot_dir}/MC_v_MC/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
                 'main_yrange': None,
                 'main_ylog': None,
-                'main_ylabel': 'Number of Events',
-                'main_ynorm': None,
+                'main_ylabel': 'Fraction of Total Events/bin',
+                'main_ynorm': True,
                 'ratio_ylabel': 'Alt/Ref',
-                'ratio_yrange': (0.8, 1.2),
+                'ratio_yrange': (0, 2),
             }
 
 

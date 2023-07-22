@@ -20,7 +20,6 @@ from  samples import *
 from regions import *
 from rescalings import *
 from variables import *
-from utils import *
 
 PROCESS = True
 

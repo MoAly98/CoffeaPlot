@@ -2,7 +2,7 @@ from classes import *
 
 ## Weights
 def MC_weight(xsec_weight, weight_mc,weight_pileup, weight_bTagSF_DL1r_Continuous,weight_jvt,weight_forwardjvt,weight_leptonSF, runNumber,totalEventsWeighted):
-    return (36207.66*(runNumber<290000)+44307.4*((runNumber>=290000) & (runNumber<310000))+58450.1*(runNumber>=310000))*weight_mc*xsec_weight*weight_pileup*weight_bTagSF_DL1r_Continuous*weight_jvt*weight_forwardjvt*weight_leptonSF/totalEventsWeighted
+    return (36646.74*(runNumber<290000)+44630.6*((runNumber>=290000) & (runNumber<310000))+58791.6*(runNumber>=310000))*weight_mc*xsec_weight*weight_pileup*weight_bTagSF_DL1r_Continuous*weight_jvt*weight_forwardjvt*weight_leptonSF/totalEventsWeighted
 
 def MM_weight(mm_weight):
     return mm_weight[:, 0]
@@ -17,11 +17,16 @@ xxx_is_c     = lambda HFClass: HFClass == -1
 xxx_is_b     = lambda HFClass: HFClass == 1
 xxx_is_light = lambda HFClass: HFClass == 0
 
+xxx_is_2b    = lambda HFClass: ( (abs(HFClass) >= 200) & (abs(HFClass) < 1000) ) | ( (abs(HFClass) >= 1100) & (abs(HFClass) < 2000) ) | (abs(HFClass) >= 2000)
+xxx_is_1b    = lambda HFClass: ( (abs(HFClass) >= 1000) & (abs(HFClass) < 1100) ) | ( (abs(HFClass) >= 100) & (abs(HFClass) < 200) ) | (abs(HFClass) < 200)
 
 leptight_cut = Functor(tight_lepton, ['leptons_PLIVtight'])
 ttb_cut = Functor( lambda x, y: (tight_lepton(x)) & (xxx_is_b(y)),     ['leptons_PLIVtight','HF_SimpleClassification'])
 ttc_cut = Functor( lambda x, y: (tight_lepton(x)) & (xxx_is_c(y)),     ['leptons_PLIVtight','HF_SimpleClassification'])
 ttl_cut = Functor( lambda x, y: (tight_lepton(x)) & (xxx_is_light(y)), ['leptons_PLIVtight','HF_SimpleClassification'])
+
+ttbb_cut = Functor( lambda x, y: (tight_lepton(x)) & (xxx_is_2b(y)), ['leptons_PLIVtight','HF_Classification'])
+tt1b_cut = Functor( lambda x, y: (tight_lepton(x)) & (xxx_is_1b(y)), ['leptons_PLIVtight','HF_Classification'])
 
 samples = [
 
@@ -41,6 +46,14 @@ samples = [
     #        '#3cb44b',
     #        'tWH'),
 
+    # Sample('ttb_hdamp_m3top',
+    #        'BKG',
+    #        ['410480_AFII*','410482_AFII*'],
+    #        ttb_cut,
+    #        mc_weight,
+    #        '#e6194b',
+    #        r'$t\bar{t}+\geq1b$ (hdamp)'),
+
     Sample('ttb',
            'BKG',
            ['410470_user*'],
@@ -50,21 +63,94 @@ samples = [
            r'$t\bar{t}+\geq1b$',
            UseAsRef=True),
 
-    Sample('ttc',
-            'BKG',
-           ['410470_user*'],
-           ttc_cut,
-           mc_weight,
-           '#000075',
-           r'$t\bar{t}+\geq1c$'),
+    # Sample('ttb_AFII',
+    #        'BKG',
+    #        ['410470_AFII*'],
+    #        ttb_cut,
+    #        mc_weight,
+    #        '#e6beff',
+    #        r'$t\bar{t}+\geq1b$ (AFII)'),
 
-    Sample('ttlight',
-              'BKG',
-           ['410470_user*'],
-           ttl_cut,
+    # Sample('ttb_4FS',
+    #        'BKG',
+    #        ['411180_AFII*','411179_AFII*','411178_AFII*'],
+    #        ttb_cut,
+    #        mc_weight,
+    #        '#e6beff',
+    #        r'$t\bar{t}+\geq1b$ (4FS)'),
+
+    # Sample('ttb_4FS_2b',
+    #        'BKG',
+    #        ['411180_AFII*','411179_AFII*','411178_AFII*'],
+    #        ttbb_cut,
+    #        mc_weight,
+    #        '#000075',
+    #        r'$t\bar{t}+2b$ (4FS)'),
+
+    Sample('ttb_4FS_1bB',
+           'BKG',
+           ['411180_AFII*','411179_AFII*','411178_AFII*'],
+           tt1b_cut,
            mc_weight,
-           '#4363d8',
-           r'$t\bar{t}+\geq0l$'),
+           'orange',
+           r'$t\bar{t}+1b/B$ (4FS)'),
+
+    # Sample('ttb_2b',
+    #        'BKG',
+    #        ['410470_user*'],
+    #        ttbb_cut,
+    #        mc_weight,
+    #        'green', #'#000075',
+    #        r'$t\bar{t}+2b$ (5FS)'),
+
+    Sample('ttb_1bB',
+           'BKG',
+           ['410470_user*'],
+           tt1b_cut,
+           mc_weight,
+           'green', #'orange',
+           r'$t\bar{t}+1b/B$ (5FS)'),
+
+    # Sample('ttc',
+    #         'BKG',
+    #        ['410470_user*'],
+    #        ttc_cut,
+    #        mc_weight,
+    #        '#000075',
+    #        r'$t\bar{t}+\geq1c$'),
+
+    # # Sample('ttlight',
+    #           'BKG',
+    #        ['410470_user*'],
+    #        ttl_cut,
+    #        mc_weight,
+    #        '#4363d8',
+    #        r'$t\bar{t}+\geq0l$'),
+
+    # Sample('ttlight_AFII',
+    #         'BKG',
+    #        ['410470_AFII*'],
+    #        ttl_cut,
+    #        mc_weight,
+    #        '#000075',
+    #        r'$t\bar{t}+\geq0l$ (AFII)',
+    #        UseAsRef=True),
+
+    # Sample('ttlight_aMCH7',
+    #           'BKG',
+    #        ['412116_AFII*', '412117_AFII*'],
+    #        ttl_cut,
+    #        mc_weight,
+    #        '#3cb44b',
+    #        r'$t\bar{t}+\geq0l$ (aMC@H7)'),
+
+    # Sample('ttlight_PH7',
+    #         'BKG',
+    #        ['411233_AFII*', '411234_AFII*'],
+    #        ttl_cut,
+    #        mc_weight,
+    #        '#911eb4',
+    #        r'$t\bar{t}+\geq0l$ (Pow@H7)'),
 
     # Sample('ttH',
     #         'BKG',
@@ -178,13 +264,13 @@ samples = [
     #        '#ffe119',
     #        'Fakes'),
 
-    Sample('Data',
-           'DATA',
-           ['data15*', 'data16*', 'data17*', 'data18*'],
-           leptight_cut,
-           None,
-           '#808080',
-           'Data'),
+    # Sample('Data',
+    #        'DATA',
+    #        ['data15*', 'data16*', 'data17*', 'data18*'],
+    #        leptight_cut,
+    #        None,
+    #        '#808080',
+    #        'Data'),
 ]
 
 
