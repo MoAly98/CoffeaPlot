@@ -58,6 +58,7 @@ def validate(indict):
                                             'method':  Or(str, Use(functor_input)), # Name of branch, or functor args
                                             'binning': Or(And(str, lambda x: len(x.strip().split(',') == 3)), [Use(float)]),
                                             Optional('label', default = None): str,
+                                            Optional('idxby', default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
                                         }
                                     ],
                                 Optional('2D', default = None): [{}],# Not implemented yet
