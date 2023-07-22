@@ -74,13 +74,15 @@ class Sample(object):
 
         # Sample type
         assert stype.upper() in ['BKG','SIG','DATA',  '___DUMMY___'], "ERROR:: Sample type must be BKG, SIG, or DATA (case in-sensitive)"
+
         self.type = stype.upper()
 
+        # Sample category
+        self.category = category
 
         # Get files for sample
-        self.regexes = regexes
         if regexes is not None:
-            self.files = self.create_fileset()
+            self.files = self.create_fileset(regexes)
             assert self.files != [], f'NO files found for sample {self.name} with any regexes: {regex}'
         else:
             self.files = []
@@ -89,7 +91,14 @@ class Sample(object):
 
         # Set sample weight
         self.weight = weight_howto
-        self.mc_weight = mc_weight
+        if self.type == 'DATA':
+            self.mc_weight = None
+        else:
+            self.mc_weight = mc_weight
+
+        self.ignore_mcweight = ignore_mcweight
+        if self.ignore_mcweight:
+            self.mc_weight = None
 
         # Sample color
         self.color = color
@@ -97,33 +106,31 @@ class Sample(object):
         # Sample label
         self.label = label
 
-        # Sample category
-        self.category = category
+        # Use as reference sample
+        if UseAsRef:
+            assert self.type != 'DATA', "ERROR:: DATA samples cannot be used as reference MC samples"
 
-        # Should this sample be used as reference MC?
         self.ref = UseAsRef
 
+        if direcs is not None:
+            raise NotImplementedError("Specifying NTuple directories per sample is not implemented yet")
 
-    def create_fileset(self):
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def create_fileset(self, regexes):
         # Collect Regexes
         to_glob = []
-        for direc in self.direcs:
-            to_glob.extend([f'{direc}/{regex}.root' for regex in self.regexes])
+        for direc in LOOK_IN:
+            to_glob.extend([f'{direc}/{regex}.root' for regex in regexes])
 
         # Collect files
         globbed   = []
         for wild in to_glob:
             globbed.extend(glob(wild))
 
+
         return globbed
-
-    def __eq__(self, other):
-        return self.name == other.name
-
-    def __str__(self):
-        sample_str = f"Sample: {self.name} \n Type: {self.type} \n Category: {self.category} \n Files: {self.regexes} \n Selection: {self.sel} \n Weight: {self.weight} \n MC Weight: {self.mc_weight} \n Color: {self.color} \n Label: {self.label} \n Use as reference MC: {self.ref}"
-
-
 
 class _DummySample(Sample):
     def __init__(self, name, stype = None, regexes = None, cut_howto = None, weight_howto = None, color = None, label = None, category = None, UseAsRef = False):
