@@ -7,12 +7,6 @@ from logger import ColoredLogger as logger
 
 
 
-LOOK_IN = ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
-           '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
-           '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
-           '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/'
-           ]
-
 class Functor(object):
     def __init__(self, fn, args):
         self.fn = fn
@@ -137,24 +131,6 @@ class _DummySample(Sample):
         super().__init__(name, "___DUMMY___", regexes, cut_howto, weight_howto, color, label, category, UseAsRef)
 
 
-
-class Samples(object):
-    def __init__(self, to_plot = []):
-        self.to_plot   = to_plot
-
-    def append(self, sample):
-        self.to_plot.append(sample)
-
-    def get_sample(self, name):
-        for sample in self.to_plot:
-            if sample.name == name:
-                return sample
-        return None
-
-    def __iter__(self):
-        for sample in self.to_plot:
-            yield sample
-
 class Region(object):
     def __init__(self, name, howto, target_sample = []):
         self.name = name
@@ -164,23 +140,6 @@ class Region(object):
     def __eq__(self, other):
         return self.name == other.name
 
-
-class Regions(object):
-    def __init__(self, to_plot = []):
-        self.to_plot   = to_plot
-
-    def append(self, region):
-        self.to_plot.append(region)
-
-    def get_region(self, name):
-        for region in self.to_plot:
-            if region.name == name:
-                return region
-        return None
-
-    def __iter__(self):
-        for region in self.to_plot:
-            yield region
 
 class Rescale(object):
     def __init__(self, name, affected_samples_names, howto):
@@ -193,23 +152,6 @@ class Rescale(object):
     def __eq__(self, other):
         return self.name == other.name
 
-
-class Rescales(object):
-    def __init__(self, to_plot = []):
-        self.to_plot   = to_plot
-
-    def append(self, rescale):
-        self.to_plot.append(rescale)
-
-    def get_rescale(self, name):
-        for rescale in self.to_plot:
-            if rescale.name == name:
-                return rescale
-        return None
-
-    def __iter__(self):
-        for rescale in self.to_plot:
-            yield rescale
 
 class Histogram(object):
 
@@ -321,7 +263,7 @@ class CoffeaPlotSettings(object):
 
     log = logger()
 
-    def __init__(self, ):
+    def __init__(self):
 
         self.dumpdir = None
         self.ntuplesdirs = None
