@@ -67,7 +67,7 @@ class MyProcessor(processor.ProcessorABC):
 
             for region_to_plot in self.regions_list:
 
-                if all(re.match(region_to_use, region_to_plot.name) is None and region_to_use != 'all' for region_to_use in regions_to_use): continue
+                if all(re.match(region_to_use, region_to_plot.name) is None for region_to_use in regions_to_use): continue
 
                 filt_reg = filt_sample[region_to_plot.sel.evaluate(filt_sample)]
 

@@ -1,11 +1,10 @@
 
 import os, re
+import importlib.util
+from inspect import getmembers, isfunction, isroutine
 from glob import glob
-import awkward as ak
 from coffea.processor import AccumulatorABC
 from logger import ColoredLogger as logger
-
-
 
 class Functor(object):
     def __init__(self, fn, args):
@@ -28,6 +27,7 @@ class Variable(object):
         self.idx = idx_by
         self.dim = None
         assert self.idx in ['event','nonevent']
+
     def set_dim(self, dim):
         self.dim = dim
 
@@ -75,6 +75,8 @@ class Sample(object):
         self.category = category
 
         # Get files for sample
+        self.regexes = regexes
+        self.direcs = direcs
         if regexes is not None:
             self.files = self.create_fileset(regexes)
             assert self.files != [], f'NO files found for sample {self.name} with any regexes: {regex}'
@@ -132,22 +134,25 @@ class _DummySample(Sample):
 
 
 class Region(object):
-    def __init__(self, name, howto, target_sample = []):
+    def __init__(self, name, howto, target_sample = [], label = None):
         self.name = name
         self.sel = howto
         self.targets = target_sample
+        self.label = label
 
     def __eq__(self, other):
         return self.name == other.name
 
 
 class Rescale(object):
-    def __init__(self, name, affected_samples_names, howto):
+    def __init__(self, name, affected_samples_names, howto, label = None):
         self.name   = name
         self.affect = affected_samples_names
         self.method = howto
         assert isinstance(self.method, Functor), "Rescale howto must be a functor"
         assert 'weights' in self.method.args, "A branch called weights must be in data and passed to functor for rescaling"
+
+        self.label = label
 
     def __eq__(self, other):
         return self.name == other.name
@@ -296,11 +301,10 @@ class CoffeaPlotSettings(object):
         functions = {}
         if helpers is not None:
             for i, helper in enumerate(helpers):
-                logger.debug(f"Importing helper functions from {helper}")
+                log.debug(f"Importing helper functions from {helper}")
                 spec = importlib.util.spec_from_file_location(f'my_module_{i}', helper)
                 my_helper = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(my_helper)
-
                 methods = dict((x, y) for x, y in getmembers(my_helper, isfunction))
                 functions.update(methods)
 
@@ -314,16 +318,19 @@ class CoffeaPlotSettings(object):
 
         # =========== Checks on input direcotries =========== #
         if self.ntuplesdirs is not None:
-            if not os.path.exist(self.ntuplesdirs):
-                log.error(f'Ntuple directory {self.ntuplesdirs} does not exist')
+            for ntupsdir in self.ntuplesdirs:
+                if not os.path.exists(ntupsdir):
+                    log.error(f'Ntuple directory {ntupsdir} does not exist')
 
         if self.inputhistos is not None:
-            if not os.path.exist(self.inputhistos):
-                log.error(f'Input histogram file {self.inputhistos} does not exist')
-
             if self.runprocessor:
-                log.warning(f'You provided a histogram file {self.inputhistos} but you are running the processor. The histogram file will be ignored')
+                log.warning(f'You provided a histogram files {self.inputhistos} but you are running the processor. The histogram file will be ignored')
                 self.inputhistos = None
+            for inhistofile in self.inputhistos:
+                if not os.path.exists(inhistofile):
+                    log.error(f'Input histogram file {inhistofile} does not exist')
+
+
 
     def setup_outpaths(self):
 

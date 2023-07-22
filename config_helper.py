@@ -1,10 +1,5 @@
 from classes import Functor
 
-# ==== Variables ==== #
-
-bdt_tH  =  lambda x: x[:,0],
-bdt_ttb = lambda x: x[:,1],
-
 # ===== Weights ===== #
 
 def MC_weight(xsec_weight, weight_mc,weight_pileup, weight_bTagSF_DL1r_Continuous,weight_jvt,weight_forwardjvt,weight_leptonSF, runNumber,totalEventsWeighted):
@@ -13,6 +8,10 @@ def MC_weight(xsec_weight, weight_mc,weight_pileup, weight_bTagSF_DL1r_Continuou
 def MM_weight(mm_weight):
     return mm_weight[:, 0]
 
+# ==== Variables ==== #
+
+bdt_tH  =  lambda x: x[:,0]
+bdt_ttb = lambda x: x[:,1]
 
 # ===== Selection ===== #
 # Selection

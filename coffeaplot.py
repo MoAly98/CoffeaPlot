@@ -5,17 +5,24 @@ a configuration file, and then the script takes care of the rest.
 '''
 # =========== Import statements =========== #
 # Import python packages
-import importlib.util
-from inspect import getmembers, isfunction
+
 import os
 import numpy as np
 # Import coffeaplot packages
 from config_reader import process
 from logger import ColoredLogger as logger
+from classes import CoffeaPlotSettings as CPS, Sample, Region, Rescale, Variable, Variables, Functor
 
+
+# ========================================= #
+# =========== Helper functions =========== #
+# ========================================= #
 same_name_obj_found = lambda obj_name, alist: any([obj_name == o.name for o in alist])
 
-def setup_logging(loglevel: int):
+# ========================================= #
+# =========== Set up functions =========== #
+# ========================================= #
+def setup_logging(log: logger,loglevel: int):
     '''
     Set up logging for the coffeaplot package. The loglevel is set by the user
     in the configuration file. The loglevel is passed to this function as an
@@ -32,23 +39,22 @@ def setup_logging(loglevel: int):
 
     '''
 
-    log = logger()
-
     # =========== Set up LOG =========== #
-    if CoffeaPlotSettings.loglevel == 0:
+    if loglevel == 0:
         # ERROR
         log.setLevel(40)
-    elif CoffeaPlotSettings.loglevel == 1:
+    elif loglevel == 1:
         # WARNING
         log.setLevel(30)
-    elif CoffeaPlotSettings.loglevel == 2:
+    elif loglevel == 2:
         # INFO
         log.setLevel(20)
-    elif CoffeaPlotSettings.loglevel == 3:
+    elif loglevel == 3:
         # DEBUG
         log.setLevel(10)
 
     log.info(f"Logging level set to {loglevel}")
+
 
 def parse_general(general_cfg: dict):
     '''
@@ -61,43 +67,52 @@ def parse_general(general_cfg: dict):
 
     Returns
     -------
-    CoffeaPlotSettings : CoffeaPlotSettings object
+    CoffeaPlotSettings : CPS object
     '''
-
-    log = logger()
 
     log.info(f"Setting up general settings")
     # =========== Set up general =========== #
-    CoffeaPlotSettings = CoffeaPlotSettings()
-    if general_cfg['mcweight'] is not None:
-        mc_weight_functor = create_weights_functor(general_cfg['mcweight'], 'MC')
+    Settings = CPS()
 
-    CoffeaPlotSettings.dumpdir      = general_cfg['dumpdir']
-    CoffeaPlotSettings.ntuplesdirs  = general_cfg['ntuplesdirs']
-    CoffeaPlotSettings.trees        = general_cfg['trees']
-    CoffeaPlotSettings.mcweight     = mc_weight_functor
-    CoffeaPlotSettings.inputhistos  = general_cfg['inputhistos']
-    CoffeaPlotSettings.helpers      = general_cfg['helpers']
-    CoffeaPlotSettings.runprocessor = general_cfg['runprocessor']
-    CoffeaPlotSettings.runplotter   = general_cfg['runplotter']
-    CoffeaPlotSettings.skipnomrescale = general_cfg['skipnomrescale']
-    CoffeaPlotSettings.loglevel     = general_cfg['loglevel']
+    Settings.dumpdir      = general_cfg['dumpdir']
+    Settings.ntuplesdirs  = general_cfg['ntuplesdirs']
+    Settings.trees        = general_cfg['trees']
+    Settings.inputhistos  = general_cfg['inputhistos']
+    Settings.helpers      = general_cfg['helpers']
+    Settings.runprocessor = general_cfg['runprocessor']
+    Settings.runplotter   = general_cfg['runplotter']
+    Settings.skipnomrescale = general_cfg['skipnomrescale']
+    Settings.loglevel     = general_cfg['loglevel']
+
+    # Setup helper modules
+    Settings.setup_helpers()
+
+    # Setup MCWeight
+    mc_weight_functor = None
+    general_mc_weight = general_cfg['mcweight']
+    if general_mc_weight is not None:
+        mc_weight_functor = create_weights_functor(general_mc_weight, Settings, 'MC')
+
+    Settings.mcweight     = mc_weight_functor
 
     log.debug(f"The following general settings were parsed:")
     for attr, value in general_cfg.items():
         log.debug(f"{attr} = {value}")
 
-    log.info(f"Using the following function for MC weights: {mc_weight_functor.fn.__str__()}")
+    log.info(f"Using the following function for MC weights: {mc_weight_functor.fn.__repr__()}")
 
-    return CoffeaPlotSettings
+    return Settings
 
-def create_weights_functor(weight, sample_name = 'None'):
+def create_weights_functor(weight, CoffeaPlotSettings, sample_name = 'None'):
 
     # Weight is a functor
     if isinstance(weight, list):
+        if CoffeaPlotSettings.functions is None:
+            log.error(f"Function {weight[0]} is not defined in any helper module. Please check your configuration file.")
+
         weight_fn = CoffeaPlotSettings.functions[weight[0]]
         weight_functor = Functor(weight_fn, weight[1])
-        log.debug(f"Sample {sample_name} weight set to use function {weight_functor.fn.__str__()} with arguments {weight[1]}")
+        log.debug(f"Sample {sample_name} weight set to use function {weight_functor.fn.__repr__()} with arguments {weight[1]}")
 
     # Weight is a branch name
     elif isinstance(weight, str):
@@ -111,7 +126,7 @@ def create_weights_functor(weight, sample_name = 'None'):
 
     return weight_functor
 
-def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CoffeaPlotSettings):
+def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
     '''
     Parse the samples settings from the configuration file.
 
@@ -128,7 +143,7 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CoffeaPlotSettings):
     samples_cfg : dict
         The dictionary containing the samples settings from the configuration
 
-    CoffeaPlotSettings : CoffeaPlotSettings
+    CoffeaPlotSettings : CPS
         The CoffeaPlotSettings object containing the general settings
 
     Returns
@@ -136,8 +151,6 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CoffeaPlotSettings):
     None
     '''
 
-    # Logger
-    log = logger()
 
     # =========== Set up samples =========== #
     log.info(f"Setting up samples ...")
@@ -147,6 +160,9 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CoffeaPlotSettings):
 
         sample_name = sample['name']
         log.info(f"Setting up sample {sample_name}")
+
+        sample_regexes = sample['ntuplesrgxs']
+        log.info(f"Using the following regexes for sample {sample_name}: {sample_regexes}")
 
         # Do sample type checks
         sample_type =  sample['type'].upper()
@@ -180,32 +196,43 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CoffeaPlotSettings):
 
         # Prepare selection functor
         selection = sample['selection']
-        selection_fn = CoffeaPlotSettings.functions[selection[0]]
-        selection_functor = Functor(selection_fn, selection[1])
-        log.debug(f"Sample selector set to use function {selection[0]} with arguments {selection[1]}")
-
+        selection_functor = None
+        if selection is not None:
+            selection_fn = CoffeaPlotSettings.functions[selection[0]]
+            selection_functor = Functor(selection_fn, selection[1])
+            log.debug(f"Sample selector set to use function {selection[0]} with arguments {selection[1]}")
+        else:
+            log.debug(f"Sample {sample_name} has no special selection.")
 
         # Prepare weight functor
         weight =  sample['weight']
         weight_functor = None
         if weight is not None:
-            weight_functor = create_weights_functor(weight, sample_name)
+            weight_functor = create_weights_functor(weight, CoffeaPlotSettings, sample_name)
         else:
             log.debug(f"Sample {sample_name} has no special weight.")
 
 
-        # Check if sample should use MCWeight
-        sample_ignore_mcweight = sample['ignoremcweight']
-        if sample_ignore_mcweight:
-            mc_weight_functor = None
-            log.debug(f"Sample {sample_name} will ignore MCWeight")
-        else:
-            mc_weight_functor = CoffeaPlotSettings.mcweight
-            log.debug(f"Sample {sample_name} will use MCWeight")
 
+        sample_ignore_mcweight = sample['ignoremcweight']
+        # Check if sample should use MCWeight
         if sample_is_data:
             mc_weight_functor = None
-            log.debug(f"Sample {sample_name} is of type data. MCWeight will be ignored.")
+        elif sample_ignore_mcweight:
+            mc_weight_functor = None
+        else:
+            mc_weight_functor = CoffeaPlotSettings.mcweight
+
+        if mc_weight_functor is not None and weight_functor is not None:
+            log.debug(f"Sample {sample_name} will use MCWeight * {weight_functor.fn.__repr__()}")
+        if mc_weight_functor is None and weight_functor is not None:
+            log.debug(f"Sample {sample_name} will use only {weight_functor.fn.__repr__()}")
+        if mc_weight_functor is not None and weight_functor is None:
+            log.debug(f"Sample {sample_name} will use only MCWeight")
+        if mc_weight_functor is None and weight_functor is None:
+            log.debug(f"Sample {sample_name} will not use any weight. Weight = 1.0")
+
+
 
 
         # Create sample object
@@ -216,10 +243,10 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CoffeaPlotSettings):
                         cut_howto = selection_functor,
                         mc_weight = mc_weight_functor,
                         weight_howto = weight_functor,
-                        ignore_mcweight = sample['ignoremcweight'],
+                        ignore_mcweight = sample_ignore_mcweight,
                         color = sample['color'],
                         label = sample['label'],
-                        UseAsRef = sample['refmc'],
+                        UseAsRef = sample_is_mc_ref,
                         category = sample['category']
                     )
 
@@ -235,7 +262,13 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CoffeaPlotSettings):
     CoffeaPlotSettings.samples_list = samples_list
 
 
-def parse_regions(regions_cfg, CoffeaPlotSettings):
+def parse_regions(regions_cfg: dict, CoffeaPlotSettings: CPS):
+    '''
+    Parse the regions settings from the configuration file.
+
+    The method prepares functors where necessary to use for applying region
+
+    '''
 
     # =========== Set up regions =========== #
     regions_list = []
@@ -245,10 +278,15 @@ def parse_regions(regions_cfg, CoffeaPlotSettings):
         if same_name_obj_found(region_name, regions_list):
             log.error(f"Region {region_name} is defined more than once. Please check your configuration file.")
 
+        # Set up selection functor
+        selection = region['selection']
+        selection_fn = CoffeaPlotSettings.functions[selection[0]]
+        selection_functor = Functor(selection_fn, selection[1])
+
         regions_list.append(Region(name = region_name,
-                                   howto = Functor(CoffeaPlotSettings.functions[region['selection'][0]], region['selection'][1]),
-                                   target_sample = region['targets']),
-                                   label = region['label'])
+                                   howto = selection_functor,
+                                   target_sample = region['targets'],
+                                   label = region['label']))
 
     CoffeaPlotSettings.regions_list = regions_list
 
@@ -263,9 +301,11 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
 
         # Handle method
         howto = variable['method']
+
         if isinstance(howto, list):
             # Method is a functor
-            howto_functor = Functor(CoffeaPlotSettings.functions[howto[0]], howto[1])
+            method_fn = CoffeaPlotSettings.functions[howto[0]]
+            howto_functor = Functor(method_fn, howto[1])
         else:
             # Method is simply a branch name
             howto_functor = Functor(lambda x: x, [howto])
@@ -285,14 +325,14 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                           binning = binning,
                                           label = variable['label'],
                                           regions = variable['regions'],
-                                          idx = variable['idxby']))
+                                          idx_by = variable['idxby']))
 
     variables_2d_list = []
-    for variable in validated['variables']['2d']:
+    for variable in variables_cfg['2d']:
         continue
 
     variables_list = []
-    for tree in trees:
+    for tree in CoffeaPlotSettings.trees:
         variables_1d = Variables(1, tree, variables_1d_list)
         variables_2d = Variables(2, tree, variables_2d_list)
         variables_list.append(variables_1d_list)
@@ -336,15 +376,17 @@ def parse_rescales(rescales_cfg, CoffeaPlotSettings):
 
 def main():
 
-    # Prepare logger
-    log = logger()
+
 
     cfgp = 'config.yaml'
     validated = process(cfgp)
 
-    CoffeaPlotSettings = parse_general(validated['general'])
+    # Prepare logger
+    global log
+    log = logger()
+    setup_logging(log, validated['general']['loglevel'])
 
-    CoffeaPlotSettings.setup_logging(CoffeaPlotSettings.loglevel)
+    CoffeaPlotSettings = parse_general(validated['general'])
     CoffeaPlotSettings.setup_inputpaths()
     CoffeaPlotSettings.setup_helpers()
     CoffeaPlotSettings.setup_mcweights()

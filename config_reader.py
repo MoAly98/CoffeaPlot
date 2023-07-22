@@ -39,7 +39,7 @@ def validate(indict):
                             {
                                 'dumpdir': str,
                                 'trees': Use(string_to_list),
-                                Optional('ntuplesdirs'. default = None): Use(string_to_list),
+                                Optional('ntuplesdirs', default = None): Use(string_to_list),
                                 Optional('mcweight', default = None): Or(str, Use(float), Use(functor_input)), # Name of branch, value, or functor args
                                 Optional('inputhistos', default = None): str,
                                 Optional('helpers', default = None): Use(string_to_list),
@@ -56,12 +56,13 @@ def validate(indict):
                                         {
                                             'name': str,
                                             'method':  Or(str, Use(functor_input)), # Name of branch, or functor args
-                                            'binning': Or(And(str, lambda x: len(x.strip().split(',') == 3)), [Use(float)]),
+                                            'binning': Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)]),
+                                            Optional('regions', default = ['.*']): Use(string_to_list),
                                             Optional('label', default = None): str,
                                             Optional('idxby', default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
                                         }
                                     ],
-                                Optional('2D', default = None): [{}],# Not implemented yet
+                                Optional('2d', default = []): [{}],# Not implemented yet
                             },
                         'samples':
                             [
