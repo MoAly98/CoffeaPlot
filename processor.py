@@ -23,8 +23,8 @@ PROCESS = True
 
 class CoffeaPlotProcessor(processor.ProcessorABC):
 
-    def __init__(self, variables_list, CoffeaPlotSettings):
-        self.variables_list = variables_list
+    def __init__(self, CoffeaPlotSettings):
+        self.variables_list = CoffeaPlotSettings.variables_list
         self.samples_list = CoffeaPlotSettings.samples_list
         self.regions_list = CoffeaPlotSettings.regions_list
         self.rescales_list = CoffeaPlotSettings.rescales_list

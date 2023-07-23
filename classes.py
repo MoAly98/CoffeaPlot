@@ -18,15 +18,17 @@ class Functor(object):
         return self.fn(*data_args)
 
 class Variable(object):
-    def __init__(self, name, howto, binning, label, regions=['.*'], idx_by = 'event'):
+    def __init__(self, name, howto, binning, label, regions=['.*'], idx_by = 'event', dim = None):
         self.name = name
         self.howto = howto
         self.binning = binning
         self.label = label
         self.regions = regions
         self.idx = idx_by
-        self.dim = None
         assert self.idx in ['event','nonevent']
+
+        self.dim = dim
+        assert self.dim in [1,2]
 
     def set_dim(self, dim):
         self.dim = dim
