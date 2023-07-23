@@ -69,15 +69,15 @@ def main():
     CoffeaPlotSettings.setup_inputpaths()
     CoffeaPlotSettings.setup_outpaths()
     CoffeaPlotSettings.setup_helpers()
-    CoffeaPlotSettings.setup_mcweights()
 
     # =========== Set up samples, regions, variables, and rescales =========== #
-    parse_samples(validated['samples'], CoffeaPlotSettings, log)
+    all_samples_cfg = validated['samples'] + validated['supersamples']
+    parse_samples(all_samples_cfg, CoffeaPlotSettings, log)
     parse_regions(validated['regions'], CoffeaPlotSettings, log)
     parse_variables(validated['variables'], CoffeaPlotSettings, log)
     parse_rescales(validated['rescales'], CoffeaPlotSettings, log)
 
-    total_histograms =  (len(CoffeaPlotSettings.samples_list)
+    total_histograms =  (CoffeaPlotSettings.NumSamples
                         *len(CoffeaPlotSettings.regions_list)
                         *len(CoffeaPlotSettings.rescales_list)
                         *len(CoffeaPlotSettings.variables_list)
@@ -117,6 +117,7 @@ def main():
 
         # ====== Loop over 1D plots ====== #
         pprint(out)
+        print(out[('new_bdt_tH', 'ttlight', 'SR', 'Nominal')].values())
 
 
 

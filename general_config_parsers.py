@@ -1,4 +1,4 @@
-from classes import CoffeaPlotSettings as CPS, Sample, Region, Rescale, Variable, Variables, Functor
+from classes import CoffeaPlotSettings as CPS, Sample, SuperSample, Region, Rescale, Variable, Variables, Functor
 from logger import ColoredLogger as logger
 import numpy as np
 
@@ -12,7 +12,6 @@ same_name_obj_found = lambda obj_name, alist: any([obj_name == o.name for o in a
 # ========================================= #
 # =========== Setup parsers     =========== #
 # ========================================= #
-
 
 def parse_general(general_cfg: dict, log: logger = None):
     '''
@@ -114,108 +113,147 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None
     # =========== Set up samples =========== #
     log.info(f"Setting up samples ...")
     samples_list = []
+    num_samples = 0
     data_sample_found = False
+
     for sample in samples_cfg:
 
-        sample_name = sample['name']
-        log.info(f"Setting up sample {sample_name}")
+        is_supersample = False
+        if 'subsamples' in sample:
+            subsamples = sample['subsamples']
+            supersample = SuperSample(sample['name'])
+            is_supersample = True
+        else:
+            subsamples = [sample]
 
-        sample_regexes = sample['ntuplesrgxs']
-        log.info(f"Using the following regexes for sample {sample_name}: {sample_regexes}")
+        for subsample in subsamples:
 
-        # Do sample type checks
-        sample_type =  sample['type'].upper()
-        if sample_type not in ['BKG','SIG','DATA', 'GHOST']:
-            log.error(f"Sample {sample_name} has unknown type {sample_type}. Please check your configuration file.")
-
-        if sample_type == 'GHOST':
-            raise NotImplementedError("GHOST samples are not yet implemented")
-
-        sample_is_data = sample_type.upper() == 'DATA'
-        if data_sample_found and sample_is_data:
-            log.error(f"More than one data sample found. Please check your configuration file.")
-
-        if sample_is_data:  data_sample_found = True
+            sample_name = subsample['name']
+            log.info(f"Setting up sample {sample_name}")
 
 
-        # Check some ntuples directory is given:
-        if sample['ntuplesdirs'] is None:
-            if CoffeaPlotSettings.ntuplesdirs is None:
-                log.error(f'No ntuples directory given for sample {sample["name"]} and none given in general settings.')
+            # Do sample type checks
+            sample_type =  subsample['type'].upper()
+            if sample_type not in ['BKG','SIG','DATA', 'GHOST']:
+                log.error(f"Sample {sample_name} has unknown type {sample_type}. Please check your configuration file.")
+
+            if sample_type == 'GHOST':
+                raise NotImplementedError("GHOST samples are not yet implemented")
+
+            sample_is_data = sample_type.upper() == 'DATA'
+            if data_sample_found and sample_is_data:
+                log.error(f"More than one data sample found. Please check your configuration file.")
+
+            if sample_is_data:  data_sample_found = True
+
+
+            # Check some ntuples directory is given:
+            if subsample['ntuplesdirs'] is None:
+                if CoffeaPlotSettings.ntuplesdirs is None:
+                    log.error(f'No ntuples directory given for sample {subsample["name"]} and none given in general settings.')
+                else:
+                    if is_supersample:
+                        get_dirs_from = sample
+                    else:
+                        get_dirs_from = subsample
+
+                    look_in = get_dirs_from['ntuplesdirs'] if get_dirs_from['ntuplesdirs'] is not None else CoffeaPlotSettings.ntuplesdirs
+                    log.debug(f"Using ntuples directory {look_in} for sample {sample_name}")
+
+
+            # Check sample being used as MC reference correctly
+            sample_is_mc_ref = subsample['refmc']
+            if sample_is_mc_ref and sample_is_data:
+                log.error(f"Sample {sample_name} is marked as reference MC but is of type data. This is not allowed.")
+
+
+            # Prepare selection functor
+            selection = subsample['selection']
+            selection_functor = None
+            if selection is not None:
+                selection_fn = CoffeaPlotSettings.functions[selection[0]]
+                selection_functor = Functor(selection_fn, selection[1])
+                log.debug(f"Sample selector set to use function {selection[0]} with arguments {selection[1]}")
             else:
-                look_in = sample['ntuplesdirs'] if sample['ntuplesdirs'] is not None else CoffeaPlotSettings.ntuplesdirs
-                log.debug(f"Using ntuples directory {look_in} for sample {sample_name}")
+                log.debug(f"Sample {sample_name} has no special selection.")
+
+            # Prepare weight functor
+            weight =  subsample['weight']
+            weight_functor = None
+            if weight is not None:
+                weight_functor = create_weights_functor(weight, CoffeaPlotSettings, sample_name, log)
+            else:
+                log.debug(f"Sample {sample_name} has no special weight.")
 
 
-        # Check sample being used as MC reference correctly
-        sample_is_mc_ref = sample['refmc']
-        if sample_is_mc_ref and sample_is_data:
-            log.error(f"Sample {sample_name} is marked as reference MC but is of type data. This is not allowed.")
+            sample_ignore_mcweight = subsample['ignoremcweight']
+            # Check if sample should use MCWeight
+            if sample_is_data:
+                mc_weight_functor = None
+            elif sample_ignore_mcweight:
+                mc_weight_functor = None
+            else:
+                mc_weight_functor = CoffeaPlotSettings.mcweight
+
+            if mc_weight_functor is not None and weight_functor is not None:
+                log.debug(f"Sample {sample_name} will use MCWeight * {weight_functor.fn.__repr__()}")
+            if mc_weight_functor is None and weight_functor is not None:
+                log.debug(f"Sample {sample_name} will use only {weight_functor.fn.__repr__()}")
+            if mc_weight_functor is not None and weight_functor is None:
+                log.debug(f"Sample {sample_name} will use only MCWeight")
+            if mc_weight_functor is None and weight_functor is None:
+                log.debug(f"Sample {sample_name} will not use any weight. Weight = 1.0")
 
 
-        # Prepare selection functor
-        selection = sample['selection']
-        selection_functor = None
-        if selection is not None:
-            selection_fn = CoffeaPlotSettings.functions[selection[0]]
-            selection_functor = Functor(selection_fn, selection[1])
-            log.debug(f"Sample selector set to use function {selection[0]} with arguments {selection[1]}")
+            sample_regexes = get_dirs_from['ntuplesrgxs']
+            log.info(f"Using the following regexes for sample {sample_name}: {sample_regexes}")
+
+            # Create sample object
+            sample_obj = Sample(name = sample_name,
+                            stype = sample_type,
+                            direcs = look_in,
+                            regexes = sample_regexes,
+                            cut_howto = selection_functor,
+                            mc_weight = mc_weight_functor,
+                            weight_howto = weight_functor,
+                            ignore_mcweight = sample_ignore_mcweight,
+                            color = subsample['color'],
+                            label = subsample['label'],
+                            UseAsRef = sample_is_mc_ref,
+                            category = subsample['category']
+                        )
+
+
+            if is_supersample:
+                supersample.add_subsample(sample_obj)
+                supersample.regexes = sample_regexes
+                supersample.direcs = look_in
+                sample_obj = supersample
+
+            # Check if sample is defined more than once
+            if same_name_obj_found(sample_obj.name, samples_list) and not is_supersample:
+                log.error(f"Sample {sample_name} is defined more than once. Please check your configuration file.")
+            elif same_name_obj_found(sample_obj.name, samples_list) and is_supersample:
+                continue
+
+
+            sample_obj.create_fileset()
+            # Add sample to list
+            samples_list.append(sample_obj)
+
+
+        if is_supersample:
+            num_samples += len(sample_obj)
         else:
-            log.debug(f"Sample {sample_name} has no special selection.")
+            num_samples += 1
 
-        # Prepare weight functor
-        weight =  sample['weight']
-        weight_functor = None
-        if weight is not None:
-            weight_functor = create_weights_functor(weight, CoffeaPlotSettings, sample_name, log)
-        else:
-            log.debug(f"Sample {sample_name} has no special weight.")
-
-
-
-        sample_ignore_mcweight = sample['ignoremcweight']
-        # Check if sample should use MCWeight
-        if sample_is_data:
-            mc_weight_functor = None
-        elif sample_ignore_mcweight:
-            mc_weight_functor = None
-        else:
-            mc_weight_functor = CoffeaPlotSettings.mcweight
-
-        if mc_weight_functor is not None and weight_functor is not None:
-            log.debug(f"Sample {sample_name} will use MCWeight * {weight_functor.fn.__repr__()}")
-        if mc_weight_functor is None and weight_functor is not None:
-            log.debug(f"Sample {sample_name} will use only {weight_functor.fn.__repr__()}")
-        if mc_weight_functor is not None and weight_functor is None:
-            log.debug(f"Sample {sample_name} will use only MCWeight")
-        if mc_weight_functor is None and weight_functor is None:
-            log.debug(f"Sample {sample_name} will not use any weight. Weight = 1.0")
-
-        # Create sample object
-        sample = Sample(name = sample_name,
-                        stype = sample_type,
-                        direcs = look_in,
-                        regexes = sample['ntuplesrgxs'],
-                        cut_howto = selection_functor,
-                        mc_weight = mc_weight_functor,
-                        weight_howto = weight_functor,
-                        ignore_mcweight = sample_ignore_mcweight,
-                        color = sample['color'],
-                        label = sample['label'],
-                        UseAsRef = sample_is_mc_ref,
-                        category = sample['category']
-                    )
-
-        # Check if sample is defined more than once
-        if same_name_obj_found(sample_name, samples_list):
-            log.error(f"Sample {sample_name} is defined more than once. Please check your configuration file.")
-
-        # Add sample to list
-        samples_list.append(sample)
-
-    log.info(f"Created {len(samples_list)} samples")
 
     CoffeaPlotSettings.samples_list = samples_list
+
+    CoffeaPlotSettings.NumSamples = num_samples
+
+    log.info(f"Created {num_samples} samples")
+
 
 
 def parse_regions(regions_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None):

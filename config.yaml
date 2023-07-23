@@ -47,6 +47,38 @@ Variables:
         Label: '$N_{jets}$'
         Method: 'njets'
         Binning: 0,5,6
+
+supersamples:
+  - Name: ttbar
+    NtuplesRgxs: ['410470_user*']
+    SubSamples:
+      - Name: ttb
+        Label: '$t\bar{t}+\geq1b$'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#e6beff'
+        RefMC: False
+
+      - Name: ttlight
+        Label: '$t\bar{t}+\geq0l$'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+        RefMC: False
+
+      - Name: ttc
+        Label: '$t\bar{t}+\geq1c$'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+        RefMC: False
+
 samples:
   - Name: tH
     Label: 'tHjb'
@@ -57,6 +89,8 @@ samples:
       - ['leptons_PLIVtight']
     Color: '#e6194b'
     RefMC: False  # Should this sample be used as a reference in MC/MC plots
+
+
 
   # - Name: tWH
   #   Label: 'tWHjb'
@@ -340,3 +374,10 @@ Regions:
 #     Method:
 #       - ttb_1p25_rescale
 #       - ['weights']
+
+# DataMC:
+#   Modes: ['DATA_OVER_MC', 'DATA_MINUS_MC', 'DATA_OVER_BKG', 'DATA_MINUS_BKG']
+
+# MCMC:
+#   -
+

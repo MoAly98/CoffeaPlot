@@ -1,4 +1,6 @@
 from schema import Schema, And, Use, Optional, Or
+from copy import deepcopy
+
 
 def functor_input(inlist):
 
@@ -16,6 +18,32 @@ def string_to_list(value):
     if isinstance(value, str):
         return [value]
     return value
+
+sample_schema = {
+                'name': str,
+                'type': And(str, lambda s: s in ['SIG', 'BKG', 'DATA']),
+                'ntuplesrgxs': Or(str, [str]),
+                Optional('selection', default = None): Use(functor_input),
+                Optional('ntuplesdirs', default = None): [str],
+                Optional('weight', default = None): Or(str, Use(float), Use(functor_input)),
+                Optional('ignoremcweight', default = False): bool,
+                Optional('refmc', default = False): bool,
+                Optional('label', default = None): str,
+                Optional('color', default = None): str,
+                Optional('category', default = None): str,
+
+                }
+
+subsample_schema = deepcopy(sample_schema)
+
+del subsample_schema['ntuplesrgxs']
+
+supersample_schema = {
+                        'name': str,
+                        'subsamples': [subsample_schema],
+                        'ntuplesrgxs': Or(str, [str]),
+                        Optional('ntuplesdirs', default = None): [str]
+                    }
 
 schema = Schema({
                         'general':
@@ -47,23 +75,9 @@ schema = Schema({
                                     ],
                                 Optional('2d', default = []): [{}],# Not implemented yet
                             },
-                        'samples':
-                            [
-                                {#[str, Or(str, [str])]
-                                    'name': str,
-                                    'type': And(str, lambda s: s in ['SIG', 'BKG', 'DATA']),
-                                    'ntuplesrgxs': Or(str, [str]),
-                                    Optional('selection', default = None): Use(functor_input),
-                                    Optional('ntuplesdirs', default = None): [str],
-                                    Optional('weight', default = None): Or(str, Use(float), Use(functor_input)),
-                                    Optional('ignoremcweight', default = False): bool,
-                                    Optional('refmc', default = False): bool,
-                                    Optional('label', default = None): str,
-                                    Optional('color', default = None): str,
-                                    Optional('category', default = None): str,
 
-                                }
-                            ],
+                        'samples':  [sample_schema],
+                        Optional('supersamples', default = []):[supersample_schema],
 
                         'regions':
                             [

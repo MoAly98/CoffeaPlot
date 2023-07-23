@@ -13,7 +13,6 @@ class Functor(object):
         assert isinstance(self.args, list)
 
     def evaluate(self, data):
-
         data_args = [data[arg] for arg in self.args]
         return self.fn(*data_args)
 
@@ -79,11 +78,8 @@ class Sample(object):
         # Get files for sample
         self.regexes = regexes
         self.direcs = direcs
-        if regexes is not None:
-            self.files = self.create_fileset(regexes)
-            assert self.files != [], f'NO files found for sample {self.name} with any regexes: {regex}'
-        else:
-            self.files = []
+        self.files = []
+
         # Set sample cuts
         self.sel = cut_howto
 
@@ -113,10 +109,10 @@ class Sample(object):
         if direcs is not None:
             raise NotImplementedError("Specifying NTuple directories per sample is not implemented yet")
 
-    def __eq__(self, other):
-        return self.name == other.name
+    def create_fileset(self):
 
-    def create_fileset(self, regexes):
+        if self.regexes is None:
+            return []
         # Collect Regexes
         to_glob = []
         for direc in LOOK_IN:
@@ -127,8 +123,33 @@ class Sample(object):
         for wild in to_glob:
             globbed.extend(glob(wild))
 
+        self.files = globbed
+        assert self.files != [], f'NO files found for sample {self.name} with any regexes: {self.regexes}'
 
-        return globbed
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __str__(self):
+        sample_str = f"Sample: {self.name} \n Type: {self.type} \n Category: {self.category} \n Files: {self.regexes} \n Selection: {self.sel} \n Weight: {self.weight} \n MC Weight: {self.mc_weight} \n Color: {self.color} \n Label: {self.label} \n Use as reference MC: {self.ref}"
+
+class SuperSample(Sample):
+
+    def __init__(self, name, subsamples = [], regexes = None, direcs = None):
+
+        self.name = name
+        self.subsamples = subsamples
+        # Get files for sample
+        self.regexes = regexes
+        self.direcs = direcs
+        self.files = []
+
+
+    def add_subsample(self, subsample):
+        self.subsamples.append(subsample)
+
+    def __len__(self):
+        return len(self.subsamples)
 
 class _DummySample(Sample):
     def __init__(self, name, stype = None, regexes = None, cut_howto = None, weight_howto = None, color = None, label = None, category = None, UseAsRef = False):
@@ -380,28 +401,3 @@ class CoffeaPlotSettings(object):
             tablesdir = f'{self.dumpdir}/tables/{tree}'
             self.tree_to_dir[tree]['tablesdir'] = tablesdir
             os.makedirs(tablesdir, exist_ok=True)
-
-
-    def setup_mcweights(self):
-
-        # Set up logger
-        log = logger()
-        log.info("Setting up MC weights")
-
-        # =========== Set up MC weight =========== #
-        general_mcweight_functor = None
-        if self.mcweight is not None:
-            if isinstance(self.mcweight, list):
-                # Weight is a functor
-                log.debug(f"MC weight is a functor: {self.mcweight}")
-                general_mcweight_functor = Functor(functions[self.mcweight[0]], self.mcweight[1])
-            elif isinstance(self.mcweight, str):
-                # Weight is a branch name
-                log.debug(f"MC weight is a branch name: {self.mcweight}")
-                general_mcweight_functor = Functor(lambda w: w, [self.mcweight])
-            else:
-                # Weight is a float
-                log.debug(f"MC weight is a float: {self.mcweight}")
-                general_mcweight_functor = Functor(lambda w: w*self.mcweight, ['weights'])
-
-        self.mcweight = general_mcweight_functor

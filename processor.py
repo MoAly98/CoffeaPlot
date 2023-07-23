@@ -17,7 +17,7 @@ from collections import defaultdict
 os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 
 # CoffeaPlot imports
-from classes import Histogram, Histograms
+from classes import Histogram, Histograms, SuperSample
 
 PROCESS = True
 
@@ -38,74 +38,82 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
         dataset = presel_events.metadata['dataset']
 
         for a_sample in self.samples_list:
-            if dataset != a_sample.name: continue
 
-            sample = a_sample
+            if dataset != a_sample.name: continue
+            the_sample = a_sample
             break
 
-        sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
+        if isinstance(the_sample, SuperSample):
+            samples = the_sample.subsamples
+        else:
+            samples = [the_sample]
 
-        presel_events['weights'] = sample_weights
-        filt_sample = presel_events[sample.sel.evaluate(presel_events)] if sample.sel is not None else presel_events
+        for sample in samples:
 
-        # ====== Loop over 1D plots ====== #
+            mc_weight = sample.mc_weight.evaluate(presel_events) if sample.mc_weight is not None else 1.0
+            sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
+            presel_events['weights'] = sample_weights*mc_weight
 
-        for variable in self.variables_list:
-            name           = variable.name
-            regions_to_use = variable.regions
-            idxing         = variable.idx
-            binning        = variable.binning
-            label          = variable.label
-            histo_compute  = variable.howto
+            filt_sample = presel_events[sample.sel.evaluate(presel_events)] if sample.sel is not None else presel_events
 
-            for region_to_plot in self.regions_list:
+            # ====== Loop over 1D plots ====== #
 
-                if all(re.match(region_to_use, region_to_plot.name) is None for region_to_use in regions_to_use): continue
+            for variable in self.variables_list:
+                name           = variable.name
+                regions_to_use = variable.regions
+                idxing         = variable.idx
+                binning        = variable.binning
+                label          = variable.label
+                histo_compute  = variable.howto
 
-                filt_reg = filt_sample[region_to_plot.sel.evaluate(filt_sample)]
+                for region_to_plot in self.regions_list:
+
+                    if all(re.match(region_to_use, region_to_plot.name) is None for region_to_use in regions_to_use): continue
+
+                    filt_reg = filt_sample[region_to_plot.sel.evaluate(filt_sample)]
 
 
-                # ================ Empty histogram for this region for this sample ===========
-                if ak.num(filt_reg['weights'], axis=0) == 0:
-                    return accum
+                    # ================ Empty histogram for this region for this sample ===========
+                    if ak.num(filt_reg['weights'], axis=0) == 0:
+                        return accum
 
-                # =============== Non empty histogram for this region for this sample ==========
-                if variable.dim == 1:
+                    # =============== Non empty histogram for this region for this sample ==========
+                    if variable.dim == 1:
 
-                    for rescaling in self.rescales_list:
+                        for rescaling in self.rescales_list:
 
-                        h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
+                            h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
 
-                        if any(re.match(affected_sample, sample.name) is not None for affected_sample in rescaling.affects):
-                            rescaled_weights = rescaling.method.evaluate(filt_reg)
-                        else:
-                            rescaled_weights = filt_reg['weights']
+                            if any(re.match(affected_sample, sample.name) is not None for affected_sample in rescaling.affects):
+                                rescaled_weights = rescaling.method.evaluate(filt_reg)
+                            else:
+                                rescaled_weights = filt_reg['weights']
 
-                        if idxing == 'nonevent':
-                            assert len(histo_compute.args) == 1, "Composite variables are not supported when indexing by nonevent"
+                            if idxing == 'nonevent':
+                                assert len(histo_compute.args) == 1, "Composite variables are not supported when indexing by nonevent"
 
-                            w, arg = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute.args[0]])
-                            data = histo_compute.fn(arg)
-                            w = ak.flatten(w)
-                        else:
-                            data = histo_compute.evaluate(filt_reg)
-                            w = rescaled_weights
+                                w, arg = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute.args[0]])
+                                data = histo_compute.fn(arg)
+                                w = ak.flatten(w)
+                            else:
+                                data = histo_compute.evaluate(filt_reg)
+                                w = rescaled_weights
 
-                        # Fill the histogram
-                        h.fill(data, weight = w)
+                            # Fill the histogram
+                            h.fill(data, weight = w)
 
-                        # Save the histogram
-                        samp_histo_obj = Histogram(name, h, dataset, region_to_plot.name , rescaling.name)
-                        if sample.type != 'DATA':
-                            tot_histo_obj = Histogram(name, deepcopy(h), 'total', region_to_plot.name , rescaling.name)
-                        else:
-                            tot_histo_obj = Histogram(name, 0, 'total', region_to_plot.name , rescaling.name)
-                        accum[samp_histo_obj] = samp_histo_obj
-                        accum[tot_histo_obj] = tot_histo_obj
+                            # Save the histogram
+                            samp_histo_obj = Histogram(name, h, sample.name, region_to_plot.name , rescaling.name)
+                            if sample.type != 'DATA':
+                                tot_histo_obj = Histogram(name, deepcopy(h), 'total', region_to_plot.name , rescaling.name)
+                            else:
+                                tot_histo_obj = Histogram(name, 0, 'total', region_to_plot.name , rescaling.name)
+                            accum[samp_histo_obj] = samp_histo_obj
+                            accum[tot_histo_obj] = tot_histo_obj
 
-                else:
-                    # TODO:: 2D
-                    pass
+                    else:
+                        # TODO:: 2D
+                        pass
 
         return accum
 
