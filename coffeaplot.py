@@ -16,7 +16,9 @@ from config_reader import process as process_config
 from logger import ColoredLogger as logger
 from processor import CoffeaPlotProcessor
 from general_config_parsers import parse_general, parse_samples, parse_regions, parse_variables, parse_rescales
+from plots_config_parsers import parse_datamc, parse_mcmc, parse_significance, parse_general_plots
 
+from plotter import prepare_1d_plots, make_plots
 # ========================================= #
 # =========== Set up functions =========== #
 # ========================================= #
@@ -87,6 +89,18 @@ def main():
                         *len(CoffeaPlotSettings.variables_list))
 
     log.info(f"Ready to process {total_histograms} histograms")
+
+    # =================== Set up plot settings =================== #
+    GeneralPlotSettings      = parse_general_plots(validated['plots'])
+    DataMCPlotSettings       = parse_datamc(validated['datamc'], GeneralPlotSettings, log)
+    MCMCPlotSettings         = parse_mcmc(validated['mcmc'], GeneralPlotSettings, log)
+    SignificancePlotSettings = parse_significance(validated['significance'], GeneralPlotSettings, log)
+
+    CoffeaPlotSettings.datamc_plot_settings       = DataMCPlotSettings
+    CoffeaPlotSettings.mcmc_plot_settings         = MCMCPlotSettings
+    CoffeaPlotSettings.significance_plot_settings = SignificancePlotSettings
+
+
     # =========== Set up fileset =========== #
     fileset = {}
     for sample in CoffeaPlotSettings.samples_list:
@@ -118,6 +132,16 @@ def main():
         # ====== Loop over 1D plots ====== #
         pprint(out)
         print(out[('new_bdt_tH', 'ttlight', 'SR', 'Nominal')].values())
+        print(out[('new_bdt_tH', 'ttc', 'SR', 'Nominal')].values())
+        print(out[('new_bdt_tH', 'ttb', 'SR', 'Nominal')].values())
+        print(out[('new_bdt_tH', 'tH', 'SR', 'Nominal')].values())
+        print(out[('new_bdt_tH', 'total', 'SR', 'Nominal')].values())
+        print(out[('njets', 'total', 'SR', 'Nominal')].values())
+
+        if CoffeaPlotSettings.runplotter:
+            plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings, log)
+            make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree], log)
+
 
 
 

@@ -7,7 +7,7 @@ from collections import defaultdict
 
 plt.style.use(mplhep.style.ATLAS)
 plt.rcParams['axes.linewidth'] = 3
-plt.rcParams.update({'font.size': 20})
+plt.rcParams.update({'font.size': 26})
 plt.rcParams['xtick.major.pad']='10'
 plt.rcParams['ytick.major.pad']='10'
 plt.rcParams['text.latex.preamble'] = r'\centering'
@@ -17,213 +17,304 @@ class CoffeaPlot(object):
     This class can create the figure, the axes, handle Stacks and RatioPlots and Box
     objects to produce a plot that gets saved to a file.
     '''
-    def __init__(self, stacks = [], ratio_plots = [], blinder = None, **settings):
+    def __init__(self, stacks = [], ratio_plots = [], settings = None):
 
         # Data
         self.stacks = stacks if isinstance(stacks, list) else [stacks]
         self.ratio_plots = ratio_plots if isinstance(ratio_plots, list) else [ratio_plots]
+        self.settings = settings
+        # # ========== General Figure ========== #
+        # self.figure_size = None
+        # self.figure_title = None
+        # # Ratio of heights of main plot and all ratio plots
 
-        # ========== General Figure ========== #
-        self.figure_size = None
-        self.figure_title = None
-        # Ratio of heights of main plot and all ratio plots
 
+        # if len(self.ratio_plots) == 0:
+        #     self.height_ratios = [1]
+        # else:
+        #     self.height_ratios =  [3,*[1]*(len(self.ratio_plots)+1-1)]
+        # # ATLAS?
+        # self.experiment = None
+        # # Internal, Simulation, Prelimary, etc.
+        # self.plot_status = None
+        # # In ifb
+        # self.lumi = None
+        # # In TeV
+        # self.com = None
+        # # Region name, scaling
+        # self.subtext = None
+        # # Save to what file
+        # self.outfile = None
+        # # Event selection text
+        # self.selection = None
 
-        if len(self.ratio_plots) == 0:
-            self.height_ratios = [1]
-        else:
-            self.height_ratios =  [3,*[1]*(len(self.ratio_plots)+1-1)]
-        # ATLAS?
-        self.experiment = None
-        # Internal, Simulation, Prelimary, etc.
-        self.plot_status = None
-        # In ifb
-        self.lumi = None
-        # In TeV
-        self.com = None
-        # Region name, scaling
-        self.subtext = None
-        # Save to what file
-        self.outfile = None
-        # Event selection text
-        self.selection = None
+        # # ========== Ratio Plots ========= #
+        # self.ratio_yrange = None
+        # self.ratio_ylog   = None
+        # self.ratio_ylabel = None
 
-        # ========== Ratio Plots ========= #
-        self.ratio_yrange = None
-        self.ratio_ylog   = None
-        self.ratio_ylabel = None
+        # # ========== Main Plot =========== #
+        # self.main_yrange = None
+        # self.main_ylog   = None
+        # self.main_ylabel = None
+        # self.main_ynorm = None
 
-        # ========== Main Plot =========== #
-        self.main_yrange = None
-        self.main_ylog   = None
-        self.main_ylabel = None
-        self.main_ynorm = None
+        # self.main_xlim = None
 
-        self.main_xlim = None
+        # # ========== Set plot settings ============= #
 
-        # ========== Set plot settings ============= #
-
-        for key, value in settings.items():
-            setattr(self, key, value)
+        # for key, value in settings.items():
+        #     setattr(self, key, value)
 
         # NotImplemented
         self.new_edges = None
 
-    def plot(self):
-
-        fig    = plt.figure(figsize=self.figure_size)
+    def make_figure(self):
+        fig    = plt.figure(figsize=self.settings.figure_size)
         nrows = len(self.ratio_plots) + 1
-        gs     = fig.add_gridspec(ncols=1, nrows=nrows, height_ratios=self.height_ratios, hspace=0.1)
+
+        if self.settings.height_ratios is None:
+            if len(self.ratio_plots) == 0:
+                height_ratios = [1]
+            else:
+                height_ratios =  [3,*[1]*(len(self.ratio_plots))]
+        else:
+            assert len(self.settings.height_ratios) == nrows, f"Number of height ratios ({len(self.settings.height_ratios)}) does not match number of axes ({len(self.ratio_plots)})"
+            height_ratios = self.settings.height_ratios
+
+        gs     = fig.add_gridspec(ncols=1, nrows=nrows, height_ratios=height_ratios, hspace=0.1)
         main_ax     = fig.add_subplot(gs[0, 0])
         rat_axes = []
         for i in range(nrows-1):
             rat_ax = fig.add_subplot(gs[i+1, 0], sharex=main_ax)
             rat_axes.append(rat_ax)
 
+        return fig, main_ax, rat_axes
+
+    def apply_blinder(self, ax, blinder, histograms, binval, binerr):
+
+        # Get the blinded bin indices
+        blinded_bins = blinder.get_blinded_bins()
+        # Loop over each bin index to be blinded
+        for blinded_bin_idx in blinded_bins:
+            # Loop over all histograms in the stack plot affected by blinding and nullify the bin contents
+            for histogram in histograms:
+                histogram.values()[blinded_bin_idx] = binval
+                histogram.variances()[blinded_bin_idx] = binerr
+
+            # Get bin edges to shade between
+            shade_x1, shade_x2 = histograms[0].axes.edges[0][blinded_bin_idx:blinded_bin_idx+2] # Last index is not inclusive
+
+            # Need to shade twice to get the hatch to show up in legend
+            VSpanBox((shade_x1, shade_x2), color='blue', alpha=0.06, linewidth=0).draw(ax)
+            # Avoid adding multiple labels to legend
+            if blinded_bin_idx == blinded_bins[0]:  label = 'Blinded'
+            else:   label = None
+
+            VSpanBox((shade_x1, shade_x2), facecolor='none', edgecolor='grey', hatch="//", alpha=0.5, linewidth=0, label = label).draw(ax)
+
+
+    def plot_main_canvas(self, main_ax):
+
         max_bin_contents = []
+        # Loop over stacks being overlaid on the plot
         for i, stack in enumerate(self.stacks):
 
+            # Sort stackatinos by sum of bin contents so that biggest stack element goes first
             sorted_stackatinos = sorted(stack.stackatinos, key=lambda stackatino: stackatino.sum.values().sum(), reverse=True)
 
+            # mplhep expects lists of stacks and corresponding settings
             styles = defaultdict(list)
             histograms, labels = [], []
+
+            # A stackatino can be the sum of some yields (stackatino = category, items are samples)
             for stackatino in sorted_stackatinos:
-                if self.main_ynorm is None or not self.main_ynorm:
+
+                # Adjust the histgoram that is being plotted if y-axis is normalized
+                if not self.settings.main.ynorm:
+                    # Just pass the histogram if not normalizing
                     histograms.append(stackatino.sum.h)
                 else:
-                    if self.main_ylog is not None:
+                    # Don't allow log scale if normalizing
+                    if self.settings.main.ylog:
                         print("WARNING:: Cannot set log scale when normalizing to unity")
-                        self.main_ylog = None
+                        self.main.ylog = False
 
+                    # Divide each bin by integral
                     histograms.append(stackatino.sum.h/stackatino.sum.h.values().sum())
 
-                for key, value in stackatino.styling.items():
-                    styles[key].append(value)
+                # Add the styling for each stackatino
+                for stackitem, style in stackatino.styling.items():
+                    styles[stackitem].append(style)
 
-
+                # Add the label for each stackatino (name of sample)
                 labels.append(stackatino.label)
 
-            if self.main_ynorm is None or not self.main_ynorm:
-                if not stack.stack:
-                    max_bin_contents.append(max(sum(histogram for histogram in histograms).values()))
-                else:
-                    max_bin_contents.append(max(max(histogram.values()) for histogram in histograms))
+            # Keep track of the largest bin content in each stack to set auto y-axis range
+            if stack.stack:
+                # If we are summing stackatinos, use largest bin in summed histogram to set ymax
+                max_bin_contents.append(max(sum(histogram for histogram in histograms).values()))
             else:
-                max_bin_contents.append(1)
+                # If we are not summing stackatinos, use largest bin in any one histogram to set ymax
+                max_bin_contents.append(max(max(histogram.values()) for histogram in histograms))
 
 
+            # If the stack needs to blinded, shade the blinded bins and set the bin contents to 0
             if stack.blinder is not None:
-                blinded_bins = stack.blinder.get_blinded_bins()
-                for blinded_bin_idx in blinded_bins:
-                    for histogram in histograms:
-                        histogram.values()[blinded_bin_idx] = 1e-10
-                        histogram.variances()[blinded_bin_idx] = 1e-20
+                self.apply_blinder(main_ax, stack.blinder, histograms, 1e-10, 1e-20)
 
-                    shade_x1, shade_x2 = histograms[0].axes.edges[0][blinded_bin_idx:blinded_bin_idx+2] # Last index is not inclusive
+            # Set the x-range while we have the histograms
+            xrange = (histograms[0].axes[0].edges[0], histograms[0].axes[0].edges[-1])
 
-                    VSpanBox((shade_x1, shade_x2), color='blue', alpha=0.06, linewidth=0).draw(main_ax)
-
-                    if blinded_bin_idx == blinded_bins[0]:
-                        label = 'Blinded'
-                    else:
-                        label = None
-                    VSpanBox((shade_x1, shade_x2), facecolor='none', edgecolor='grey', hatch="//", alpha=0.5, linewidth=0, label = label).draw(main_ax)
+            # Plot the stack
             mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=stack.stack, flow='hint', **styles)
+        return max_bin_contents, xrange
 
+    def decorate_main_canvas(self, main_ax, max_bin_contents, xrange):
 
+        # ==================== Legend ==================== #
 
-        main_ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left", ncol=2, fontsize=26)
+        if self.settings.main.legend_show:
+            if self.settings.main.legend_outside:
+                main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.main.legend_ncol, fontsize=self.settings.main.legend_fontsize)
+            else:
+                print("XX",self.settings.main.legend_loc)
+                main_ax.legend(loc=self.settings.main.legend_loc, ncol=self.settings.main.legend_ncol, fontsize=self.settings.main.legend_fontsize)
 
-
+        # ==================== X-axis ==================== #
+        # If there are ratio plots, don't use an x-axis label on main plot
         if len(self.ratio_plots) != 0:
             plt.setp(main_ax.get_xticklabels(), visible=False)
             main_ax.set_xlabel('')
+        else:
+            plt.setp(main_ax.get_xticklabels(), visible=True)
+            main_ax.set_xlabel(self.stacks[0].stackatinos[0].histograms[0].label, fontsize=self.settings.main.xlabelfontsize)
 
-        if self.main_ylabel is not None:
-            main_ax.set_ylabel(self.main_ylabel)
+        # Set the x-axis range
+        if self.settings.main.xrange is None:
+            main_ax.set_xlim(xrange)
+        else:
+            main_ax.set_xlim(self.settings.main.xrange)
 
-        if self.main_ylog is not None:
+        # ===================== Y-axis ==================== #
+        # Set the y-axis label
+        if self.settings.main.ylabel is not None:
+            print(self.settings.main.ylabelfontsize)
+            main_ax.set_ylabel(self.settings.main.ylabel, fontsize=self.settings.main.ylabelfontsize)
+        else:
+            if self.settings.main.ynorm:
+                main_ax.set_ylabel('Fraction of events / bin', fontsize=self.settings.main.ylabelfontsize)
+            else:
+                print(self.settings.main.ylabelfontsize)
+                main_ax.set_ylabel('Number of Events', fontsize=self.settings.main.ylabelfontsize)
+
+        # Set the y-axis scale
+        if self.settings.main.ylog:
             main_ax.set_yscale('log')
 
-
-        if self.main_yrange is not None:
-            main_ax.set_ylim(self.main_yrange)
+        # Set the y-axis range
+        if self.settings.main.yrange is not None:
+            main_ax.set_ylim(self.settings.main.yrange)
         else:
-            if self.main_ylog is not None:
+            if self.settings.main.ylog is not None:
                 main_ax.set_ylim(1., max(max_bin_contents)*20)
             else:
                 main_ax.set_ylim(0., max(max_bin_contents)*1.25)
 
-        if self.main_xlim is not None:
-            main_ax.set_xlim(self.main_xlim)
-        else:
-            main_ax.set_xlim(histograms[0].axes[0].edges[0], histograms[0].axes[0].edges[-1])
         # COM notworking
-        mplhep.atlas.label(self.plot_status, data=True, lumi=self.lumi, com=self.com, ax = main_ax, fontsize=29)
+        mplhep.atlas.label(self.settings.plot_status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
+
+    def plot_ratio_canvases(self, ratio_plot, ratio_ax):
 
 
+
+        # Loop over ratio items in the ratio plot
+        for ratio_item in ratio_plot.ratio_items:
+
+            # Normalise numerators and denominators if the main plot is normalised
+            if self.settings.main.ynorm is not None:
+                ratio_item.numerator.h   *= 1/ratio_item.numerator.h.values().sum()
+                ratio_item.denominator.h *= 1/ratio_item.denominator.h.values().sum()
+
+            # Get the bin centers edges and widths for the ratio plot
+            bin_centers = ratio_item.numerator.h.axes[0].centers
+            bin_edges   = ratio_item.numerator.h.axes[0].edges
+            bin_widths  = (bin_edges[1:] - bin_edges[:-1])
+
+            # Compute ratio values and errors
+            ratio_vals = ratio_item.get_ratio_vals()
+            ratio_err  = ratio_item.err()
+
+            # Plot the ratio and error bars
+            mplhep.histplot(ratio_vals, bins=bin_edges, yerr=ratio_err, label = ratio_item.label, ax = ratio_ax, histtype=ratio_plot.bar_type, stack=ratio_plot.stack, **ratio_item.styling)
+
+            # If this is a DataMC plot, add a relative MC uncertainty band
+            if isinstance(ratio_item, DataOverMC):
+                # Get the uncertainty band
+                mc_err = ratio_item.mc_err()
+                # Plot the uncertainty band
+                ratio_ax.bar(bin_centers, 2*mc_err, width= bin_widths, bottom=(1.0-mc_err), fill=False, linewidth=0, edgecolor="gray", hatch=3 * "/",)
+
+        # If the stack needs to blinded, shade the blinded bins and set the bin contents to 0
+        if ratio_plot.blinder is not None:
+            numerators = [ratio_item.numerator.h for ratio_item in ratio_plot.ratio_items]
+            self.apply_blinder(ratio_ax, ratio_plot.blinder, numerators, 0, 1e-20)
+
+
+    def decorate_ratio_canvases(self, ratio_plot, ratio_ax, last_canvas):
+
+        # ================= Legends ==================== #
+        if self.settings.ratio.legend_show:
+            if self.settings.ratio.legend_outside:
+                ratio_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.ratio.legend_ncol, fontsize=self.settings.ratio.legend_fontsize)
+            else:
+                ratio_ax.legend(loc=self.settings.ratio.legend_loc, ncol=self.settings.ratio.legend_ncol, fontsize=self.settings.ratio.legend_fontsize)
+
+        # ================= X-axis ==================== #
+        if last_canvas:
+            ratio_ax.set_xlabel(self.stacks[0].stackatinos[0].histograms[0].label, fontsize = self.settings.main.xlabelfontsize)
+        else:
+            plt.setp(ratio_ax.get_xticklabels(), visible=False)
+            ratio_ax.set_xlabel('')
+
+        # ================= Y-axis ==================== #
+
+        # Set the y-axis scale
+        if self.settings.ratio.ylog:
+            ratio_ax.set_yscale('log')
+
+        # Set the y-axis range
+        if self.settings.ratio.yrange is not None:
+            ratio_ax.set_ylim(self.settings.ratio.yrange)
+
+        # Set the y-axis label
+        if ratio_plot.ylabel is not None:
+            ratio_ax.set_ylabel(ratio_plot.ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
+        if self.settings.ratio.ylabel is not None:
+            ratio_ax.set_ylabel(self.settings.ratio.ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
+
+        # ==================== Grid ==================== #
+        ratio_ax.grid(True)
+
+
+    def plot(self, outpath):
+
+        fig, main_ax, rat_axes = self.make_figure()
+
+        max_bin_contents, xrange = self.plot_main_canvas(main_ax)
+        self.decorate_main_canvas(main_ax, max_bin_contents, xrange)
 
 
         for i, ratio_plot in enumerate(self.ratio_plots):
             ratio_ax = rat_axes[i]
-
             if len(ratio_plot.ratio_items) == 0:    continue
+            last_canvas = False
+            if i == len(self.ratio_plots)-1:        last_canvas = True
+            self.plot_ratio_canvases(ratio_plot, ratio_ax)
+            self.decorate_ratio_canvases(ratio_plot, ratio_ax, last_canvas)
 
-            if ratio_plot.blinder is not None:
-                blinded_bins = ratio_plot.blinder.get_blinded_bins()
-                blinding_bool = ratio_plot.blinder.get_blinding()
-
-                for blinded_bin_idx in blinded_bins:
-
-                    shade_x1, shade_x2 = histograms[0].axes.edges[0][blinded_bin_idx:blinded_bin_idx+2] # Last index is not inclusive
-                    VSpanBox((shade_x1, shade_x2), color='blue', alpha=0.06, linewidth=0).draw(ratio_ax)
-
-                    if blinded_bin_idx == blinded_bins[0]:
-                        label = 'Blinded'
-                    else:
-                        label = None
-                    VSpanBox((shade_x1, shade_x2), facecolor='none', edgecolor='grey', hatch="//", alpha=0.5, linewidth=0, label = label).draw(ratio_ax)
-
-            for ratio_item in ratio_plot.ratio_items:
-
-                if self.main_ynorm is not None:
-                    ratio_item.numerator.h *= 1/ratio_item.numerator.h.values().sum()
-                    ratio_item.denominator.h *= 1/ratio_item.denominator.h.values().sum()
-
-                bin_centers = ratio_item.numerator.h.axes[0].centers
-                bin_edges   = ratio_item.numerator.h.axes[0].edges
-                bin_widths  = (bin_edges[1:] - bin_edges[:-1])
-
-                ratio_vals = ratio_item.get_ratio_vals()
-                ratio_err  = ratio_item.err()
-                if ratio_plot.blinder is not None:
-                    ratio_vals[blinding_bool] = 1e6
-                    ratio_err[blinding_bool] = 0
-
-                mplhep.histplot(ratio_vals, bins=bin_edges, yerr=ratio_err, label = ratio_item.label, ax = ratio_ax, histtype=ratio_plot.bar_type, stack=ratio_plot.stack, **ratio_item.styling)
-
-                if isinstance(ratio_item, DataOverMC):
-                    mc_err = ratio_item.mc_err()
-                    ratio_ax.bar(bin_centers, 2*mc_err, width= bin_widths, bottom=(1.0-mc_err), fill=False, linewidth=0, edgecolor="gray", hatch=3 * "/",)
-                    ratio_ax.set_ylim((0.8,1.2))
-                    ratio_ax.grid(True)
-
-
-
-            if i != len(self.ratio_plots) - 1:
-                plt.setp(ratio_ax.get_xticklabels(), visible=False)
-            else:
-                ratio_ax.set_xlabel(ratio_plot.ratio_items[0].numerator.label)
-
-            if ratio_plot.ylabel is not None:
-                ratio_ax.set_ylabel(ratio_plot.ylabel, loc='center', verticalalignment='center', labelpad=20)
-            if self.ratio_ylabel is not None:
-                ratio_ax.set_ylabel(self.ratio_ylabel, loc='center', verticalalignment='center', labelpad=20)
-
-            if self.ratio_yrange is not None:
-                ratio_ax.set_ylim(self.ratio_yrange)
-
-        plt.savefig(self.outfile, bbox_inches='tight')
+        filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.rescale
+        plt.savefig(f"{outpath}/{filename}.pdf", bbox_inches='tight')
         plt.close('all')
 
 
@@ -271,7 +362,7 @@ class DistWithUncObjects(object):
 
     TO_MPL = {'stepfilled': 'fill', 'points': 'errorbar', 'step': 'step'}
 
-    def __init__(self, bar_type, error_type = 'stat', stack=True, ylabel = None, blinder = None, combo = None):
+    def __init__(self, bar_type, error_type = 'stat', stack=True, ylabel = None, blinder = None, plottersettings = None):
 
 
         if bar_type not in self.ALLOW_BAR_TYPES:
@@ -291,23 +382,13 @@ class DistWithUncObjects(object):
 
         self.blinder = blinder
 
-        if combo is not None:
-
-            assert 'variable' in combo, 'Must specify a variable to identify a plot'
-            assert 'region' in combo, 'Must specify a region to identify a plot'
-            assert 'rescale' in combo, 'Must specify a rescale to identify a plot'
-            self.combo = PlotIdentifier(combo)
+        if plottersettings is not None:
+            self.plotid = PlotIdentifier(plottersettings)
         else:
             raise ValueError("Must specify an identifier for a stack")
 
-class PlotIdentifier(object):
-    def __init__(self, identifier_dict):
-        self.variable = identifier_dict['variable']
-        self.region = identifier_dict['region']
-        self.rescale = identifier_dict['rescale']
-
 class RatioPlot(DistWithUncObjects):
-    def __init__(self, ratio_items, bar_type = 'step', error_type = 'stat', stack=False, ylabel=None, blinder = None, combo = None):
+    def __init__(self, ratio_items, bar_type = 'step', error_type = 'stat', stack=False, ylabel=None, blinder = None, plottersettings = None):
 
         '''
         Create a RatioPlot object.
@@ -316,7 +397,7 @@ class RatioPlot(DistWithUncObjects):
         '''
         self.ratio_items = []
 
-        DistWithUncObjects.__init__(self, bar_type, error_type, stack=stack, ylabel=ylabel, blinder=blinder, combo=combo)
+        DistWithUncObjects.__init__(self, bar_type, error_type, stack=stack, ylabel=ylabel, blinder=blinder, plottersettings=plottersettings)
 
     def append(self, ratio_item):
         self.ratio_items.append(ratio_item)
@@ -431,11 +512,11 @@ class Stack(DistWithUncObjects):
     A COLLECTION OF Stackatinos.
     '''
 
-    def __init__(self, stackatinos, bar_type = 'filled', error_type = 'stat', stack=True, ylabel=None, blinder = None, combo = None):
+    def __init__(self, stackatinos, bar_type = 'filled', error_type = 'stat', stack=True, ylabel=None, blinder = None, plottersettings = None):
 
         # List of stackatinos
         self.stackatinos = stackatinos
-        DistWithUncObjects.__init__(self, bar_type, error_type, stack=stack, ylabel=ylabel, blinder=blinder, combo=combo)
+        DistWithUncObjects.__init__(self, bar_type, error_type, stack=stack, ylabel=ylabel, blinder=blinder, plottersettings=plottersettings)
 
     def append(self, stackatino):
         self.stackatinos.append(stackatino)
@@ -506,3 +587,34 @@ class Blinder(object):
 
     def get_blinded_bins(self):
         return [bin_idx for bin_idx, bin_is_blinded in enumerate(self.get_blinding()) if bin_is_blinded]
+
+
+class PlotterSettings(object):
+    def __init__(self, variable, region, rescale):
+        self.region = region
+        self.variable = variable
+        self.rescale = rescale
+
+        # Processed attributes
+        self.backgrounds_histos = None
+        self.signals_histos = None
+        self.tot_signals_histo = None
+        self.tot_backgrounds_histo = None
+        self.data_histo = None
+        self.total_mc_histo = None
+        self.category_to_sample_histos= None
+        self.region_targets_histos = None
+
+
+        self.mc_stack = None
+        self.data_stack = None
+        self.data_over_mc_ratio = None
+        self.mc_over_mc_ratio = None
+        self.signif_ratios  = None
+
+
+class PlotIdentifier(object):
+    def __init__(self, plottersettings):
+        self.variable = plottersettings.variable.name
+        self.region   = plottersettings.region.name
+        self.rescale  = plottersettings.rescale.name

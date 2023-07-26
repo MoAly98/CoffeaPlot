@@ -19,8 +19,6 @@ os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 # CoffeaPlot imports
 from classes import Histogram, Histograms, SuperSample
 
-PROCESS = True
-
 class CoffeaPlotProcessor(processor.ProcessorABC):
 
     def __init__(self, CoffeaPlotSettings):
@@ -90,8 +88,8 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                 rescaled_weights = filt_reg['weights']
 
                             if idxing == 'nonevent':
-                                assert len(histo_compute.args) == 1, "Composite variables are not supported when indexing by nonevent"
-
+                                if len(histo_compute.args) != 1:
+                                    raise NotImplementedError("Composite variables are not supported when indexing by nonevent")
                                 w, arg = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute.args[0]])
                                 data = histo_compute.fn(arg)
                                 w = ak.flatten(w)
@@ -108,8 +106,12 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                 tot_histo_obj = Histogram(name, deepcopy(h), 'total', region_to_plot.name , rescaling.name)
                             else:
                                 tot_histo_obj = Histogram(name, 0, 'total', region_to_plot.name , rescaling.name)
+
                             accum[samp_histo_obj] = samp_histo_obj
-                            accum[tot_histo_obj] = tot_histo_obj
+                            if sample == samples[0]:
+                                accum[tot_histo_obj] = tot_histo_obj
+                            else:
+                                accum[tot_histo_obj] += tot_histo_obj
 
                     else:
                         # TODO:: 2D

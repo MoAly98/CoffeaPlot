@@ -1,7 +1,5 @@
 
 import os, re
-import importlib.util
-from inspect import getmembers, isfunction, isroutine
 from glob import glob
 from coffea.processor import AccumulatorABC
 from logger import ColoredLogger as logger
@@ -106,8 +104,9 @@ class Sample(object):
 
         self.ref = UseAsRef
 
-        if direcs is not None:
-            raise NotImplementedError("Specifying NTuple directories per sample is not implemented yet")
+        # Is this a super sample
+        self.is_super = False
+
 
     def create_fileset(self):
 
@@ -143,7 +142,7 @@ class SuperSample(Sample):
         self.regexes = regexes
         self.direcs = direcs
         self.files = []
-
+        self.is_super = True
 
     def add_subsample(self, subsample):
         self.subsamples.append(subsample)
@@ -195,6 +194,8 @@ class Histogram(object):
         self.stylish_sample = None
         self.stylish_region = None
         self.stylish_rescale = None
+
+        self.color = None
 
     def set_label(self, label):
         self.label = label
@@ -268,6 +269,14 @@ class Histograms(AccumulatorABC):
                 # Initialize the histogram in the accumulator if it doesn't exist
                 self.to_plot[key] = value
 
+    def __getitem__(self, histo):
+
+        if isinstance(histo, Histogram):
+            key = (histo.name, histo.sample, histo.region, histo.rescale)
+        else:
+            key = histo
+        return self.to_plot[key]
+
     def identity(self):
         # Create and return a new instance of the accumulator
         return Histograms()
@@ -285,119 +294,3 @@ class Histograms(AccumulatorABC):
         else:
             key = histo
         self.to_plot[key] = h
-
-
-class CoffeaPlotSettings(object):
-
-    log = logger()
-
-    def __init__(self):
-
-        self.dumpdir = None
-        self.ntuplesdirs = None
-        self.trees = None
-        self.mcweight = None
-        self.samples_list = None
-        self.regions_list = None
-        self.variables_list = None
-        self.rescales_list = None
-
-        # Optional
-        self.inputhistos = None
-        self.helpers = None
-        self.runprocessor = None
-        self.runplotter = None
-        self.skipnomrescale = None
-        self.loglevel = None
-
-        # Processed attributes
-        self.functions = None
-        self.tree_to_dir = None
-
-
-
-    def setup_helpers(self):
-
-        # Set up logger
-        log = logger()
-        log.info("Setting up helper functions")
-
-        # =========== Set up helpers =========== #
-        helpers = self.helpers
-        functions = {}
-        if helpers is not None:
-            for i, helper in enumerate(helpers):
-                log.debug(f"Importing helper functions from {helper}")
-                spec = importlib.util.spec_from_file_location(f'my_module_{i}', helper)
-                my_helper = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(my_helper)
-                methods = dict((x, y) for x, y in getmembers(my_helper, isfunction))
-                functions.update(methods)
-
-        self.functions = functions
-
-    def setup_inputpaths(self):
-
-        # Set up logger
-        log = logger()
-        log.info("Running checks on input paths")
-
-        # =========== Checks on input direcotries =========== #
-        if self.ntuplesdirs is not None:
-            for ntupsdir in self.ntuplesdirs:
-                if not os.path.exists(ntupsdir):
-                    log.error(f'Ntuple directory {ntupsdir} does not exist')
-
-        if self.inputhistos is not None:
-            if self.runprocessor:
-                log.warning(f'You provided a histogram files {self.inputhistos} but you are running the processor. The histogram file will be ignored')
-                self.inputhistos = None
-            for inhistofile in self.inputhistos:
-                if not os.path.exists(inhistofile):
-                    log.error(f'Input histogram file {inhistofile} does not exist')
-
-
-
-    def setup_outpaths(self):
-
-        # Set up logger
-        log = logger()
-        log.info("Preparing output paths")
-
-        # =========== Prepare output directory =========== #
-        os.makedirs(self.dumpdir, exist_ok=True)
-
-        self.tree_to_dir = { tree: {
-                                'datadir': None,
-                                'mcmcdir': None,
-                                'datamcdir': None,
-                                'separationdir': None,
-                                'significancedir': None,
-                                'tablesdir': None,
-                                }
-                        for tree in self.trees
-                        }
-
-        for tree in self.trees:
-            # ==== Data ==== #
-            datadir = f'{self.dumpdir}/data/'
-            self.tree_to_dir[tree]['datadir'] = datadir
-            os.makedirs(datadir, exist_ok=True)
-
-            # ==== Plots ==== #
-            significancedir = f'{self.dumpdir}/plots/{tree}/Significance'
-            self.tree_to_dir[tree]['significancedir'] = significancedir
-            os.makedirs(significancedir, exist_ok=True)
-
-            mcmcdir = f'{self.dumpdir}/plots/{tree}/MCMC'
-            self.tree_to_dir[tree]['mcmcdir'] = mcmcdir
-            os.makedirs(mcmcdir, exist_ok=True)
-
-            datamcdir = f'{self.dumpdir}/plots/{tree}/DataMC'
-            self.tree_to_dir[tree]['datamcdir'] = datamcdir
-            os.makedirs(datamcdir, exist_ok=True)
-
-            # === Tables === #
-            tablesdir = f'{self.dumpdir}/tables/{tree}'
-            self.tree_to_dir[tree]['tablesdir'] = tablesdir
-            os.makedirs(tablesdir, exist_ok=True)

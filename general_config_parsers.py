@@ -1,4 +1,5 @@
-from classes import CoffeaPlotSettings as CPS, Sample, SuperSample, Region, Rescale, Variable, Variables, Functor
+from classes import Sample, SuperSample, Region, Rescale, Variable, Variables, Functor
+from config_classes import CoffeaPlotSettings as CPS
 from logger import ColoredLogger as logger
 import numpy as np
 
@@ -36,8 +37,10 @@ def parse_general(general_cfg: dict, log: logger = None):
     Settings.trees        = general_cfg['trees']
     Settings.inputhistos  = general_cfg['inputhistos']
     Settings.helpers      = general_cfg['helpers']
+    Settings.blinding     = general_cfg['blinding']
     Settings.runprocessor = general_cfg['runprocessor']
     Settings.runplotter   = general_cfg['runplotter']
+    Settings.makeplots    = general_cfg['makeplots']
     Settings.skipnomrescale = general_cfg['skipnomrescale']
     Settings.loglevel     = general_cfg['loglevel']
     Settings.nworkers  = general_cfg['nworkers']
@@ -109,7 +112,6 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None
     None
     '''
 
-
     # =========== Set up samples =========== #
     log.info(f"Setting up samples ...")
     samples_list = []
@@ -118,6 +120,7 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None
 
     for sample in samples_cfg:
 
+        # Check if sample is a SuperSample
         is_supersample = False
         if 'subsamples' in sample:
             subsamples = sample['subsamples']
@@ -185,9 +188,8 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None
             else:
                 log.debug(f"Sample {sample_name} has no special weight.")
 
-
-            sample_ignore_mcweight = subsample['ignoremcweight']
             # Check if sample should use MCWeight
+            sample_ignore_mcweight = subsample['ignoremcweight']
             if sample_is_data:
                 mc_weight_functor = None
             elif sample_ignore_mcweight:
@@ -309,6 +311,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings, log: logger = None):
         if isinstance(variable['binning'], str):
             minbin, maxbin, nbins = variable['binning'].strip().split(',')
             binning = np.linspace(float(minbin), float(maxbin), int(nbins))
+            print("Binning is", binning)
         else:
             binning = variable['binning']
 

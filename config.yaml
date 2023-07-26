@@ -2,7 +2,8 @@ General:
   DumpDir: "./outputs/TestConfig/"
   Helpers: 'config_helper.py'
   Trees: 'nominal_Loose'
-  RunProcessor: True
+  RunProcessor: False
+  RunPlotter: True
   LogLevel: 3 # 0: ERRORS, 1: WARNINGS, 2: INFO (default), 3: DEBUG
   NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
                 '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
@@ -12,6 +13,8 @@ General:
     - 'MC_weight'
     - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
   SkipNomRescale: False # Nominal re-scaling should be added automatically by default
+  #Plots: [MCMC]
+  Blinding: 0.00333
 
 Variables:
   1D:
@@ -46,7 +49,7 @@ Variables:
       - Name: njets
         Label: '$N_{jets}$'
         Method: 'njets'
-        Binning: 0,5,6
+        Binning: 2.5,4.5,3
 
 supersamples:
   - Name: ttbar
@@ -375,9 +378,74 @@ Regions:
 #       - ttb_1p25_rescale
 #       - ['weights']
 
-# DataMC:
-#   Modes: ['DATA_OVER_MC', 'DATA_MINUS_MC', 'DATA_OVER_BKG', 'DATA_MINUS_BKG']
+#AllPlots: Settings for all plots, overwrite by individual plot settings
 
-# MCMC:
-#   -
+DataMC:
+  Data: 'data' # Default data sample
+  MC:   'total' # Default MC total sample, support a list of samples and sum them up
+  FigureSize: [24, 18] # Default figure size
+  FigureTitle: False # Default figure title 'Region = {region} & Rescale = {rescale}'
+  Experiment: 'ATLAS'
+  Lumi: 140
+  Com: 13
+  PlotStatus: 'Internal'
+  Main:
+    #YRange: null
+    YLog: True
+    Ynorm: False
+    YLabel: 'Number of Events' # If None, default is Number of Events for ynorm = False, Fraction of events per bin for ynorm = True
+    YLabelFontSize: 35
+    XLabelFontSize: 35
+    LegendShow: True
+    LegendOutside: True
+
+  Ratio:
+    #YRange: null
+    YLog: False
+    YLabel: 'Data/MC'
+    LegendShow: False
+    LegendOutside: False
+    LegendLoc: 'best'
+
+# Support many ref samples, one ratio plot per reference sample...
+MCMC:
+  RefSamples: 'ttb'
+  FigureSize: [24, 18]
+  FigureTitle: False # Default figure title 'Region = {region} & Rescale = {rescale}'
+  Experiment: 'ATLAS'
+  Lumi: 140
+  Com: 13
+  PlotStatus: 'Internal'
+  Main:
+    #YRange: null
+    YLog: True
+    Ynorm: False
+    YLabel: 'Number of Events' # If None, default is Number of Events for ynorm = False, Fraction of events per bin for ynorm = True
+    LegendShow: True
+    LegendOutside: False
+
+Significance:
+  FigureSize: [24, 18]
+  FigureTitle: False # Default figure title 'Region = {region} & Rescale = {rescale}'
+  Experiment: 'ATLAS'
+  Lumi: 140
+  Com: 13
+  PlotStatus: 'Internal'
+
+  Main:
+    #YRange: null
+    YLog: True
+    Ynorm: False
+    YLabel: 'Number of Events' # If None, default is Number of Events for ynorm = False, Fraction of events per bin for ynorm = True
+    LegendShow: True
+    LegendOutside: False
+
+  Ratio:
+    #YRange: null
+    YLog: False
+    #YLabel: null
+    LegendShow: False
+    LegendOutside: False
+    LegendFontSize: 20
+    LegendLoc: 'upper right'
 
