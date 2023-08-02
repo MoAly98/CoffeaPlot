@@ -53,14 +53,13 @@ def parse_general(general_cfg: dict, log: logger = None):
     general_mc_weight = general_cfg['mcweight']
     if general_mc_weight is not None:
         mc_weight_functor = create_weights_functor(general_mc_weight, Settings, 'MC', log)
+        log.info(f"Using the following function for MC weights: {mc_weight_functor.fn.__repr__()}")
 
     Settings.mcweight     = mc_weight_functor
 
     log.debug(f"The following general settings were parsed:")
     for attr, value in general_cfg.items():
         log.debug(f"{attr} = {value}")
-
-    log.info(f"Using the following function for MC weights: {mc_weight_functor.fn.__repr__()}")
 
     return Settings
 
@@ -315,6 +314,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings, log: logger = None):
         else:
             binning = variable['binning']
 
+
         if same_name_obj_found(variable_name, variables_list):
             log.error(f"Variable {variable_name} is defined more than once. Please check your configuration file.")
 
@@ -324,7 +324,8 @@ def parse_variables(variables_cfg, CoffeaPlotSettings, log: logger = None):
                                           label = variable['label'],
                                           regions = variable['regions'],
                                           idx_by = variable['idxby'],
-                                          dim = 1))
+                                          dim = 1,
+                                          rebin = variable['rebin']))
 
     for variable in variables_cfg['2d']:
         continue

@@ -3,6 +3,9 @@ import os, re
 from glob import glob
 from coffea.processor import AccumulatorABC
 from logger import ColoredLogger as logger
+# Histogramming imports
+import hist
+import numpy as np
 
 class Functor(object):
     def __init__(self, fn, args):
@@ -15,7 +18,7 @@ class Functor(object):
         return self.fn(*data_args)
 
 class Variable(object):
-    def __init__(self, name, howto, binning, label, regions=['.*'], idx_by = 'event', dim = None):
+    def __init__(self, name, howto, binning, label, regions=['.*'], idx_by = 'event', dim = None, rebin = None):
         self.name = name
         self.howto = howto
         self.binning = binning
@@ -26,6 +29,8 @@ class Variable(object):
 
         self.dim = dim
         assert self.dim in [1,2]
+
+        self.rebin = rebin
 
     def set_dim(self, dim):
         self.dim = dim
@@ -134,15 +139,19 @@ class Sample(object):
 
 class SuperSample(Sample):
 
-    def __init__(self, name, subsamples = [], regexes = None, direcs = None):
+    def __init__(self, name, subsamples = None, regexes = None, direcs = None):
 
         self.name = name
+        if subsamples is None:
+            subsamples = []
         self.subsamples = subsamples
         # Get files for sample
         self.regexes = regexes
         self.direcs = direcs
         self.files = []
         self.is_super = True
+
+
 
     def add_subsample(self, subsample):
         self.subsamples.append(subsample)
@@ -253,6 +262,37 @@ class Histogram(object):
 
     def __str__(self):
             return f'Hist: {self.name}, Sample: {self.sample}, Region: {self.region}, Rescale: {self.rescale}'
+
+    def rebin(self, new_edges):
+        # Need to match storage of incoming histogram
+        histo = self.h
+        new_axis = hist.axis.Variable(new_edges, name=histo.axes[0].name)
+        hnew = hist.Hist.new.Var(new_edges, name=histo.axes[0].name, label=histo.label, flow=True).Weight()
+        new_edges = new_axis.edges
+        sw =  np.array(histo.values())
+        sw2 =  np.array(histo.variances())
+
+        edges_correct = []
+        for ne in new_edges:
+            available = False
+            for oe in histo.axes[0].edges:
+                if (ne-oe)/oe < 1e-3:
+                    available = True
+            edges_correct.append(available)
+
+        assert all(edges_correct)
+        binmap = np.digitize(histo.axes[0].centers, new_edges)
+        new_sw, new_sw2 = [], []
+
+        for bin_num in sorted(set(binmap)):
+            old_bins_in_this_bin = np.where(binmap == bin_num)[0]
+            w_slice = sw[old_bins_in_this_bin].sum()
+            sw2_slice = sw2[old_bins_in_this_bin].sum()
+            new_sw.append(w_slice)
+            new_sw2.append(sw2_slice)
+        hnew[...] = np.stack([new_sw, new_sw2], axis=-1)
+
+        self.h = hnew
 
 class Histograms(AccumulatorABC):
     def __init__(self):
