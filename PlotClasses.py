@@ -129,7 +129,6 @@ class CoffeaPlot(object):
 
             # A stackatino can be the sum of some yields (stackatino = category, items are samples)
             for stackatino in sorted_stackatinos:
-
                 # Adjust the histgoram that is being plotted if y-axis is normalized
                 if not self.settings.main.ynorm:
                     # Just pass the histogram if not normalizing
@@ -139,7 +138,6 @@ class CoffeaPlot(object):
                     if self.settings.main.ylog:
                         print("WARNING:: Cannot set log scale when normalizing to unity")
                         self.main.ylog = False
-
                     # Divide each bin by integral
                     histograms.append(stackatino.sum.h/stackatino.sum.h.values().sum())
 
@@ -157,7 +155,6 @@ class CoffeaPlot(object):
             else:
                 # If we are not summing stackatinos, use largest bin in any one histogram to set ymax
                 max_bin_contents.append(max(max(histogram.values()) for histogram in histograms))
-
 
             # If the stack needs to blinded, shade the blinded bins and set the bin contents to 0
             if stack.blinder is not None:
@@ -178,7 +175,6 @@ class CoffeaPlot(object):
             if self.settings.main.legend_outside:
                 main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.main.legend_ncol, fontsize=self.settings.main.legend_fontsize)
             else:
-                print("XX",self.settings.main.legend_loc)
                 main_ax.legend(loc=self.settings.main.legend_loc, ncol=self.settings.main.legend_ncol, fontsize=self.settings.main.legend_fontsize)
 
         # ==================== X-axis ==================== #
@@ -199,13 +195,11 @@ class CoffeaPlot(object):
         # ===================== Y-axis ==================== #
         # Set the y-axis label
         if self.settings.main.ylabel is not None:
-            print(self.settings.main.ylabelfontsize)
             main_ax.set_ylabel(self.settings.main.ylabel, fontsize=self.settings.main.ylabelfontsize)
         else:
             if self.settings.main.ynorm:
                 main_ax.set_ylabel('Fraction of events / bin', fontsize=self.settings.main.ylabelfontsize)
             else:
-                print(self.settings.main.ylabelfontsize)
                 main_ax.set_ylabel('Number of Events', fontsize=self.settings.main.ylabelfontsize)
 
         # Set the y-axis scale
@@ -216,7 +210,7 @@ class CoffeaPlot(object):
         if self.settings.main.yrange is not None:
             main_ax.set_ylim(self.settings.main.yrange)
         else:
-            if self.settings.main.ylog is not None:
+            if self.settings.main.ylog:
                 main_ax.set_ylim(1., max(max_bin_contents)*20)
             else:
                 main_ax.set_ylim(0., max(max_bin_contents)*1.25)
@@ -225,8 +219,6 @@ class CoffeaPlot(object):
         mplhep.atlas.label(self.settings.plot_status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
 
     def plot_ratio_canvases(self, ratio_plot, ratio_ax):
-
-
 
         # Loop over ratio items in the ratio plot
         for ratio_item in ratio_plot.ratio_items:
@@ -582,7 +574,6 @@ class Blinder(object):
         bkg_vals     = self.bkg.values()
         sqrt_bkg     = np.sqrt(bkg_vals, out = np.full_like(bkg_vals, 0), where = bkg_vals>=0)
         s_over_sqrtb = np.divide(signal_vals,  bkg_vals, out = np.full_like(bkg_vals, 0),  where = bkg_vals>0)
-        #print(s_over_sqrtb)
         return s_over_sqrtb > self.threshold
 
     def get_blinded_bins(self):
