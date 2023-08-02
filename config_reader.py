@@ -9,7 +9,7 @@ def validate(indict):
     return validated
 
 def process(cfgp):
-    with open(f'config.yaml','r') as f:
+    with open(cfgp,'r') as f:
         output = yaml.safe_load(f)
         validated = validate(output)
 
