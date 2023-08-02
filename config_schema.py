@@ -64,44 +64,44 @@ axes_schema = {
 
 main_axis_schema = {
                     **axes_schema,
-                    Optional('legendshow', default = False): bool,
+                    Optional('legendshow', default = True): bool,
                     Optional('ynorm', default = True): bool,
                 }
 
 main_axis_defaults = {
-                'ylabel': None,
-                'ylabelfontsize': None,
+                'ylabel': 'Fraction of events / bin',
+                'ylabelfontsize': 26,
                 'ylog': False,
                 'yrange': None,
                 'xrange': None,
                 'xlog': False,
-                'xlabelfontsize': None,
-                'legendfontsize': None,
+                'xlabelfontsize': 26,
+                'legendfontsize': 26,
                 'legendloc': None,
-                'legendncol': None,
-                'legendoutside': None,
-                'legendshow': None,
-                'ynorm': None,
+                'legendncol': 2,
+                'legendoutside': False,
+                'legendshow': True,
+                'ynorm': True,
 }
 
 ratio_axis_schema = {
                     **axes_schema,
-                    Optional('legendshow', default = True): bool,
+                    Optional('legendshow', default = False): bool,
                 }
 
 ratio_axis_defaults = {
                 'ylabel': None,
-                'ylabelfontsize': None,
+                'ylabelfontsize': 26,
                 'ylog': False,
                 'yrange': None,
                 'xrange': None,
                 'xlog': False,
-                'xlabelfontsize': None,
-                'legendfontsize': None,
+                'xlabelfontsize': 26,
+                'legendfontsize': 26,
                 'legendloc': None,
-                'legendncol': None,
-                'legendoutside': None,
-                'legendshow': None,
+                'legendncol': 2,
+                'legendoutside': False,
+                'legendshow': False,
 }
 
 general_plot_settings_schema = {
@@ -128,17 +128,16 @@ default_plot_settings= {
 
 
 plots_with_ratio_schema = {
-                            Optional('figuresize', default = None): And([int], lambda x: len(x) == 2),
-                            Optional('figuretitle', default = None): Or(str, bool),
-                            Optional('figuretitlefontsize', default = None): int,
-                            Optional('experiment', default = None): str,
-                            Optional('lumi', default = None): Or(int, float),
-                            Optional('com', default = None): Or(int, float),
-                            Optional('plotstatus', default = None): str,
-                            Optional('height_ratios', default = None): And([int]), # Ratio of main to ratio canvas
+                            **general_plot_settings_schema,
                             Optional('main', default = main_axis_defaults): main_axis_schema,
                             Optional('ratio', default = ratio_axis_defaults): ratio_axis_schema,
                         }
+
+default_plots_with_ratio = {
+                            **default_plot_settings,
+                            'main': main_axis_defaults,
+                            'ratio': ratio_axis_defaults,
+}
 
 
 datamc_schema = {
@@ -147,10 +146,22 @@ datamc_schema = {
                     Optional('mc', default = None): str
                 }
 
+default_datamc = {
+                    **default_plots_with_ratio,
+                    'data': None,
+                    'mc': None
+                }
+
 mcmc_schema =   {
                     **plots_with_ratio_schema,
                     Optional('refsamples', default = None): str
                 }
+
+default_mcmc = {
+                    **default_plots_with_ratio,
+                    'refsamples': None
+                }
+
 
 schema = Schema({
                 'general':
@@ -159,7 +170,7 @@ schema = Schema({
                         'trees': Use(string_to_list),
                         Optional('ntuplesdirs', default = None): Use(string_to_list),
                         Optional('mcweight', default = None): Or(str, Use(float), Use(functor_input)), # Name of branch, value, or functor args
-                        Optional('inputhistos', default = None): str,
+                        Optional('inputhistos', default = None):  Use(string_to_list),
                         Optional('blinding', default = 0): Use(float),
                         Optional('helpers', default = None): Use(string_to_list),
                         Optional('runprocessor', default = False): bool,
@@ -180,6 +191,7 @@ schema = Schema({
                                     Optional('regions', default = ['.*']): Use(string_to_list),
                                     Optional('label', default = None): str,
                                     Optional('idxby', default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
+                                    Optional('rebin', default = None): [Use(float)],
                                 }
                             ],
                         Optional('2d', default = []): [{}],# Not implemented yet
@@ -194,7 +206,7 @@ schema = Schema({
                             'name': str,
                             'selection': Use(functor_input),
                             Optional('label', default = None): str,
-                            Optional('targets', default = None): Or(str, [str]),
+                            Optional('targets', default = []): Or(str, [str]),
                         }
                     ],
 
@@ -204,11 +216,11 @@ schema = Schema({
                             'name': str,
                             'method': Or(float, Use(functor_input)),
                             Optional('label', default = None): str,
-                            Optional('affects', default = None): Or(str, [str]),
+                            Optional('affects', default = []): Or(str, [str]),
                         }
                     ],
                 Optional('plots', default = default_plot_settings): general_plot_settings_schema,
-                Optional('datamc', default = {}): datamc_schema,
-                Optional('mcmc', default = {}): mcmc_schema,
-                Optional('significance', default = {}): plots_with_ratio_schema,
+                Optional('datamc', default = default_datamc): datamc_schema,
+                Optional('mcmc', default = default_mcmc): mcmc_schema,
+                Optional('significance', default = default_plots_with_ratio): plots_with_ratio_schema,
                 })
