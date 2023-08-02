@@ -310,7 +310,6 @@ def parse_variables(variables_cfg, CoffeaPlotSettings, log: logger = None):
         if isinstance(variable['binning'], str):
             minbin, maxbin, nbins = variable['binning'].strip().split(',')
             binning = np.linspace(float(minbin), float(maxbin), int(nbins))
-            print("Binning is", binning)
         else:
             binning = variable['binning']
 
