@@ -6,7 +6,7 @@ from collections import defaultdict
 from copy import copy, deepcopy
 
 from logger import ColoredLogger as logger
-from utils import rebin
+
 # TODO:: FilterNones function to get only settings that have been specified by user
 
 
