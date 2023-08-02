@@ -6,10 +6,11 @@ from collections import defaultdict
 from copy import copy, deepcopy
 
 from logger import ColoredLogger as logger
+from utils import rebin
 # TODO:: FilterNones function to get only settings that have been specified by user
 
 
-def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
+def sort_samples(histograms, samples_list, PlotSettings, rebin = None, log: logger = None):
 
     region, rescale, variable = PlotSettings.region, PlotSettings.rescale, PlotSettings.variable
     region_targets_names = region.targets
@@ -40,6 +41,9 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
                 category_histogram.stylish_region = region.label
                 category_histogram.stylish_rescale = rescale.label
 
+                if rebin is not None:
+                    category_histogram.rebin(rebin)
+
                 if sample.category is not None:
                     category_to_samples[sample.category].append(category_histogram)
                 else:
@@ -54,6 +58,8 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
                 region_target_histogram.stylish_sample = sample.label
                 region_target_histogram.stylish_region = region.label
                 region_target_histogram.stylish_rescale = rescale.label
+                if rebin is not None:
+                    region_target_histogram.rebin(rebin)
                 region_targets.append(region_target_histogram)
 
             # ========== Support one Reference MC sample ========== #
@@ -65,6 +71,9 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
                 refMC.stylish_sample = sample.label
                 refMC.stylish_region = region.label
                 refMC.stylish_rescale = rescale.label
+                if rebin is not None:
+                    refMC.rebin(rebin)
+
             elif sample.ref == True and refMC is not None:
                 log.error("More than one reference MC sample found")
 
@@ -77,6 +86,8 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
                 bkg.stylish_sample = sample.label
                 bkg.stylish_region = region.label
                 bkg.stylish_rescale = rescale.label
+                if rebin is not None:
+                    bkg.rebin(rebin)
                 backgrounds.append(bkg)
 
             # ============== Group Signals ============== #
@@ -88,6 +99,8 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
                 sig.stylish_sample = sample.label
                 sig.stylish_region = region.label
                 sig.stylish_rescale = rescale.label
+                if rebin is not None:
+                    sig.rebin(rebin)
                 signals.append(sig)
 
             # ============== Data ============== #
@@ -100,6 +113,8 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
                     data.stylish_sample = sample.label
                     data.stylish_region = region.label
                     data.stylish_rescale = rescale.label
+                    if rebin is not None:
+                        data.rebin(rebin)
                 else:   log.error("More than one data sample found")
             else:
                 log.error("Sample type not recognised", sample.type)
@@ -112,7 +127,8 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
         data.stylish_sample = 'Data (MC)'
         data.stylish_region = region.label
         data.stylish_rescale = rescale.label
-
+        if rebin is not None:
+            data.rebin(rebin)
     PlotSettings.data_histo = data
 
     # ============== Backgrounds Histo ============== #
@@ -144,6 +160,8 @@ def sort_samples(histograms, samples_list, PlotSettings, log: logger = None):
 
     # ============== Total Histo ============== #
     total_histogram =  histograms[(variable.name, 'total', region.name, rescale.name)]
+    if rebin is not None:
+        total_histogram.rebin(rebin)
     total_histogram.label = variable_label
     total_histogram.stylish_sample = 'Total'
     tot_signals_histogram.stylish_region = region.label
@@ -178,7 +196,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
                 PlotSettings = PlotterSettings(variable, region, rescale )
 
                 # Sort samples and save them to PlotSettings
-                sort_samples(histograms, CoffeaPlotSettings.samples_list, PlotSettings, log)
+                sort_samples(histograms, CoffeaPlotSettings.samples_list, PlotSettings, variable.rebin, log)
                 # ================================================ #
                 # ============== Create the blinding box ============== #
                 # ================================================ #
@@ -235,7 +253,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
                 log.info(f"Preparing MC/MC ratio")
                 if PlotSettings.refMC_histo is not None:
                     for mc_histogram in PlotSettings.backgrounds_histos+PlotSettings.signals_histos:
-                        mc_over_mc_ratioitem = RatioItem(mc_histogram, refMC, label = None, color = mc_histogram.color, linewidth=3)
+                        mc_over_mc_ratioitem = RatioItem(mc_histogram, PlotSettings.refMC_histo, label = None, color = mc_histogram.color, linewidth=3)
                         mc_over_mc_ratio.append(mc_over_mc_ratioitem)
                 else:
                     mc_over_mc_ratio = None
@@ -324,92 +342,3 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths, log):
         if 'SIGNIF' in makeplots:
             outpath = outpaths['significancedir']
             make_significance(plot, CoffeaPlotSettings.significance_plot_settings, outpath)
-
-
-    # # ====== Loop over stacks ========= #
-    # for plot_idx in range(plot_settings_list):
-    #     mc_stack = mc_stacks[plot_idx]
-    #     data_stack = data_stacks[plot_idx]
-    #     data_over_mc_ratio = data_over_mc_ratios[plot_idx]
-    #     signif_ratio = signif_ratios[plot_idx]
-
-    #     if len(mc_over_mc_ratios) > 0:
-    #         mc_over_mc_ratio = mc_over_mc_ratios[plot_idx]
-
-    #     relevant_combo = mc_stack.combo
-
-    #     stack_data_over_mc_settings = {
-    #         'figure_size': (24, 18),
-    #         'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
-    #         'experiment': 'ATLAS',
-    #         'lumi': 139,
-    #         'com': 13,
-    #         'plot_status': 'Internal',
-    #         'outfile': f"{plot_dir}/data_over_mc/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
-    #         'ratio_yrange': (0.5, 1.5),
-    #         'ratio_ylabel': 'Data/MC',
-    #         'ratio_ylog': False,
-    #         'main_yrange': None,
-    #         'main_ylog': True,
-    #         'main_ylabel': 'Number of Events',
-    #     }
-
-    #     stack_with_datamc = CoffeaPlot([mc_stack, data_stack], data_over_mc_ratio, **stack_data_over_mc_settings)
-    #     stack_with_datamc.plot()
-
-    #     stack_signif_settings = {
-    #         'figure_size': (24, 18),
-    #         'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
-    #         'experiment': 'ATLAS',
-    #         'lumi': 139,
-    #         'com': 13,
-    #         'plot_status': 'Internal',
-    #         'outfile': f"{plot_dir}/Significance/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
-    #         'ratio_yrange': None,
-    #         'ratio_ylabel': None,
-    #         'ratio_ylog': False,
-    #         'main_yrange': None,
-    #         'main_ylog': True,
-    #         'main_ylabel': 'Number of Events',
-    #     }
-
-    #     stack_with_signif = CoffeaPlot([mc_stack, data_stack], signif_ratio, **stack_signif_settings)
-    #     stack_with_signif.plot()
-
-    #     # mcmc_settings = {
-    #     #     'figure_size': (24, 18),
-    #     #     'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
-    #     #     'experiment': 'ATLAS',
-    #     #     'lumi': 139,
-    #     #     'com': 13,
-    #     #     'plot_status': 'Internal',
-    #     #     'outfile': f"{plot_dir}/MC_v_MC/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
-    #     #     'main_yrange': None,
-    #     #     'main_ylog': None,
-    #     #     'main_ylabel': 'Fraction of Total Events/bin',
-    #     #     'main_ynorm': True,
-    #     #     'ratio_ylabel': 'Alt/Ref'
-    #     # }
-
-    #     mcmc_settings = {
-    #         'figure_size': (24, 18),
-    #         'figure_title': f"Region = {relevant_combo.region} & Rescale = {relevant_combo.rescale}",
-    #         'experiment': 'ATLAS',
-    #         'lumi': 139,
-    #         'com': 13,
-    #         'plot_status': 'Internal',
-    #         'outfile': f"{plot_dir}/MC_v_MC/{relevant_combo.variable}__{relevant_combo.region}_{relevant_combo.rescale}.pdf",
-    #         'main_yrange': None,
-    #         'main_ylog': None,
-    #         'main_ylabel': 'Fraction of Total Events/bin',
-    #         'main_ynorm': True,
-    #         'ratio_ylabel': 'Alt/Ref',
-    #         'ratio_yrange': (0, 2),
-    #     }
-
-
-    #     mcmc_stack = deepcopy(mc_stack)
-    #     mcmc_stack.stack = False
-    #     mcmc_stack.bar_type = 'step'
-    #     mcmc_plot = CoffeaPlot(mcmc_stack, mc_over_mc_ratio, **mcmc_settings)
-    #     mcmc_plot.plot()
