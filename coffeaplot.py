@@ -10,7 +10,7 @@ from coffea import processor
 from coffea.nanoevents import  BaseSchema
 from pprint import pprint
 import cloudpickle as pickle
-
+import argparse
 # Import coffeaplot packages
 from config_reader import process as process_config
 from logger import ColoredLogger as logger
@@ -19,6 +19,7 @@ from general_config_parsers import parse_general, parse_samples, parse_regions, 
 from plots_config_parsers import parse_datamc, parse_mcmc, parse_significance, parse_general_plots
 
 from plotter import prepare_1d_plots, make_plots
+
 # ========================================= #
 # =========== Set up functions =========== #
 # ========================================= #
@@ -54,10 +55,17 @@ def setup_logging(log: logger,loglevel: int):
 
     log.info(f"Logging level set to {loglevel}")
 
+def argparser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("cfg",   help="Configuration file to run")
+    return parser.parse_args()
+
 
 def main():
 
-    cfgp = 'config.yaml'
+    args = argparser()
+    cfgp = args.cfg
+
     # Prepare logger
     log = logger()
     log.info("Parsing and Validating config file")
@@ -72,7 +80,6 @@ def main():
     CoffeaPlotSettings.setup_outpaths()
     CoffeaPlotSettings.setup_helpers()
 
-    # =========== Set up samples, regions, variables, and rescales =========== #
     all_samples_cfg = validated['samples'] + validated['supersamples']
     parse_samples(all_samples_cfg, CoffeaPlotSettings, log)
     parse_regions(validated['regions'], CoffeaPlotSettings, log)
@@ -90,15 +97,19 @@ def main():
 
     log.info(f"Ready to process {total_histograms} histograms")
 
-    # =================== Set up plot settings =================== #
-    GeneralPlotSettings      = parse_general_plots(validated['plots'])
-    DataMCPlotSettings       = parse_datamc(validated['datamc'], GeneralPlotSettings, log)
-    MCMCPlotSettings         = parse_mcmc(validated['mcmc'], GeneralPlotSettings, log)
-    SignificancePlotSettings = parse_significance(validated['significance'], GeneralPlotSettings, log)
+    if CoffeaPlotSettings.runplotter:
+        # =================== Set up plot settings =================== #
+        GeneralPlotSettings      = parse_general_plots(validated['plots'])
+        if 'DATAMC' in CoffeaPlotSettings.makeplots:
+            DataMCPlotSettings       = parse_datamc(validated['datamc'], GeneralPlotSettings, log)
+            CoffeaPlotSettings.datamc_plot_settings       = DataMCPlotSettings
+        if 'MCMC' in CoffeaPlotSettings.makeplots:
+            MCMCPlotSettings         = parse_mcmc(validated['mcmc'], GeneralPlotSettings, log)
+            CoffeaPlotSettings.mcmc_plot_settings         = MCMCPlotSettings
+        if 'SIGNIF' in CoffeaPlotSettings.makeplots:
+            SignificancePlotSettings = parse_significance(validated['significance'], GeneralPlotSettings, log)
+            CoffeaPlotSettings.significance_plot_settings = SignificancePlotSettings
 
-    CoffeaPlotSettings.datamc_plot_settings       = DataMCPlotSettings
-    CoffeaPlotSettings.mcmc_plot_settings         = MCMCPlotSettings
-    CoffeaPlotSettings.significance_plot_settings = SignificancePlotSettings
 
 
     # =========== Set up fileset =========== #
@@ -117,7 +128,6 @@ def main():
 
         datadir = CoffeaPlotSettings.tree_to_dir[tree]['datadir']
         if CoffeaPlotSettings.runprocessor:
-
             run = processor.Runner(executor=executor, schema=BaseSchema, skipbadfiles=True)
             out = run(fileset, tree, CoffeaPlotProcessor(CoffeaPlotSettings))
 
@@ -126,19 +136,66 @@ def main():
             with open(f"{datadir}/data___{tree}.pkl", "wb") as f:
                 pickle.dump(out, f)
         else:
-            with open(f"{datadir}/data___{tree}.pkl", "rb") as f:
-                out = pickle.load(f)
+            if CoffeaPlotSettings.inputhistos is None:
+                with open(f"{datadir}/data___{tree}.pkl", "rb") as f:
+                    out = pickle.load(f)
+            else:
+                out = {}
+                for inputhistos_file in CoffeaPlotSettings.inputhistos:
+                    with open(inputhistos_file, "rb") as f:
+                        out.update(pickle.load(f))
 
         # ====== Loop over 1D plots ====== #
-        pprint(out)
-        print(out[('new_bdt_tH', 'ttlight', 'SR', 'Nominal')].values())
-        print(out[('new_bdt_tH', 'ttc', 'SR', 'Nominal')].values())
-        print(out[('new_bdt_tH', 'ttb', 'SR', 'Nominal')].values())
-        print(out[('new_bdt_tH', 'tH', 'SR', 'Nominal')].values())
-        print(out[('new_bdt_tH', 'total', 'SR', 'Nominal')].values())
-        print(out[('njets', 'total', 'SR', 'Nominal')].values())
+        #pprint(out)
+
+        # print("tH, nom", sum(out[('alt_bdt_tH', 'tH', 'SR', 'Nominal')].values()))
+
+        # print("ttlight, PH7", "SR", sum(out[('alt_bdt_tH', 'ttlight_PH7', 'SR', 'Nominal')].values()))
+        # print("ttlight, aMCH7", "SR", sum(out[('alt_bdt_tH', 'ttlight_aMCH7', 'SR', 'Nominal')].values()))
+        # print("ttlight, pThard1", "SR", sum(out[('alt_bdt_tH', 'ttlight_pThard1', 'SR', 'Nominal')].values()))
+        # print("ttlight, AFII", "SR", sum(out[('alt_bdt_tH', 'ttlight_AFII', 'SR', 'Nominal')].values()))
+
+        # print("ttc, PH7", "SR", sum(out[('alt_bdt_tH', 'ttc_PH7', 'SR', 'Nominal')].values()))
+        # print("ttc, aMCH7", "SR", sum(out[('alt_bdt_tH', 'ttc_aMCH7', 'SR', 'Nominal')].values()))
+        # print("ttc, pThard1", "SR", sum(out[('alt_bdt_tH', 'ttc_pThard1', 'SR', 'Nominal')].values()))
+        # print("ttc, AFII", "SR", sum(out[('alt_bdt_tH', 'ttc_AFII', 'SR', 'Nominal')].values()))
+
+        # print("ttb, PH7", "SR", sum(out[('alt_bdt_tH', 'ttb_PH7', 'SR', 'Nominal')].values()))
+        # print("ttb, aMCH7", "SR", sum(out[('alt_bdt_tH', 'ttb_aMCH7', 'SR', 'Nominal')].values()))
+        # print("ttb, pThard1", "SR", sum(out[('alt_bdt_tH', 'ttb_pThard1', 'SR', 'Nominal')].values()))
+        print("ttb, FS", "PR", sum(out[('alt_bdt_tH', 'ttb', 'PR', 'Nominal')].values()))
+        print("ttb_5FS_1bB, FS", "PR", sum(out[('alt_bdt_tH', 'ttb_5FS_1bB', 'PR', 'Nominal')].values()))
+        print("ttb_5FS_2b, FS", "PR", sum(out[('alt_bdt_tH', 'ttb_5FS_2b', 'PR', 'Nominal')].values()))
+
+        print("ttb, FS", "SR", sum(out[('alt_bdt_tH', 'ttb', 'SR', 'Nominal')].values()))
+        print("ttb_5FS_1bB, FS", "SR", sum(out[('alt_bdt_tH', 'ttb_5FS_1bB', 'SR', 'Nominal')].values()))
+        print("ttb_5FS_2b, FS", "SR", sum(out[('alt_bdt_tH', 'ttb_5FS_2b', 'SR', 'Nominal')].values()))
+
+
+        # print("ttlight, PH7", "PR", sum(out[('alt_bdt_tH', 'ttlight_PH7', 'PR', 'Nominal')].values()))
+        # print("ttlight, aMCH7", "PR", sum(out[('alt_bdt_tH', 'ttlight_aMCH7', 'PR', 'Nominal')].values()))
+        # print("ttlight, pThard1", "PR", sum(out[('alt_bdt_tH', 'ttlight_pThard1', 'PR', 'Nominal')].values()))
+        # print("ttlight, AFII", "PR", sum(out[('alt_bdt_tH', 'ttlight_AFII', 'PR', 'Nominal')].values()))
+
+        # print("ttc, PH7", "PR", sum(out[('alt_bdt_tH', 'ttc_PH7', 'PR', 'Nominal')].values()))
+        # print("ttc, aMCH7", "PR", sum(out[('alt_bdt_tH', 'ttc_aMCH7', 'PR', 'Nominal')].values()))
+        # print("ttc, pThard1", "PR", sum(out[('alt_bdt_tH', 'ttc_pThard1', 'PR', 'Nominal')].values()))
+        # print("ttc, AFII", "PR", sum(out[('alt_bdt_tH', 'ttc_AFII', 'PR', 'Nominal')].values()))
+
+        # print("ttb, PH7", "PR", sum(out[('alt_bdt_tH', 'ttb_PH7', 'PR', 'Nominal')].values()))
+        # print("ttb, aMCH7", "PR", sum(out[('alt_bdt_tH', 'ttb_aMCH7', 'PR', 'Nominal')].values()))
+        # print("ttb, pThard1", "PR", sum(out[('alt_bdt_tH', 'ttb_pThard1', 'PR', 'Nominal')].values()))
+        # print("ttb, AFII", "PR", sum(out[('alt_bdt_tH', 'ttb_AFII', 'PR', 'Nominal')].values()))
+
+        # print(out[('new_bdt_tH', 'ttc', 'SR', 'Nominal')].values())
+        # print(out[('new_bdt_tH', 'ttb', 'SR', 'Nominal')].values())
+        # print(out[('new_bdt_tH', 'tH', 'SR', 'Nominal')].values())
+        # print(out[('new_bdt_tH', 'total', 'SR', 'Nominal')].values())
+        # print(out[('njets', 'total', 'SR', 'Nominal')].values())
 
         if CoffeaPlotSettings.runplotter:
+            # =========== Set up samples, regions, variables, and rescales =========== #
+
             plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings, log)
             make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree], log)
 
