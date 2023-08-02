@@ -48,6 +48,7 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
 
         for sample in samples:
 
+            presel_events['weights'] = 1.0
             mc_weight = sample.mc_weight.evaluate(presel_events) if sample.mc_weight is not None else 1.0
             sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
             presel_events['weights'] = sample_weights*mc_weight
@@ -108,6 +109,7 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                 tot_histo_obj = Histogram(name, 0, 'total', region_to_plot.name , rescaling.name)
 
                             accum[samp_histo_obj] = samp_histo_obj
+
                             if sample == samples[0]:
                                 accum[tot_histo_obj] = tot_histo_obj
                             else:
