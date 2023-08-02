@@ -1,0 +1,155 @@
+General:
+  DumpDir: "./outputs/AltBDT_4v5FS_studies/4FS_1b_v_2b/"
+  InputHistos: /eos/user/m/maly/thbb/coffeaplot/outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
+  Helpers: '/eos/user/m/maly/thbb/coffeaplot/configs/config_helper.py'
+  Trees: 'nominal_Loose'
+  RunProcessor: False
+  RunPlotter: True
+  LogLevel: 2
+  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  MCWeight:
+    - 'MC_weight'
+    - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
+  Blinding: 0.00333
+  makeplots: ['MCMC']
+
+Variables:
+  1D:
+    - Name: alt_bdt_tH
+      Label: 'NewBDT(tH)'
+      Method:
+        - bdt_tH
+        - ['BDT']
+      Binning: [0, 0.3528, 0.6, 0.78, 1]
+      Rebin: [0, 0.31578947, 0.57894737, 0.78947368, 1]
+
+    - Name: alt_bdt_ttb
+      Label: 'NewBDT(ttb)'
+      Method:
+        - bdt_ttb
+        - ['BDT']
+      Binning: [0, 0.2, 0.4, 0.6, 0.8, 1]
+
+
+    - Name: njets
+      Label: '$n_{j}$'
+      Method: njets
+      Binning: 0.5,7.5,8
+
+    - Name: nbjets
+      Label: '$n_{b}$'
+      Method: njets
+      Binning: 0.5,7.5,8
+
+    - Name: nlights
+      Label: '$n_{q}$'
+      Method:
+        -  nlights
+        - ['njets','nbjets']
+      Binning: 0.5,7.5,8
+
+    - Name: tagnonb_topb_m
+      Label: '$M(b_{top} + q_{tag})$'
+      Method:
+        - tagnonb_topb_m
+        - ['tagnonb_topb_m']
+      Binning: [20, 96.836, 132.86, 194.876, 2300]
+
+    - Name: tagnonb_eta
+      Label: '$\eta(q_{tag})$'
+      Method: tagnonb_eta
+      Binning: [0,1,2,3,4,5]
+
+    - Name: n_tophad_jets_CBT4
+      Label: '$N(j_{top}, CBT = 4)$'
+      Method: n_tophad_jets_CBT4
+      Binning: -0.5,9.5,11
+
+    - Name: n_tophad_jets_CBT4_ttAll
+      Label: '$N(j_{top}, CBT = 4, ttAll)$'
+      Method: n_tophad_jets_CBT4_ttAll
+      Binning: -0.5,9.5,11
+
+    - Name: n_tophad_jets_CBT123_ttAll
+      Label: '$N(j_{top}, CBT = 123, ttAll)$'
+      Method: n_tophad_jets_CBT123_ttAll
+      Binning: -0.5,9.5,11
+Supersamples:
+
+  # - Name: ttb_5FS
+  #   NtuplesRgxs: ['410470_user*']
+  #   SubSamples:
+  #     - Name: ttb
+  #       Label: '$t\bar{t}+\geq1b$'
+  #       Type: 'BKG'
+  #       Selection:
+  #         - ttb_cut
+  #         - ['leptons_PLIVtight','HF_SimpleClassification']
+  #       Color: 'orange'
+
+  - Name: ttb_4FS
+    NtuplesRgxs: ['411180_AFII*','411179_AFII*','411178_AFII*']
+    Subsamples:
+
+      - Name: ttb_4FS_1bB
+        Label: '$t\bar{t}+1b/B$ (4FS)'
+        Type: 'BKG'
+        Selection:
+          - tt1b_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: 'brown'
+
+      - Name: ttb_4FS_2b
+        Label: '$t\bar{t}+2b$ (4FS)'
+        Type: 'BKG'
+        Selection:
+          - ttbb_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: 'darkblue'
+
+
+Samples:
+
+  - Name: tH
+    Label: 'tHjb'
+    Type: 'SIG'
+    NtuplesRgxs: ['346676*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#e6194b'
+    RefMC: True
+
+Regions:
+
+  - Name: PR
+    Label: 'PR'
+    Selection:
+      - PR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5', 'nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+
+  - Name: CR
+    Label: 'CR'
+    Selection:
+      - CR_ttb_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['ttb']
+
+  - Name: SR
+    Label: 'SR'
+    Selection:
+      - SR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['tH', 'tWH']
+
+MCMC:
+  RefSamples: 'ttb'
+  Main:
+    #YRange: [0, 0.9]
+    YLog: False
+    Ynorm: True
+  #Ratio:
+    #YRange: [0, 2]
