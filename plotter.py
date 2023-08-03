@@ -5,12 +5,13 @@ import os, re
 from collections import defaultdict
 from copy import copy, deepcopy
 
-from logger import ColoredLogger as logger
+import logging
+log = logging.getLogger(__name__)
 
 # TODO:: FilterNones function to get only settings that have been specified by user
 
 
-def sort_samples(histograms, samples_list, PlotSettings, rebin = None, log: logger = None):
+def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
 
     region, rescale, variable = PlotSettings.region, PlotSettings.rescale, PlotSettings.variable
     region_targets_names = region.targets
@@ -21,107 +22,99 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None, log: logg
     data = None
     refMC = None
 
-    for a_sample in samples_list:
 
-        # ============== Handle SuperSamples ============== #
-        if a_sample.is_super:
-            subsamples = a_sample.subsamples
-        else:
-            subsamples = [a_sample]
+    # ============== Loop over subsamples ============== #
+    for sample in samples_list:
 
-        # ============== Loop over subsamples ============== #
-        for sample in subsamples:
+        # =========== Categorise MC according to config =========== #
+        if sample.type != 'DATA':
+            category_histogram = histograms[(variable.name, sample.name, region.name, rescale.name)]
+            category_histogram.label = variable_label
+            category_histogram.color = sample.color
+            category_histogram.stylish_sample = sample.label
+            category_histogram.stylish_region = region.label
+            category_histogram.stylish_rescale = rescale.label
 
-            # =========== Categorise MC according to config =========== #
-            if sample.type != 'DATA':
-                category_histogram = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                category_histogram.label = variable_label
-                category_histogram.color = sample.color
-                category_histogram.stylish_sample = sample.label
-                category_histogram.stylish_region = region.label
-                category_histogram.stylish_rescale = rescale.label
+            if rebin is not None:
+                category_histogram.rebin(rebin)
 
-                if rebin is not None:
-                    category_histogram.rebin(rebin)
-
-                if sample.category is not None:
-                    category_to_samples[sample.category].append(category_histogram)
-                else:
-                    category_to_samples[sample.label].append(category_histogram)
-
-            # ============== Target samples for this region ============== #
-            if any(re.match(region_target_name, sample.name) for region_target_name in region_targets_names):
-                log.debug(f"Adding sample {sample.name} to region {region.name} targets")
-                region_target_histogram = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                region_target_histogram.label = variable_label
-                region_target_histogram.color = sample.color
-                region_target_histogram.stylish_sample = sample.label
-                region_target_histogram.stylish_region = region.label
-                region_target_histogram.stylish_rescale = rescale.label
-                if rebin is not None:
-                    region_target_histogram.rebin(rebin)
-                region_targets.append(region_target_histogram)
-
-            # ========== Support one Reference MC sample ========== #
-            if sample.ref == True and refMC is None:
-                log.debug(f"Setting sample {sample.name} as reference MC")
-                refMC = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                refMC.label = variable_label
-                refMC.color = sample.color
-                refMC.stylish_sample = sample.label
-                refMC.stylish_region = region.label
-                refMC.stylish_rescale = rescale.label
-                if rebin is not None:
-                    refMC.rebin(rebin)
-
-            elif sample.ref == True and refMC is not None:
-                log.error("More than one reference MC sample found")
-
-            # ============== Group Backgrounds ============== #
-            if sample.type == 'BKG':
-                log.debug(f"Adding sample {sample.name} to backgrounds")
-                bkg = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                bkg.label = variable_label
-                bkg.color = sample.color
-                bkg.stylish_sample = sample.label
-                bkg.stylish_region = region.label
-                bkg.stylish_rescale = rescale.label
-                if rebin is not None:
-                    bkg.rebin(rebin)
-                backgrounds.append(bkg)
-
-            # ============== Group Signals ============== #
-            elif sample.type == 'SIG':
-                log.debug(f"Adding sample {sample.name} to signals")
-                sig = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                sig.label = variable_label
-                sig.color = sample.color
-                sig.stylish_sample = sample.label
-                sig.stylish_region = region.label
-                sig.stylish_rescale = rescale.label
-                if rebin is not None:
-                    sig.rebin(rebin)
-                signals.append(sig)
-
-            # ============== Data ============== #
-            elif sample.type == 'DATA':
-                log.debug(f"Setting sample {sample.name} as data")
-                # ======= Support one Data sample ====== #
-                if data is None:
-                    data = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                    data.label = variable_label
-                    data.stylish_sample = sample.label
-                    data.stylish_region = region.label
-                    data.stylish_rescale = rescale.label
-                    if rebin is not None:
-                        data.rebin(rebin)
-                else:   log.error("More than one data sample found")
+            if sample.category is not None:
+                category_to_samples[sample.category].append(category_histogram)
             else:
-                log.error("Sample type not recognised", sample.type)
+                category_to_samples[sample.label].append(category_histogram)
+
+        # ============== Target samples for this region ============== #
+        if any(re.match(region_target_name, sample.name) for region_target_name in region_targets_names):
+            log.debug(f"Adding sample {sample.name} to region {region.name} targets")
+            region_target_histogram = histograms[(variable.name, sample.name, region.name, rescale.name)]
+            region_target_histogram.label = variable_label
+            region_target_histogram.color = sample.color
+            region_target_histogram.stylish_sample = sample.label
+            region_target_histogram.stylish_region = region.label
+            region_target_histogram.stylish_rescale = rescale.label
+            if rebin is not None:
+                region_target_histogram.rebin(rebin)
+            region_targets.append(region_target_histogram)
+
+        # ========== Support one Reference MC sample ========== #
+        if sample.ref == True and refMC is None:
+            log.debug(f"Setting sample {sample.name} as reference MC")
+            refMC = histograms[(variable.name, sample.name, region.name, rescale.name)]
+            refMC.label = variable_label
+            refMC.color = sample.color
+            refMC.stylish_sample = sample.label
+            refMC.stylish_region = region.label
+            refMC.stylish_rescale = rescale.label
+            if rebin is not None:
+                refMC.rebin(rebin)
+
+        elif sample.ref == True and refMC is not None:
+            log.error("More than one reference MC sample found")
+
+        # ============== Group Backgrounds ============== #
+        if sample.type == 'BKG':
+            log.debug(f"Adding sample {sample.name} to backgrounds")
+            bkg = histograms[(variable.name, sample.name, region.name, rescale.name)]
+            bkg.label = variable_label
+            bkg.color = sample.color
+            bkg.stylish_sample = sample.label
+            bkg.stylish_region = region.label
+            bkg.stylish_rescale = rescale.label
+            if rebin is not None:
+                bkg.rebin(rebin)
+            backgrounds.append(bkg)
+
+        # ============== Group Signals ============== #
+        elif sample.type == 'SIG':
+            log.debug(f"Adding sample {sample.name} to signals")
+            sig = histograms[(variable.name, sample.name, region.name, rescale.name)]
+            sig.label = variable_label
+            sig.color = sample.color
+            sig.stylish_sample = sample.label
+            sig.stylish_region = region.label
+            sig.stylish_rescale = rescale.label
+            if rebin is not None:
+                sig.rebin(rebin)
+            signals.append(sig)
+
+        # ============== Data ============== #
+        elif sample.type == 'DATA':
+            log.debug(f"Setting sample {sample.name} as data")
+            # ======= Support one Data sample ====== #
+            if data is None:
+                data = histograms[(variable.name, sample.name, region.name, rescale.name)]
+                data.label = variable_label
+                data.stylish_sample = sample.label
+                data.stylish_region = region.label
+                data.stylish_rescale = rescale.label
+                if rebin is not None:
+                    data.rebin(rebin)
+            else:   log.error("More than one data sample found")
+        else:
+            log.error("Sample type not recognised", sample.type)
 
     # ============== Check if data sample exists ============== #
     if data is None:
-        log.warning("No data sample found, using total MC as data")
         data =  histograms[(variable.name, 'total', region.name, rescale.name)]
         data.label = variable_label
         data.stylish_sample = 'Data (MC)'
@@ -145,7 +138,6 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None, log: logg
     if signals != []:
         tot_signals_histogram = sum(signals)
     else:
-        log.warning("No signal samples found, setting signal histogram to 0")
         tot_signals_histogram = deepcopy(tot_backgrounds_histogram)
         tot_signals_histogram *= 0
 
@@ -179,24 +171,39 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None, log: logg
     PlotSettings.category_to_samples_histos = category_to_samples
 
 
-def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
+def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
     # ====== Loop over 1D plots ====== #
     plot_settings_list = []
-    for region in CoffeaPlotSettings.regions_list:
-        log.info(f"Setting up region {region.name}")
-        for variable in CoffeaPlotSettings.variables_list:
-            #if variable.tree != tree: continue
-            if variable.dim  != 1:    continue
-            log.info(f"Setting up variable {variable.name}")
+
+    unpacked_samples = []
+    for sample in CoffeaPlotSettings.samples_list:
+        if sample.is_super:
+            unpacked_samples.extend(sample.subsamples)
+        else:
+            unpacked_samples.append(sample)
+
+
+    if all(s.type != 'DATA' for s in unpacked_samples):
+        log.warning("No data sample found, using total MC as data")
+    if all(s.type != 'SIG' for s in unpacked_samples):
+        log.warning("No signal samples found, setting signal histogram to 0")
+
+    for variable in CoffeaPlotSettings.variables_list:
+        #if variable.tree != tree: continue
+        if variable.dim  != 1:    continue
+        log.info(f"Setting up variable {variable.name}")
+
+        for region in CoffeaPlotSettings.regions_list:
+            log.info(f"Setting up region {region.name}")
 
             for rescale in CoffeaPlotSettings.rescales_list:
                 log.info(f"Setting up rescale {rescale.name}")
 
                 PlotSettings = PlotterSettings(variable, region, rescale )
-
                 # Sort samples and save them to PlotSettings
-                sort_samples(histograms, CoffeaPlotSettings.samples_list, PlotSettings, variable.rebin, log)
+                sort_samples(histograms, unpacked_samples, PlotSettings, variable.rebin)
+
                 # ================================================ #
                 # ============== Create the blinding box ============== #
                 # ================================================ #
@@ -206,7 +213,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
                 # ============== Create the MC stack ============== #
                 # ================================================ #
                 mc_stack              = Stack(stackatinos = [], bar_type = 'stepfilled', error_type = 'stat', plottersettings = PlotSettings)
-                log.info(f"Preparing MC stack")
+                log.debug(f"Preparing MC stack")
                 # ============== Make a Stackatino for each category ============== #
                 for category, cat_samples_histograms in PlotSettings.category_to_samples_histos.items():
                     log.debug(f"Adding sample category:  {category} to stack")
@@ -226,7 +233,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
                 # ================================================ #
                 # ============== Create the Data stack ============== #
                 # ================================================ #
-                log.info(f"Preparing Data stack")
+                log.debug(f"Preparing Data stack")
                 data_stack = Stack(stackatinos = [], bar_type = 'points', error_type = 'stat', plottersettings = PlotSettings)
                 # ============== Data Stack ==============
                 data_histogram = PlotSettings.data_histo
@@ -240,7 +247,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
                 # ================================================ #
                 # ============== Create the Data/MC ratio ============== #
                 # ================================================ #
-                log.info(f"Preparing Data/MC ratio")
+                log.debug(f"Preparing Data/MC ratio")
                 data_over_mc_ratio    = RatioPlot(ratio_items = [], bar_type = 'points', error_type = 'stat', plottersettings = PlotSettings)
                 data_over_mc_ratioitem = DataOverMC(data_histogram,  PlotSettings.total_mc_histo, label = None, marker = 'o', color = 'black', markersize=12)
                 data_over_mc_ratio.append(data_over_mc_ratioitem)
@@ -250,7 +257,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
                 # ============== Create the MC/MC ratio ============== #
                 # ================================================ #
                 mc_over_mc_ratio      = RatioPlot(ratio_items = [], bar_type = 'step', error_type = 'stat', plottersettings = PlotSettings)
-                log.info(f"Preparing MC/MC ratio")
+                log.debug(f"Preparing MC/MC ratio")
                 if PlotSettings.refMC_histo is not None:
                     for mc_histogram in PlotSettings.backgrounds_histos+PlotSettings.signals_histos:
                         mc_over_mc_ratioitem = RatioItem(mc_histogram, PlotSettings.refMC_histo, label = None, color = mc_histogram.color, linewidth=3)
@@ -263,7 +270,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings, log):
                 # ================================================ #
                 # ============== Create the Significance Plot ============== #
                 # ================================================ #
-                log.info(f"Preparing Significance ratio plots")
+                log.debug(f"Preparing Significance ratio plots")
                 signif_ratios_for_one_stack = []
                 # ============== Set up significance ratio plots ============== #
                 for target_histogram in PlotSettings.region_targets_histos:
@@ -329,7 +336,7 @@ def make_significance(plot, settings, outpath):
     stack_with_signif.plot(outpath)
 
 
-def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths, log):
+def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
     makeplots = CoffeaPlotSettings.makeplots
     for plot in plot_settings_list:
 
