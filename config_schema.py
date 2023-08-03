@@ -197,8 +197,8 @@ schema = Schema({
                         Optional('2d', default = []): [{}],# Not implemented yet
                     },
 
-                'samples':  [sample_schema],
-                Optional('supersamples', default = []):[supersample_schema],
+                Optional('samples', default = []):  [sample_schema],
+                Optional('supersamples', default = []): [supersample_schema],
 
                 'regions':
                     [

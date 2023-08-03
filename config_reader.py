@@ -12,5 +12,7 @@ def process(cfgp):
     with open(cfgp,'r') as f:
         output = yaml.safe_load(f)
         validated = validate(output)
+        if  validated['samples'] == [] and validated['supersamples'] == []:
+            log.error("No samples specified in config file, need at least one sample/supersample !")
 
     return validated
