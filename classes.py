@@ -6,6 +6,7 @@ from logger import ColoredLogger as logger
 # Histogramming imports
 import hist
 import numpy as np
+import math
 
 class Functor(object):
     def __init__(self, fn, args):
@@ -276,7 +277,7 @@ class Histogram(object):
         for ne in new_edges:
             available = False
             for oe in histo.axes[0].edges:
-                if (ne-oe)/oe < 1e-3:
+                if math.isclose(ne, oe, rel_tol = 1e-4):
                     available = True
             edges_correct.append(available)
 
