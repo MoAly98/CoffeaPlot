@@ -23,51 +23,7 @@ class CoffeaPlot(object):
         self.stacks = stacks if isinstance(stacks, list) else [stacks]
         self.ratio_plots = ratio_plots if isinstance(ratio_plots, list) else [ratio_plots]
         self.settings = settings
-        # # ========== General Figure ========== #
-        # self.figure_size = None
-        # self.figure_title = None
-        # # Ratio of heights of main plot and all ratio plots
 
-
-        # if len(self.ratio_plots) == 0:
-        #     self.height_ratios = [1]
-        # else:
-        #     self.height_ratios =  [3,*[1]*(len(self.ratio_plots)+1-1)]
-        # # ATLAS?
-        # self.experiment = None
-        # # Internal, Simulation, Prelimary, etc.
-        # self.plot_status = None
-        # # In ifb
-        # self.lumi = None
-        # # In TeV
-        # self.com = None
-        # # Region name, scaling
-        # self.subtext = None
-        # # Save to what file
-        # self.outfile = None
-        # # Event selection text
-        # self.selection = None
-
-        # # ========== Ratio Plots ========= #
-        # self.ratio_yrange = None
-        # self.ratio_ylog   = None
-        # self.ratio_ylabel = None
-
-        # # ========== Main Plot =========== #
-        # self.main_yrange = None
-        # self.main_ylog   = None
-        # self.main_ylabel = None
-        # self.main_ynorm = None
-
-        # self.main_xlim = None
-
-        # # ========== Set plot settings ============= #
-
-        # for key, value in settings.items():
-        #     setattr(self, key, value)
-
-        # NotImplemented
-        self.new_edges = None
 
     def make_figure(self):
         fig    = plt.figure(figsize=self.settings.figure_size)
@@ -224,7 +180,7 @@ class CoffeaPlot(object):
         for ratio_item in ratio_plot.ratio_items:
 
             # Normalise numerators and denominators if the main plot is normalised
-            if self.settings.main.ynorm is not None:
+            if self.settings.main.ynorm:
                 ratio_item.numerator.h   *= 1/ratio_item.numerator.h.values().sum()
                 ratio_item.denominator.h *= 1/ratio_item.denominator.h.values().sum()
 
