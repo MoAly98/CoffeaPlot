@@ -1,6 +1,7 @@
 from classes import Sample, SuperSample, Region, Rescale, Variable, Variables, Functor
 from config_classes import CoffeaPlotSettings as CPS
-from logger import ColoredLogger as logger
+import logging
+log = logging.getLogger(__name__)
 import numpy as np
 
 
@@ -9,61 +10,7 @@ import numpy as np
 # ========================================= #
 same_name_obj_found = lambda obj_name, alist: any([obj_name == o.name for o in alist])
 
-
-# ========================================= #
-# =========== Setup parsers     =========== #
-# ========================================= #
-
-def parse_general(general_cfg: dict, log: logger = None):
-    '''
-    Parse the general settings from the configuration file.
-
-    Parameters
-    ----------
-    general_cfg : dict
-        The dictionary containing the general settings from the configuration
-
-    Returns
-    -------
-    CoffeaPlotSettings : CPS object
-    '''
-
-    log.info(f"Setting up general settings")
-    # =========== Set up general =========== #
-    Settings = CPS()
-
-    Settings.dumpdir      = general_cfg['dumpdir']
-    Settings.ntuplesdirs  = general_cfg['ntuplesdirs']
-    Settings.trees        = general_cfg['trees']
-    Settings.inputhistos  = general_cfg['inputhistos']
-    Settings.helpers      = general_cfg['helpers']
-    Settings.blinding     = general_cfg['blinding']
-    Settings.runprocessor = general_cfg['runprocessor']
-    Settings.runplotter   = general_cfg['runplotter']
-    Settings.makeplots    = general_cfg['makeplots']
-    Settings.skipnomrescale = general_cfg['skipnomrescale']
-    Settings.loglevel     = general_cfg['loglevel']
-    Settings.nworkers  = general_cfg['nworkers']
-
-    # Setup helper modules
-    Settings.setup_helpers()
-
-    # Setup MCWeight
-    mc_weight_functor = None
-    general_mc_weight = general_cfg['mcweight']
-    if general_mc_weight is not None:
-        mc_weight_functor = create_weights_functor(general_mc_weight, Settings, 'MC', log)
-        log.info(f"Using the following function for MC weights: {mc_weight_functor.fn.__repr__()}")
-
-    Settings.mcweight     = mc_weight_functor
-
-    log.debug(f"The following general settings were parsed:")
-    for attr, value in general_cfg.items():
-        log.debug(f"{attr} = {value}")
-
-    return Settings
-
-def create_weights_functor(weight, CoffeaPlotSettings, sample_name = 'None', log: logger = None):
+def create_weights_functor(weight, CoffeaPlotSettings, sample_name = 'None'):
 
     # Weight is a functor
     if isinstance(weight, list):
@@ -86,7 +33,48 @@ def create_weights_functor(weight, CoffeaPlotSettings, sample_name = 'None', log
 
     return weight_functor
 
-def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None):
+# ========================================= #
+# =========== Setup parsers     =========== #
+# ========================================= #
+
+def parse_general(general_cfg: dict,):
+    '''
+    Parse the general settings from the configuration file.
+
+    Parameters
+    ----------
+    general_cfg : dict
+        The dictionary containing the general settings from the configuration
+
+    Returns
+    -------
+    CoffeaPlotSettings : CPS object
+    '''
+
+    log.info(f"Setting up general settings")
+    # =========== Set up general =========== #
+    Settings = CPS()
+
+    Settings.helpers      = general_cfg['helpers']
+    Settings.setup_helpers()
+
+    for key, value in general_cfg.items():
+
+        if key == 'helpers': continue
+
+        if key == 'mcweight' and value is not None:
+            mc_weight_functor = create_weights_functor(value, Settings, 'MC')
+            log.info(f"Using the following function for MC weights: {mc_weight_functor.fn.__repr__()}")
+            setattr(Settings, key,mc_weight_functor )
+        else:
+            setattr(Settings, key, value)
+
+        log.debug(f"The following general setting was parsed:")
+        log.debug(f"{key} = {value}")
+
+    return Settings
+
+def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
     '''
     Parse the samples settings from the configuration file.
 
@@ -257,7 +245,7 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None
 
 
 
-def parse_regions(regions_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None):
+def parse_regions(regions_cfg: dict, CoffeaPlotSettings: CPS):
     '''
     Parse the regions settings from the configuration file.
 
@@ -287,7 +275,7 @@ def parse_regions(regions_cfg: dict, CoffeaPlotSettings: CPS, log: logger = None
     CoffeaPlotSettings.regions_list = regions_list
 
 
-def parse_variables(variables_cfg, CoffeaPlotSettings, log: logger = None):
+def parse_variables(variables_cfg, CoffeaPlotSettings):
 
     # =========== Set up variables =========== #
     variables_list = []
@@ -332,7 +320,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings, log: logger = None):
     log.info(f"Created {len(variables_list)} variables")
     CoffeaPlotSettings.variables_list = variables_list
 
-def parse_rescales(rescales_cfg, CoffeaPlotSettings, log: logger = None):
+def parse_rescales(rescales_cfg, CoffeaPlotSettings):
 
     # =========== Set up rescales =========== #
     rescales_list = []

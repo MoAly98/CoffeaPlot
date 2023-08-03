@@ -53,7 +53,7 @@ def setup_logging(log: logger,loglevel: int):
         # DEBUG
         log.setLevel(10)
 
-    log.info(f"Logging level set to {loglevel}")
+    log.info(f"Logging level set to {loglevel}, logger name is {log.name}")
 
 def argparser():
     parser = argparse.ArgumentParser()
@@ -67,7 +67,7 @@ def main():
     cfgp = args.cfg
 
     # Prepare logger
-    log = logger()
+    log = logger(name='coffeaplot')
     log.info("Parsing and Validating config file")
     validated = process_config(cfgp)
 
@@ -75,16 +75,16 @@ def main():
     setup_logging(log, validated['general']['loglevel'])
 
     # =========== Set up general settings =========== #
-    CoffeaPlotSettings = parse_general(validated['general'], log)
+    CoffeaPlotSettings = parse_general(validated['general'])
     CoffeaPlotSettings.setup_inputpaths()
     CoffeaPlotSettings.setup_outpaths()
     CoffeaPlotSettings.setup_helpers()
 
     all_samples_cfg = validated['samples'] + validated['supersamples']
-    parse_samples(all_samples_cfg, CoffeaPlotSettings, log)
-    parse_regions(validated['regions'], CoffeaPlotSettings, log)
-    parse_variables(validated['variables'], CoffeaPlotSettings, log)
-    parse_rescales(validated['rescales'], CoffeaPlotSettings, log)
+    parse_samples(all_samples_cfg, CoffeaPlotSettings)
+    parse_regions(validated['regions'], CoffeaPlotSettings)
+    parse_variables(validated['variables'], CoffeaPlotSettings)
+    parse_rescales(validated['rescales'], CoffeaPlotSettings)
 
     total_histograms =  (CoffeaPlotSettings.NumSamples
                         *len(CoffeaPlotSettings.regions_list)
