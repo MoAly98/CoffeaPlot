@@ -1,5 +1,5 @@
 General:
-  DumpDir: "./outputs/AltBDT_4v5FS_studies/4v5FS_1b/"
+  DumpDir: "./outputs/AltBDT_4v5FS_studies_noSig/4v5FS_1b/"
   InputHistos: /eos/user/m/maly/thbb/coffeaplot/outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
   Helpers: '/eos/user/m/maly/thbb/coffeaplot/configs/config_helper.py'
   Trees: 'nominal_Loose'
@@ -96,6 +96,7 @@ Supersamples:
           - tt1b_cut
           - ['leptons_PLIVtight','HF_Classification']
         Color: 'green'
+        RefMC: True
 
   - Name: ttb_4FS
     NtuplesRgxs: ['411180_AFII*','411179_AFII*','411178_AFII*']
@@ -109,17 +110,17 @@ Supersamples:
           - ['leptons_PLIVtight','HF_Classification']
         Color: 'brown'
 
-Samples:
+# Samples:
 
-  - Name: tH
-    Label: 'tHjb'
-    Type: 'SIG'
-    NtuplesRgxs: ['346676*']
-    Selection:
-      - tight_lepton
-      - ['leptons_PLIVtight']
-    Color: '#e6194b'
-    RefMC: True
+#   - Name: tH
+#     Label: 'tHjb'
+#     Type: 'SIG'
+#     NtuplesRgxs: ['346676*']
+#     Selection:
+#       - tight_lepton
+#       - ['leptons_PLIVtight']
+#     Color: '#e6194b'
+#     RefMC: True
 
 
 Regions:
@@ -149,6 +150,6 @@ MCMC:
   Main:
     #YRange: [0, 0.9]
     YLog: False
-    Ynorm: True
+    Ynorm: False
   Ratio:
-    YRange: [0, 1.1]
+    YRange: [0.75, 1.25]
