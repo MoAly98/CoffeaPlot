@@ -1,5 +1,5 @@
 import yaml
-from config_schema import schema
+from config.schemas import schema
 from pprint import pprint
 from utils import keys_to_lower
 

@@ -12,11 +12,11 @@ from pprint import pprint
 import cloudpickle as pickle
 import argparse
 # Import coffeaplot packages
-from config_reader import process as process_config
+from config.reader import process as process_config
 from logger import ColoredLogger as logger
 from processor import CoffeaPlotProcessor
-from general_config_parsers import parse_general, parse_samples, parse_regions, parse_variables, parse_rescales
-from plots_config_parsers import parse_datamc, parse_mcmc, parse_significance, parse_general_plots
+from config.general_parsers import parse_general, parse_samples, parse_regions, parse_variables, parse_rescales
+from config.plots_parsers import parse_datamc, parse_mcmc, parse_significance, parse_general_plots
 
 from plotter import prepare_1d_plots, make_plots
 

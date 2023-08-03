@@ -1,5 +1,5 @@
 from classes import Sample, SuperSample, Region, Rescale, Variable, Variables, Functor
-from config_classes import CoffeaPlotSettings as CPS
+from config.classes import CoffeaPlotSettings as CPS
 import logging
 log = logging.getLogger(__name__)
 import numpy as np
