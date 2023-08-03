@@ -101,16 +101,14 @@ def main():
         # =================== Set up plot settings =================== #
         GeneralPlotSettings      = parse_general_plots(validated['plots'])
         if 'DATAMC' in CoffeaPlotSettings.makeplots:
-            DataMCPlotSettings       = parse_datamc(validated['datamc'], GeneralPlotSettings, log)
+            DataMCPlotSettings       = parse_datamc(validated['datamc'], GeneralPlotSettings)
             CoffeaPlotSettings.datamc_plot_settings       = DataMCPlotSettings
         if 'MCMC' in CoffeaPlotSettings.makeplots:
-            MCMCPlotSettings         = parse_mcmc(validated['mcmc'], GeneralPlotSettings, log)
+            MCMCPlotSettings         = parse_mcmc(validated['mcmc'], GeneralPlotSettings)
             CoffeaPlotSettings.mcmc_plot_settings         = MCMCPlotSettings
         if 'SIGNIF' in CoffeaPlotSettings.makeplots:
-            SignificancePlotSettings = parse_significance(validated['significance'], GeneralPlotSettings, log)
+            SignificancePlotSettings = parse_significance(validated['significance'], GeneralPlotSettings)
             CoffeaPlotSettings.significance_plot_settings = SignificancePlotSettings
-
-
 
     # =========== Set up fileset =========== #
     fileset = {}
@@ -196,8 +194,8 @@ def main():
         if CoffeaPlotSettings.runplotter:
             # =========== Set up samples, regions, variables, and rescales =========== #
 
-            plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings, log)
-            make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree], log)
+            plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings)
+            make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
 
 
 

@@ -1,4 +1,6 @@
 from config.classes import DataMCSettings, MCMCSettings, SignificanceSettings, MainCanvasSettings, RatioCanvasSettings, CanvasSettings, GeneralPlotSettings as GPS
+import logging
+log = logging.getLogger(__name__)
 
 def choose_priority_opt(opt_name, priority, secondary):
     if priority[opt_name] is not None:
@@ -35,7 +37,7 @@ def parse_axis(axis_cfg):
 
     return AxisSettings
 
-def parse_settings(cfg, settings_class, GeneralPlotSettings, log):
+def parse_settings(cfg, settings_class, GeneralPlotSettings):
 
     if cfg == {}: return None
 
@@ -66,24 +68,24 @@ def parse_settings(cfg, settings_class, GeneralPlotSettings, log):
 
     return PlotSettings
 
-def parse_datamc(datamc_cfg, GeneralPlotSettings, log):
-    DataMCPlotSettings = parse_settings(datamc_cfg, 'DATAMC', GeneralPlotSettings, log)
+def parse_datamc(datamc_cfg, GeneralPlotSettings):
+    DataMCPlotSettings = parse_settings(datamc_cfg, 'DATAMC', GeneralPlotSettings)
 
     DataMCPlotSettings.data = datamc_cfg['data']
     DataMCPlotSettings.mc = datamc_cfg['mc']
 
     return DataMCPlotSettings
 
-def parse_mcmc(mcmc_cfg, GeneralPlotSettings, log):
+def parse_mcmc(mcmc_cfg, GeneralPlotSettings):
 
-    MCMCPlotSettings = parse_settings(mcmc_cfg, 'MCMC', GeneralPlotSettings, log)
+    MCMCPlotSettings = parse_settings(mcmc_cfg, 'MCMC', GeneralPlotSettings)
 
     MCMCPlotSettings.refsamples = mcmc_cfg['refsamples']
 
     return MCMCPlotSettings
 
-def parse_significance(significance_cfg, GeneralPlotSettings, log):
+def parse_significance(significance_cfg, GeneralPlotSettings):
 
-    SignificancePlotSettings = parse_settings(significance_cfg, 'SIGNIF', GeneralPlotSettings, log)
+    SignificancePlotSettings = parse_settings(significance_cfg, 'SIGNIF', GeneralPlotSettings)
 
     return SignificancePlotSettings
