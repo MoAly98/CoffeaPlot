@@ -1,11 +1,11 @@
-from util.logger import ColoredLogger as logger
+import logging
+log = logging.getLogger(__name__)
+
 import importlib.util
 from inspect import getmembers, isfunction, isroutine
 import os, re
 
 class CoffeaPlotSettings(object):
-
-    log = logger()
 
     def __init__(self):
 
@@ -41,8 +41,6 @@ class CoffeaPlotSettings(object):
 
     def setup_helpers(self):
 
-        # Set up logger
-        log = logger()
         log.info("Setting up helper functions")
 
         # =========== Set up helpers =========== #
@@ -61,8 +59,6 @@ class CoffeaPlotSettings(object):
 
     def setup_inputpaths(self):
 
-        # Set up logger
-        log = logger()
         log.info("Running checks on input paths")
 
         # =========== Checks on input direcotries =========== #
@@ -83,8 +79,6 @@ class CoffeaPlotSettings(object):
 
     def setup_outpaths(self):
 
-        # Set up logger
-        log = logger()
         log.info("Preparing output paths")
 
         # =========== Prepare output directory =========== #
@@ -128,6 +122,7 @@ class CoffeaPlotSettings(object):
 
 
 class GeneralPlotSettings(object):
+
     def __init__(self):
         self.figure_size = None
         self.lumi = None
@@ -141,6 +136,7 @@ class GeneralPlotSettings(object):
         return getattr(self, item)
 
 class CanvasSettings(object):
+
     def __init__(self):
         self.ylabel = None
         self.ylog = None
