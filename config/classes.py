@@ -136,7 +136,7 @@ class GeneralPlotSettings(object):
     def __getitem__(self, item):
         return getattr(self, item)
 
-class CanvasSettings(GeneralPlotSettings):
+class PanelSettings(object):
 
     def __init__(self):
 
@@ -151,26 +151,25 @@ class CanvasSettings(GeneralPlotSettings):
         self.legendloc      = None
         self.legendncol     = None
         self.legendfontsize = None
-        super(CanvasSettings, self).__init__()
 
     def __getitem__(self, item):
         return getattr(self, item)
 
-class MainCanvasSettings(CanvasSettings):
+class MainPanelSettings(PanelSettings):
     def __init__(self):
         self.ynorm = None
-        super(MainCanvasSettings, self).__init__()
+        super(MainPanelSettings, self).__init__()
 
-class PlotWithRatioSettings(CanvasSettings):
+class PlotWithRatioSettings(PanelSettings):
     def __init__(self, main_canvas_settings = None, ratio_canvas_settings = None):
-        self.main = main_canvas_settings
+        self.main  = main_canvas_settings
         self.ratio = ratio_canvas_settings
         super(PlotWithRatioSettings, self).__init__()
 
 class DataMCSettings(PlotWithRatioSettings):
     def __init__(self):
         self.data = None
-        self.mc = None
+        self.mc   = None
         super(DataMCSettings, self).__init__()
 
 class MCMCSettings(PlotWithRatioSettings):
