@@ -124,62 +124,68 @@ class CoffeaPlotSettings(object):
 class GeneralPlotSettings(object):
 
     def __init__(self):
-        self.figure_size = None
+        self.figuresize = None
+        self.figuretitle = None
+        self.status = None
+        self.heightratios = None
+
         self.lumi = None
         self.energy  = None
         self.experiment = None
-        self.plot_status = None
-        self.plot_title = None
-        self.height_ratios = None
 
     def __getitem__(self, item):
         return getattr(self, item)
 
-class CanvasSettings(object):
+class CanvasSettings(GeneralPlotSettings):
 
     def __init__(self):
+
         self.ylabel = None
-        self.ylog = None
+        self.ylog   = None
         self.yrange = None
-        self.legend_show = None
-        self.legend_outside = None
-        self.legend_loc = None
-        self.legend_ncol = None
-        self.legend_fontsize = None
+        self.xrange = None
+        self.xlog   = None
+        self.xlabelfontsize = None
+        self.legendshow     = None
+        self.legendoutside  = None
+        self.legendloc      = None
+        self.legendncol     = None
+        self.legendfontsize = None
+        super(CanvasSettings, self).__init__()
 
     def __getitem__(self, item):
         return getattr(self, item)
 
 class MainCanvasSettings(CanvasSettings):
-    def __init__(self, maincanvas):
-        self.__dict__ = maincanvas.__dict__.copy()
+    def __init__(self):
         self.ynorm = None
+        super(MainCanvasSettings, self).__init__()
 
 class RatioCanvasSettings(CanvasSettings):
     '''
     This class is for readbiblity purposes only, can be used in future for ratio canvas settings
     that are not main canvas settings
     '''
-    def __init__(self, maincanvas):
-        self.__dict__ = maincanvas.__dict__.copy()
+    def __init__(self):
+        super(RatioCanvasSettings, self).__init__()
 
-
-class PlotWithRatioSettings(object):
-    def __init__(self, main_canvas_settings, ratio_canvas_settings):
+class PlotWithRatioSettings(CanvasSettings):
+    def __init__(self, main_canvas_settings = None, ratio_canvas_settings = None):
         self.main = main_canvas_settings
         self.ratio = ratio_canvas_settings
+        super(PlotWithRatioSettings, self).__init__()
 
 class DataMCSettings(PlotWithRatioSettings):
-    def __init__(self, main_canvas_settings, ratio_canvas_settings):
+    def __init__(self):
         self.data = None
         self.mc = None
-        super(DataMCSettings, self).__init__(main_canvas_settings, ratio_canvas_settings)
+        super(DataMCSettings, self).__init__()
 
 class MCMCSettings(PlotWithRatioSettings):
-    def __init__(self, main_canvas_settings, ratio_canvas_settings):
+    def __init__(self):
         self.refsamples = None
-        super(MCMCSettings, self).__init__(main_canvas_settings, ratio_canvas_settings)
+        super(MCMCSettings, self).__init__()
 
 class SignificanceSettings(PlotWithRatioSettings):
-    def __init__(self, main_canvas_settings, ratio_canvas_settings):
-        super(SignificanceSettings, self).__init__(main_canvas_settings, ratio_canvas_settings)
+    def __init__(self):
+        super(SignificanceSettings, self).__init__()

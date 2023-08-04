@@ -26,15 +26,23 @@ class CanvasSchema(object):
             Optional('figuretitlefontsize', default = 20): int,
             Optional('experiment',          default = 'ATLAS'): str,
             Optional('lumi',                default = 140): Or(int, float),
-            Optional('com',                 default = 13): Or(int, float),
-            Optional('plotstatus',          default = 'Internal'): str,
-            Optional('height_ratios',       default = None): And([int]), # Ratio of main to ratio canvas
+            Optional('energy',              default = 13): Or(int, float),
+            Optional('status',              default = 'Internal'): str,
+            Optional('heightratios',        default = None): And([int]), # Ratio of main to ratio canvas
         }
 
         if canvas_type == 'MPLUSR':
             # Main and Ratio canvas
             main_axis_schema = AxisSchema('MAIN')
             ratio_axis_schema = AxisSchema('RATIO')
+
+            # Set all defaults to None if this is not a "GENERAL" canvas settings schema
+            # This allows later to check if a setting is set for specific plots that
+            # should override the general settings
+
+            for k, v in general_plot_settings_schema.items():
+                k.default = None
+
             general_plot_settings_schema.update({
                 Optional('main',  default = main_axis_schema.defaults): main_axis_schema.schema,
                 Optional('ratio', default = ratio_axis_schema.defaults): ratio_axis_schema.schema,

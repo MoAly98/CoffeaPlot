@@ -30,17 +30,17 @@ class CoffeaPlot(object):
 
 
     def make_figure(self):
-        fig    = plt.figure(figsize=self.settings.figure_size)
+        fig    = plt.figure(figsize=self.settings.figuresize)
         nrows = len(self.ratio_plots) + 1
 
-        if self.settings.height_ratios is None:
+        if self.settings.heightratios is None:
             if len(self.ratio_plots) == 0:
                 height_ratios = [1]
             else:
                 height_ratios =  [3,*[1]*(len(self.ratio_plots))]
         else:
-            assert len(self.settings.height_ratios) == nrows, f"Number of height ratios ({len(self.settings.height_ratios)}) does not match number of axes ({len(self.ratio_plots)})"
-            height_ratios = self.settings.height_ratios
+            assert len(self.settings.heightratios) == nrows, f"Number of height ratios ({len(self.settings.heightratios)}) does not match number of axes ({len(self.ratio_plots)})"
+            height_ratios = self.settings.heightratios
 
         gs     = fig.add_gridspec(ncols=1, nrows=nrows, height_ratios=height_ratios, hspace=0.1)
         main_ax     = fig.add_subplot(gs[0, 0])
@@ -131,11 +131,11 @@ class CoffeaPlot(object):
 
         # ==================== Legend ==================== #
 
-        if self.settings.main.legend_show:
-            if self.settings.main.legend_outside:
-                main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.main.legend_ncol, fontsize=self.settings.main.legend_fontsize)
+        if self.settings.main.legendshow:
+            if self.settings.main.legendoutside:
+                main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
             else:
-                main_ax.legend(loc=self.settings.main.legend_loc, ncol=self.settings.main.legend_ncol, fontsize=self.settings.main.legend_fontsize)
+                main_ax.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
 
         # ==================== X-axis ==================== #
         # If there are ratio plots, don't use an x-axis label on main plot
@@ -176,7 +176,7 @@ class CoffeaPlot(object):
                 main_ax.set_ylim(0., max(max_bin_contents)*1.25)
 
         # COM notworking
-        mplhep.atlas.label(self.settings.plot_status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
+        mplhep.atlas.label(self.settings.status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
 
     def plot_ratio_canvases(self, ratio_plot, ratio_ax):
 
@@ -216,11 +216,11 @@ class CoffeaPlot(object):
     def decorate_ratio_canvases(self, ratio_plot, ratio_ax, last_canvas):
 
         # ================= Legends ==================== #
-        if self.settings.ratio.legend_show:
-            if self.settings.ratio.legend_outside:
-                ratio_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.ratio.legend_ncol, fontsize=self.settings.ratio.legend_fontsize)
+        if self.settings.ratio.legendshow:
+            if self.settings.ratio.legendoutside:
+                ratio_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
             else:
-                ratio_ax.legend(loc=self.settings.ratio.legend_loc, ncol=self.settings.ratio.legend_ncol, fontsize=self.settings.ratio.legend_fontsize)
+                ratio_ax.legend(loc=self.settings.ratio.legend_loc, ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
 
         # ================= X-axis ==================== #
         if last_canvas:
