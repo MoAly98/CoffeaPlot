@@ -17,7 +17,8 @@ from collections import defaultdict
 os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 
 # CoffeaPlot imports
-from classes import Histogram, Histograms, SuperSample
+from containers.histograms import Histogram, Histograms
+from containers.samples import SuperSample
 
 class CoffeaPlotProcessor(processor.ProcessorABC):
 

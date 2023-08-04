@@ -1,9 +1,14 @@
-from classes import Sample, SuperSample, Region, Rescale, Variable, Variables, Functor
-from config.classes import CoffeaPlotSettings as CPS
-import logging
-log = logging.getLogger(__name__)
 import numpy as np
 
+import logging
+log = logging.getLogger(__name__)
+
+from containers.samples import Sample, SuperSample
+from containers.regions import Region
+from containers.rescales import Rescale
+from containers.variables import Variable, Variables
+from containers.functors import Functor
+from config.classes import CoffeaPlotSettings as CPS
 
 # ========================================= #
 # =========== Helper functions =========== #
@@ -171,7 +176,7 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
             weight =  subsample['weight']
             weight_functor = None
             if weight is not None:
-                weight_functor = create_weights_functor(weight, CoffeaPlotSettings, sample_name, log)
+                weight_functor = create_weights_functor(weight, CoffeaPlotSettings, sample_name)
             else:
                 log.debug(f"Sample {sample_name} has no special weight.")
 

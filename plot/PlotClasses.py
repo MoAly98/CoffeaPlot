@@ -1,9 +1,13 @@
-import numpy as np
-import hist
-from classes import Histogram
-import matplotlib.pyplot as plt
-import mplhep
+
 from collections import defaultdict
+
+import hist
+import mplhep
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+from containers.histograms import Histogram
 
 plt.style.use(mplhep.style.ATLAS)
 plt.rcParams['axes.linewidth'] = 3

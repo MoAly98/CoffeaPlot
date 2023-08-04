@@ -1,4 +1,4 @@
-from logger import ColoredLogger as logger
+from util.logger import ColoredLogger as logger
 import importlib.util
 from inspect import getmembers, isfunction, isroutine
 import os, re

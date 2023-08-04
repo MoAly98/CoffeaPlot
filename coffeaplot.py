@@ -13,12 +13,11 @@ import cloudpickle as pickle
 import argparse
 # Import coffeaplot packages
 from config.reader import process as process_config
-from logger import ColoredLogger as logger
-from processor import CoffeaPlotProcessor
 from config.general_parsers import parse_general, parse_samples, parse_regions, parse_variables, parse_rescales
 from config.plots_parsers import parse_datamc, parse_mcmc, parse_significance, parse_general_plots
-
-from plotter import prepare_1d_plots, make_plots
+from util.logger import ColoredLogger as logger
+from histogram.processor import CoffeaPlotProcessor
+from plot.plotter import prepare_1d_plots, make_plots
 
 # ========================================= #
 # =========== Set up functions =========== #

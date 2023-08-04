@@ -1,14 +1,11 @@
 
-from classes import _DummySample
-from PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder
-import os, re
 from collections import defaultdict
 from copy import copy, deepcopy
-
+import os, re
 import logging
 log = logging.getLogger(__name__)
 
-# TODO:: FilterNones function to get only settings that have been specified by user
+from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder
 
 
 def sort_samples(histograms, samples_list, PlotSettings, rebin = None):

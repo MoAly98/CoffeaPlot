@@ -1,6 +1,7 @@
-from config.classes import DataMCSettings, MCMCSettings, SignificanceSettings, MainCanvasSettings, RatioCanvasSettings, CanvasSettings, GeneralPlotSettings as GPS
 import logging
 log = logging.getLogger(__name__)
+
+from config.classes import DataMCSettings, MCMCSettings, SignificanceSettings, MainCanvasSettings, RatioCanvasSettings, CanvasSettings, GeneralPlotSettings as GPS
 
 def choose_priority_opt(opt_name, priority, secondary):
     if priority[opt_name] is not None:

@@ -1,7 +1,7 @@
 import yaml
 from config.schemas import schema
 from pprint import pprint
-from utils import keys_to_lower
+from util.utils import keys_to_lower
 
 def validate(indict):
     mydict = keys_to_lower(indict)
