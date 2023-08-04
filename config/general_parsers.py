@@ -8,7 +8,7 @@ from containers.regions import Region
 from containers.rescales import Rescale
 from containers.variables import Variable, Variables
 from containers.functors import Functor
-from config.classes import CoffeaPlotSettings as CPS
+from config.general_classes import CoffeaPlotSettings as CPS
 
 # ========================================= #
 # =========== Helper functions =========== #

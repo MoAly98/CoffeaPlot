@@ -2,9 +2,9 @@
 import logging
 log = logging.getLogger(__name__)
 # ================ CoffeaPlot Imports ================ #
-from config.classes import (DataMCSettings, MCMCSettings,
-                            MainPanelSettings, PanelSettings,
-                            GeneralPlotSettings as GPS)
+from config.plot_classes import (DataMCSettings, MCMCSettings,
+                                MainPanelSettings, PanelSettings,
+                                GeneralPlotSettings as GPS)
 
 def filter_none_settings(settings):
     """
