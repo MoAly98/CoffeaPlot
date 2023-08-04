@@ -14,7 +14,7 @@ import argparse
 # Import coffeaplot packages
 from config.reader import process as process_config
 from config.general_parsers import parse_general, parse_samples, parse_regions, parse_variables, parse_rescales
-from config.plots_parsers import parse_settings, parse_general_plots
+from config.plots_parsers import parse_special_plot_settings, parse_general_plot_settings
 from util.logger import ColoredLogger as logger
 from histogram.processor import CoffeaPlotProcessor
 from plot.plotter import prepare_1d_plots, make_plots
@@ -98,13 +98,13 @@ def main():
 
     if CoffeaPlotSettings.runplotter:
         # =================== Set up plot settings =================== #
-        GeneralPlotSettings      = parse_general_plots(validated['plots'])
+        GeneralPlotSettings      = parse_general_plot_settings(validated['plots'])
         if 'DATAMC' in CoffeaPlotSettings.makeplots:
-            CoffeaPlotSettings.datamc_plot_settings       = parse_settings(validated['datamc'], 'DATAMC', GeneralPlotSettings)
+            CoffeaPlotSettings.datamc_plot_settings       = parse_special_plot_settings(validated['datamc'], 'DATAMC', GeneralPlotSettings)
         if 'MCMC' in CoffeaPlotSettings.makeplots:
-            CoffeaPlotSettings.mcmc_plot_settings         = parse_settings(validated['mcmc'], 'MCMC', GeneralPlotSettings)
+            CoffeaPlotSettings.mcmc_plot_settings         = parse_special_plot_settings(validated['mcmc'], 'MCMC', GeneralPlotSettings)
         if 'SIGNIF' in CoffeaPlotSettings.makeplots:
-            CoffeaPlotSettings.significance_plot_settings = parse_settings(validated['significance'], 'SIGNIF', GeneralPlotSettings)
+            CoffeaPlotSettings.significance_plot_settings = parse_special_plot_settings(validated['significance'], 'SIGNIF', GeneralPlotSettings)
 
     # =========== Set up fileset =========== #
     fileset = {}

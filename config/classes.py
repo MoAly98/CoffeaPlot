@@ -161,14 +161,6 @@ class MainCanvasSettings(CanvasSettings):
         self.ynorm = None
         super(MainCanvasSettings, self).__init__()
 
-class RatioCanvasSettings(CanvasSettings):
-    '''
-    This class is for readbiblity purposes only, can be used in future for ratio canvas settings
-    that are not main canvas settings
-    '''
-    def __init__(self):
-        super(RatioCanvasSettings, self).__init__()
-
 class PlotWithRatioSettings(CanvasSettings):
     def __init__(self, main_canvas_settings = None, ratio_canvas_settings = None):
         self.main = main_canvas_settings
@@ -185,7 +177,3 @@ class MCMCSettings(PlotWithRatioSettings):
     def __init__(self):
         self.refsamples = None
         super(MCMCSettings, self).__init__()
-
-class SignificanceSettings(PlotWithRatioSettings):
-    def __init__(self):
-        super(SignificanceSettings, self).__init__()
