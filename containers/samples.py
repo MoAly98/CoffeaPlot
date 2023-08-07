@@ -7,11 +7,7 @@ class Sample(object):
         # Sample name
         self.name = name
 
-        # Sample type
-        assert stype.upper() in ['BKG','SIG','DATA',  '___DUMMY___'], "ERROR:: Sample type must be BKG, SIG, or DATA (case in-sensitive)"
         self.type = stype.upper()
-
-
         # Get files for sample
         self.regexes = regexes
         self.direcs = direcs

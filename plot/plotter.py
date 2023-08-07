@@ -98,15 +98,13 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
         elif sample.type == 'DATA':
             log.debug(f"Setting sample {sample.name} as data")
             # ======= Support one Data sample ====== #
-            if data is None:
-                data = histograms[(variable.name, sample.name, region.name, rescale.name)]
-                data.label = variable_label
-                data.stylish_sample = sample.label
-                data.stylish_region = region.label
-                data.stylish_rescale = rescale.label
-                if rebin is not None:
-                    data.rebin(rebin)
-            else:   log.error("More than one data sample found")
+            data = histograms[(variable.name, sample.name, region.name, rescale.name)]
+            data.label = variable_label
+            data.stylish_sample = sample.label
+            data.stylish_region = region.label
+            data.stylish_rescale = rescale.label
+            if rebin is not None:
+                data.rebin(rebin)
         else:
             log.error("Sample type not recognised", sample.type)
 
@@ -185,6 +183,8 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
         log.warning("No data sample found, using total MC as data")
     if all(s.type != 'SIG' for s in unpacked_samples):
         log.warning("No signal samples found, setting signal histogram to 0")
+    if all(not s.ref  for s in unpacked_samples):
+        log.warning("No reference MC sample found, expect no MC/MC ratio plot")
 
     for variable in CoffeaPlotSettings.variables_list:
         #if variable.tree != tree: continue
@@ -261,7 +261,6 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                         mc_over_mc_ratio.append(mc_over_mc_ratioitem)
                 else:
                     mc_over_mc_ratio = None
-                    log.warning("No reference MC sample found, expect no MC/MC ratio plot")
 
                 PlotSettings.mc_over_mc_ratio = mc_over_mc_ratio
                 # ================================================ #

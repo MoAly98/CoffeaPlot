@@ -11,11 +11,15 @@ from coffea.nanoevents import  BaseSchema
 from pprint import pprint
 import cloudpickle as pickle
 import argparse
+
+from util.logger import ColoredLogger as logger
+# Prepare logger
+log = logger(name='coffeaplot')
+
 # Import coffeaplot packages
 from config.reader import process as process_config
 from config.general_parsers import parse_general, parse_samples, parse_regions, parse_variables, parse_rescales
 from config.plots_parsers import parse_special_plot_settings, parse_general_plot_settings
-from util.logger import ColoredLogger as logger
 from histogram.processor import CoffeaPlotProcessor
 from plot.plotter import prepare_1d_plots, make_plots
 
@@ -65,8 +69,6 @@ def main():
     args = argparser()
     cfgp = args.cfg
 
-    # Prepare logger
-    log = logger(name='coffeaplot')
     log.info("Parsing and Validating config file")
     validated = process_config(cfgp)
 

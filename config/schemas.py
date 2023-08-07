@@ -191,7 +191,7 @@ class GeneralSettingsSchema(object):
                             'dumpdir': str,
                             'trees': Use(string_to_list),
                             Optional('ntuplesdirs',    default = None): Use(string_to_list),
-                            Optional('mcweight',       default = 1): Or(str, Use(float), Use(functor_input)), # Name of branch, value, or functor args
+                            Optional('mcweight',       default = 1.0): Or(str, Use(float), Use(functor_input)), # Name of branch, value, or functor args
                             Optional('inputhistos',    default = None):  Use(string_to_list),
                             Optional('blinding',       default = 0): Use(float),
                             Optional('helpers',        default = None): Use(string_to_list),
