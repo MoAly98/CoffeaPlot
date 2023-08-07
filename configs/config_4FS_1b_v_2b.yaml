@@ -1,7 +1,7 @@
 General:
   DumpDir: "./outputs/AltBDT_4v5FS_studies/4FS_1b_v_2b/"
-  InputHistos: /eos/user/m/maly/thbb/coffeaplot/outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
-  Helpers: '/eos/user/m/maly/thbb/coffeaplot/configs/config_helper.py'
+  InputHistos: ./outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
+  Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
   RunProcessor: False
   RunPlotter: True
