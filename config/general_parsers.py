@@ -1,8 +1,9 @@
+# ======= Pythonic Imports ======= #
 import numpy as np
 
+# ======= CoffeaPlot Imports ======= #
 import logging
 log = logging.getLogger(__name__)
-
 from containers.samples import Sample, SuperSample
 from containers.regions import Region
 from containers.rescales import Rescale
@@ -10,40 +11,60 @@ from containers.variables import Variable, Variables
 from containers.functors import Functor
 from config.general_classes import CoffeaPlotSettings as CPS
 
-# ========================================= #
-# =========== Helper functions =========== #
-# ========================================= #
+
+# Method to check for uniquness of an object name
 same_name_obj_found = lambda obj_name, alist: any([obj_name == o.name for o in alist])
 
-def create_weights_functor(weight, CoffeaPlotSettings, sample_name = 'None'):
 
-    # Weight is a functor
+def create_weights_functor(weight, CoffeaPlotSettings, sample_name):
+    """
+    Create a functor instance to define weights to apply to events. This uses
+    the weight configuration from the config file, and the functions defined
+    in the helper modules.
+
+    Parameters
+    ----------
+    weight : str, float, list
+        The weight configuration from the config file
+    CoffeaPlotSettings : CPS object
+        The CoffeaPlotSettings object containing the helper functions
+    sample_name : str
+        The name of the sample to be used in logging
+
+    Returns
+    -------
+    weight_functor : Functor
+        The functor instance to be used to define weights in processor
+    """
+
+    # =========== If user provided weight confiuration that is a list, they expect to use a function =========== #
     if isinstance(weight, list):
+        # The function used in config file mut be defined in a helper module
         if CoffeaPlotSettings.functions is None:
             log.error(f"Function {weight[0]} is not defined in any helper module. Please check your configuration file.")
 
+        # Create a functor instance to be used to define weights
         weight_fn = CoffeaPlotSettings.functions[weight[0]]
         weight_functor = Functor(weight_fn, weight[1])
         log.debug(f"Sample {sample_name} weight set to use function {weight_functor.fn.__repr__()} with arguments {weight[1]}")
 
-    # Weight is a branch name
+    # ======== If user provided weight configuration that is a string, they expect to use a branch ======== #
     elif isinstance(weight, str):
+        # Create a functor instance to be used to define weights as just the branch
         weight_functor = Functor(lambda w: w, [weight])
         log.debug(f"Sample {sample_name} weight set to use branch {weight}")
 
-    # Weight is a float
+    # ======== If user provided weight configuration that is a float, they expect to use a constant weighting ======== #
     else:
+        # Create a functor instance to be used to define weights as a constant rescaling
         weight_functor = Functor(lambda w: w*weight, ['weights'])
         log.debug(f"Sample {sample_name} weight set to use float {weight}")
 
     return weight_functor
 
-# ========================================= #
-# =========== Setup parsers     =========== #
-# ========================================= #
 
 def parse_general(general_cfg: dict,):
-    '''
+    """
     Parse the general settings from the configuration file.
 
     Parameters
@@ -54,7 +75,7 @@ def parse_general(general_cfg: dict,):
     Returns
     -------
     CoffeaPlotSettings : CPS object
-    '''
+    """
 
     log.info(f"Setting up general settings")
     # =========== Set up general =========== #
@@ -67,8 +88,8 @@ def parse_general(general_cfg: dict,):
 
         if key == 'helpers': continue
 
-        if key == 'mcweight' and value is not None:
-            mc_weight_functor = create_weights_functor(value, Settings, 'MC')
+        if key == 'mcweight':
+            mc_weight_functor = create_weights_functor(value, Settings, 'All MC')
             log.info(f"Using the following function for MC weights: {mc_weight_functor.fn.__repr__()}")
             setattr(Settings, key,mc_weight_functor )
         else:
@@ -174,29 +195,18 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
 
             # Prepare weight functor
             weight =  subsample['weight']
-            weight_functor = None
-            if weight is not None:
-                weight_functor = create_weights_functor(weight, CoffeaPlotSettings, sample_name)
-            else:
-                log.debug(f"Sample {sample_name} has no special weight.")
+            weight_functor = create_weights_functor(weight, CoffeaPlotSettings, sample_name)
 
             # Check if sample should use MCWeight
             sample_ignore_mcweight = subsample['ignoremcweight']
             if sample_is_data:
-                mc_weight_functor = None
+                mc_weight_functor = create_weights_functor(1., CoffeaPlotSettings, sample_name)
             elif sample_ignore_mcweight:
-                mc_weight_functor = None
+                mc_weight_functor = create_weights_functor(1., CoffeaPlotSettings, sample_name)
             else:
                 mc_weight_functor = CoffeaPlotSettings.mcweight
 
-            if mc_weight_functor is not None and weight_functor is not None:
-                log.debug(f"Sample {sample_name} will use MCWeight * {weight_functor.fn.__repr__()}")
-            if mc_weight_functor is None and weight_functor is not None:
-                log.debug(f"Sample {sample_name} will use only {weight_functor.fn.__repr__()}")
-            if mc_weight_functor is not None and weight_functor is None:
-                log.debug(f"Sample {sample_name} will use only MCWeight")
-            if mc_weight_functor is None and weight_functor is None:
-                log.debug(f"Sample {sample_name} will not use any weight. Weight = 1.0")
+            log.debug(f"Sample {sample_name} will use the following weight: {mc_weight_functor.fn.__repr__()} * {weight_functor.fn.__repr__()}")
 
 
             sample_regexes = get_dirs_from['ntuplesrgxs']

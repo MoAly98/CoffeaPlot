@@ -1,7 +1,22 @@
 from schema import Schema, And, Use, Optional, Or
-from copy import deepcopy
 
 def functor_input(inlist):
+    """
+    This method takes a list of length 2, where the first element is a string and the second element is either a string or a list of strings.
+    Any string in the second element is converted to a list of length 1. The method returns a list of length 2, where the first element is
+    the name of a function and the second element is a list of arguments to the function. These are used to create a functor objects.
+
+    Parameters
+    ----------
+    inlist : list
+        List of length 2, where the first element is a string and the second element is either a string or a list of strings.
+
+    Returns
+    -------
+    list
+        List of length 2, where the first element is the name of a function and the second element is a list of arguments to the function.
+
+    """
     if len(inlist) != 2:
         raise SchemaError("Expecting a list of length 2 here")
     if not isinstance(inlist[0], str):
@@ -11,6 +26,20 @@ def functor_input(inlist):
     return [inlist[0], second_element]
 
 def string_to_list(value):
+    """
+    This method takes an argument htat is either a string or list. If it is a string,
+    it is converted to a list of length 1. If it is a list, it is returned as is.
+
+    Parameters
+    ----------
+    value : str or list
+        Argument that is either a string or list.
+
+    Returns
+    -------
+    list
+        List of length 1 if the argument was a string, otherwise the argument is returned as is.
+    """
     if not isinstance(value, str) and not isinstance(value, list):
         raise SchemaError("Expecting a string or list of strings here")
     if isinstance(value, str):
@@ -18,8 +47,16 @@ def string_to_list(value):
     return value
 
 class CanvasSchema(object):
+    """
+    Class to handle the schema for a general canvas. It hold generic canvas
+    options and sensible defaults for them.
 
+    Each of the options have corrspinding class attributes in the classes
+    GeneralPlotSettings (and its child classes).
+    """
     def __init__(self, canvas_type='GENERAL', plot_type='GENERAL'):
+
+        # ========== All plots have the following attributes ========== #
         general_plot_settings_schema = {
             Optional('figuresize',          default = (24, 18)): And([int], lambda x: len(x) == 2),
             Optional('figuretitle',         default = True): Or(str, bool),
@@ -31,44 +68,54 @@ class CanvasSchema(object):
             Optional('heightratios',        default = None): And([int]), # Ratio of main to ratio canvas
         }
 
-        if canvas_type == 'MPLUSR':
-            # Main and Ratio canvas
-            main_axis_schema = AxisSchema('MAIN')
-            ratio_axis_schema = AxisSchema('RATIO')
-
-            # Set all defaults to None if this is not a "GENERAL" canvas settings schema
-            # This allows later to check if a setting is set for specific plots that
-            # should override the general settings
-
+        # ========== If non-general schema is being built, set defaults to None ========== #
+        # This allows later to check if a setting is set for specific plots that
+        # should override the general settings
+        if canvas_type != 'GENERAL':
             for k, v in general_plot_settings_schema.items():
                 k.default = None
 
+        # ========== Canvases with a MAIN+RATIO panels have the following attributes ========== #
+        if canvas_type == 'MPLUSR':
+
+            # Get the schema for main and ratio panels
+            main_axis_schema = PanelSchema('MAIN')
+            ratio_axis_schema = PanelSchema('RATIO')
+
+            # Add the schema for main and ratio panels to the canvas schema
             general_plot_settings_schema.update({
                 Optional('main',  default = main_axis_schema.defaults): main_axis_schema.schema,
                 Optional('ratio', default = ratio_axis_schema.defaults): ratio_axis_schema.schema,
             })
 
+            # ======= MPLUSR Canvases displaying data and MC have the following attributes ======= #
             if plot_type == 'DATAMC':
                 general_plot_settings_schema.update({
                     Optional('data', default = None): str,
-                    Optional('mc', default = None): str
+                    Optional('mc',   default = None): str
                 })
 
+            # ======= MPLUSR Canvases displaying MC v MC have the following attributes ======= #
             if plot_type == 'MCMC':
                 general_plot_settings_schema.update({
                     Optional('refsamples', default = None): str,
                 })
 
+        # set the schema and defaults
         self.schema = general_plot_settings_schema
         self.defaults  = {k.key: k.default for k in self.schema.keys()}
 
-class AxisSchema(object):
-
-    def __init__(self, ax_type='MAIN'):
-
-        axes_schema = {
+class PanelSchema(object):
+    """
+    This class holds the schema for a single panel. It holds generic panel
+    options and sensible defaults for them. Each option will have a corrspinding
+    class attribute in the class PanelSettings (and its child classes).
+    """
+    def __init__(self, panel_type='MAIN'):
+        # ===== All panels have the following attributes ===== #
+        panels_schema = {
             # Y-axis
-            Optional('ylabel', default = 'Fraction of Events/bin' if ax_type == 'MAIN' else None): str,
+            Optional('ylabel', default = 'Fraction of Events/bin' if panel_type == 'MAIN' else 'Ratio'): str,
             Optional('ylabelfontsize', default = 26): int,
             Optional('ylog',   default = False): bool,
             Optional('yrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
@@ -77,34 +124,40 @@ class AxisSchema(object):
             Optional('xlog',   default = False): bool,
             Optional('xlabelfontsize', default = 26): int,
             # Legend
-            Optional('legendshow',     default = True if ax_type == 'MAIN' else False): bool,
+            Optional('legendshow',     default = True if panel_type == 'MAIN' else False): bool,
             Optional('legendfontsize', default = 26): int,
             Optional('legendloc',      default = 'upper right'): Or(str, And([Use(float)], lambda x: len(x) == 2)),
             Optional('legendncol',     default = 2): int,
             Optional('legendoutside',  default = False): bool,
         }
 
-        if ax_type == 'MAIN':
-            axes_schema.update({
+        # ===== Main panels only have the following attributes ===== #
+        if panel_type == 'MAIN':
+            panels_schema.update({
                Optional('ynorm',  default = True):  bool,
             })
 
-        self.schema = axes_schema
-
+         # set the schema and defaults
+        self.schema = panels_schema
         self.defaults  = {k.key: k.default for k in self.schema.keys()}
 
 
 class SampleSchema(object):
-
+    """
+    Class to handle the schema for a sample. It hold generic sample
+    options and sensible defaults for them. It also holds the schema for
+    subsamples, which are samples that share the same input files but defined
+    by different selection. Subsamples are held as attributes of SuperSample objects.
+    """
     def __init__(self, sample_type='SAMPLE'):
-
+        # ===== All samples have the following attributes ===== #
         sample_schema = {
                         'name': str,
                         'type': And(str, lambda s: s in ['SIG', 'BKG', 'DATA']),
                         'ntuplesrgxs': Or(str, [str]),
                         Optional('selection', default = None): Use(functor_input),
                         Optional('ntuplesdirs', default = None): [str],
-                        Optional('weight', default = None): Or(str, Use(float), Use(functor_input)),
+                        Optional('weight', default = 1.): Or(str, Use(float), Use(functor_input)),
                         Optional('ignoremcweight', default = False): bool,
                         Optional('refmc', default = False): bool,
                         Optional('label', default = None): str,
@@ -112,8 +165,10 @@ class SampleSchema(object):
                         Optional('category', default = None): str,
         }
 
+        # ====== subsamples don't need ntuplesrgxs, since these should be defined by the supersample ====== #
         subsample_schema = {k: v for k, v in sample_schema.items() if k not in ['ntuplesrgxs']}
 
+        # ====== Supersamples have the following attributes ====== #
         if sample_type == 'SUPERSAMPLE':
             sample_schema = {
                                 'name': str,
@@ -122,37 +177,42 @@ class SampleSchema(object):
                                 Optional('ntuplesdirs', default = None): [str]
                             }
 
+        # set the schema, no need for defaults dict since one cannot get away without defining any samples
         self.schema = sample_schema
 
+class GeneralSettingsSchema(object):
+    """
+    Class to handle the schema for the general settings. It holds generic
+    options and sensible defaults for them.
+    """
 
-sample_schema           = SampleSchema('SAMPLE')
-supersample_schema      = SampleSchema('SUPERSAMPLE')
-plots_schema            = CanvasSchema('GENERAL', 'GENERAL')
-plots_with_ratio_schema = CanvasSchema('MPLUSR', 'GENERAL')
-datamc_schema           = CanvasSchema('MPLUSR', 'DATAMC')
-mcmc_schema             = CanvasSchema('MPLUSR', 'MCMC')
+    def __init__(self):
+        general_schema = {
+                            'dumpdir': str,
+                            'trees': Use(string_to_list),
+                            Optional('ntuplesdirs',    default = None): Use(string_to_list),
+                            Optional('mcweight',       default = 1): Or(str, Use(float), Use(functor_input)), # Name of branch, value, or functor args
+                            Optional('inputhistos',    default = None):  Use(string_to_list),
+                            Optional('blinding',       default = 0): Use(float),
+                            Optional('helpers',        default = None): Use(string_to_list),
+                            Optional('runprocessor',   default = False): bool,
+                            Optional('runplotter',     default = False): bool,
+                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF'] for y in x])),
+                            Optional('skipnomrescale', default = False): bool,
+                            Optional('loglevel',       default = 3): int,
+                            Optional('nworkers',       default = 8): int, # 0 is Iterative executor...
+                        }
 
-schema = Schema({
-                'general':
-                    {
-                        'dumpdir': str,
-                        'trees': Use(string_to_list),
-                        Optional('ntuplesdirs',  default = None): Use(string_to_list),
-                        Optional('mcweight',     default = None): Or(str, Use(float), Use(functor_input)), # Name of branch, value, or functor args
-                        Optional('inputhistos',  default = None):  Use(string_to_list),
-                        Optional('blinding',     default = 0): Use(float),
-                        Optional('helpers',      default = None): Use(string_to_list),
-                        Optional('runprocessor', default = False): bool,
-                        Optional('runplotter',   default = False): bool,
-                        Optional('makeplots',    default = ['MCMC', 'DATAMC', 'SIGNIF']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF'] for y in x])),
-                        Optional('skipnomrescale', default = False): bool,
-                        Optional('loglevel',     default = 3): int,
-                        Optional('nworkers',     default = 8): int, # 0 is Iterative executor...
-                    },
+        self.schema = general_schema
 
-                'variables':
-                    {
-                        '1d':[{
+class VariableSchema(object):
+    """
+    Class to handle the schema for a variable. It holds generic
+    options and sensible defaults for them. It handles both 1D and 2D variables.
+    """
+    def __init__(self, dim = 1):
+        if dim == 1:
+            variable_schema = {
                                 'name': str,
                                 'method':  Or(str, Use(functor_input)), # Name of branch, or functor args
                                 'binning': Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)]),
@@ -160,29 +220,67 @@ schema = Schema({
                                 Optional('label',   default = None): str,
                                 Optional('idxby',   default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
                                 Optional('rebin',   default = None): [Use(float)],
-                            }],
-                        Optional('2d', default = []): [{}],# Not implemented yet
-                    },
+                            }
+        else:
+            # Not implemented yet
+            variable_schema = {}
 
-                Optional('samples',     default = []):  [sample_schema.schema],
-                Optional('supersamples', default = []): [supersample_schema.schema],
+        self.schema = variable_schema
 
-                'regions':
-                [{
-                            'name': str,
-                            'selection': Use(functor_input),
-                            Optional('label', default = None): str,
-                            Optional('targets', default = []): Or(str, [str]),
-                }],
+class RegionSchema(object):
+    """
+    Class to handle the schema for a region. It holds generic
+    options and sensible defaults for them.
+    """
+    def __init__(self):
+        region_schema = {
+                        'name': str,
+                        'selection': Use(functor_input),
+                        Optional('label',   default = None): str,
+                        Optional('targets', default = []): Or(str, [str]),
+                    }
 
-                Optional('rescales', default = []):
-                [{
+        self.schema = region_schema
+
+class RescaleSchema(object):
+    """
+    Class to handle the schema for a rescale. It holds generic
+    options and sensible defaults for them.
+    """
+
+    def __init__(self):
+        rescale_schema = {
                             'name': str,
                             'method': Or(float, Use(functor_input)),
                             Optional('label', default = None): str,
                             Optional('affects', default = []): Or(str, [str]),
-                }],
+                        }
 
+        self.schema = rescale_schema
+
+
+# Processing+Plotting
+general_schema          = GeneralSettingsSchema()
+variable_1d_schema      = VariableSchema(dim=1)
+variable_2d_schema      = VariableSchema(dim=2)
+region_schema           = RegionSchema()
+rescale_schema          = RescaleSchema()
+sample_schema           = SampleSchema('SAMPLE')
+supersample_schema      = SampleSchema('SUPERSAMPLE')
+
+# Plotting Only
+plots_schema            = CanvasSchema('GENERAL', 'GENERAL')
+plots_with_ratio_schema = CanvasSchema('MPLUSR', 'GENERAL')
+datamc_schema           = CanvasSchema('MPLUSR', 'DATAMC')
+mcmc_schema             = CanvasSchema('MPLUSR', 'MCMC')
+
+schema = Schema({
+                'general': general_schema.schema ,
+                'variables': {'1d': [variable_1d_schema.schema], Optional('2d', default=[]): [variable_2d_schema.schema]},
+                'regions': [region_schema.schema],
+                Optional('rescales', default = []): [rescale_schema.schema],
+                Optional('samples',     default = []):  [sample_schema.schema],
+                Optional('supersamples', default = []): [supersample_schema.schema],
                 Optional('plots',        default = plots_schema.defaults):  plots_schema.schema,
                 Optional('datamc',       default = datamc_schema.defaults): datamc_schema.schema,
                 Optional('mcmc',         default = mcmc_schema.defaults):   mcmc_schema.schema,

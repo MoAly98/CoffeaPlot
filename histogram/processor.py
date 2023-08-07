@@ -50,8 +50,8 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
         for sample in samples:
 
             presel_events['weights'] = 1.0
-            mc_weight = sample.mc_weight.evaluate(presel_events) if sample.mc_weight is not None else 1.0
-            sample_weights = sample.weight.evaluate(presel_events) if sample.weight is not None else 1.0
+            mc_weight = sample.mc_weight.evaluate(presel_events)
+            sample_weights = sample.weight.evaluate(presel_events)
             presel_events['weights'] = sample_weights*mc_weight
 
             filt_sample = presel_events[sample.sel.evaluate(presel_events)] if sample.sel is not None else presel_events
