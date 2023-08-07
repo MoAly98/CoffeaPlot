@@ -1,0 +1,202 @@
+General:
+  DumpDir: "./outputs/RawMC_CountTest_ttbar_AltGenSamples/"
+  Helpers: 'config_helper.py'
+  Trees: 'nominal_Loose'
+  RunProcessor: True
+  RunPlotter: False
+  LogLevel: 2
+  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  MCWeight: 1.0
+  SkipNomRescale: False # Nominal re-scaling should be added automatically by default
+  Blinding: 0.00333
+
+Variables:
+  1D:
+    - Name: alt_bdt_tH
+      Label: 'NewBDT(tH)'
+      Method:
+        - bdt_tH
+        - ['BDT']
+      Binning: [0, 0.3528, 0.6, 0.78, 1]
+
+supersamples:
+  - Name: ttbar_AFII
+    NtuplesRgxs: ['410470_AFII*']
+    SubSamples:
+      - Name: ttb_AFII
+        Label: '$t\bar{t}+\geq1b$ (AFII)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#e6beff'
+        RefMC: False
+
+      - Name: ttlight_AFII
+        Label: '$t\bar{t}+\geq0l$ (AFII)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+        RefMC: False
+
+      - Name: ttc_AFII
+        Label: '$t\bar{t}+\geq1c$ (AFII)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+        RefMC: False
+
+
+  - Name: ttbar
+    NtuplesRgxs: ['410470_user*']
+    SubSamples:
+      - Name: ttb
+        Label: '$t\bar{t}+\geq1b$'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#e6beff'
+        RefMC: False
+
+      - Name: ttlight
+        Label: '$t\bar{t}+\geq0l$'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+        RefMC: False
+
+      - Name: ttc
+        Label: '$t\bar{t}+\geq1c$'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+        RefMC: False
+
+  - Name: ttbar_pThard1
+    NTuplesDirs: ["/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_GRID/mc16a/","/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_GRID/mc16d/","/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_GRID/mc16e/"]
+    NtuplesRgxs: ['*601497*_a875*/*', '*601491*_a875*/*']
+    SubSamples:
+      - Name: ttb_pThard1
+        Label: '$t\bar{t}+\geq1b$ (pThard = 1)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#e6beff'
+        RefMC: False
+
+      - Name: ttlight_pThard1
+        Label: '$t\bar{t}+\geq0l$ (pThard = 1)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+        RefMC: False
+
+      - Name: ttc_pThard1
+        Label: '$t\bar{t}+\geq1c$ (pThard = 1)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+        RefMC: False
+
+  - Name: ttbar_aMCH7
+    NtuplesRgxs: ['412116_AFII*', '412117_AFII*']
+    Subsamples:
+      - Name: ttlight_aMCH7
+        Label: '$t\bar{t}+\geq0l$ (aMC@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+      - Name: ttc_aMCH7
+        Label: '$t\bar{t}+\geq1c$ (aMC@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+      - Name: ttb_aMCH7
+        Label: '$t\bar{t}+\geq1b$ (aMC@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+  - Name: ttbar_PH7
+    NtuplesRgxs: ['411233_AFII*','411234_AFII*']
+    Subsamples:
+      - Name: ttlight_PH7
+        Label: '$t\bar{t}+\geq0l$ (Pow@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+      - Name: ttc_PH7
+        Label: '$t\bar{t}+\geq1c$ (Pow@H7@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+      - Name: ttb_PH7
+        Label: '$t\bar{t}+\geq1b$ (Pow@H7@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+Samples:
+  - Name: tH
+    Label: 'tHjb'
+    Type: 'SIG'
+    NtuplesRgxs: ['346676*']
+    Selection:
+      - tight_lepton          # From a replacement file
+      - ['leptons_PLIVtight']
+    Color: '#e6194b'
+    RefMC: False  # Should this sample be used as a reference in MC/MC plots
+
+
+Regions:
+
+  - Name: PR
+    Label: 'PR'
+    Selection:
+      - PR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5', 'nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+
+  - Name: CR
+    Label: 'CR'
+    Selection:
+      - CR_ttb_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['ttb']
+
+  - Name: SR
+    Label: 'SR'
+    Selection:
+      - SR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['tH', 'tWH']

@@ -1,0 +1,444 @@
+General:
+  DumpDir: "/eos/user/m/maly/thbb/coffeaplot/outputs/AllProcessedSamples/"
+  Helpers: '/eos/user/m/maly/thbb/coffeaplot/configs/config_helper.py'
+  Trees: 'nominal_Loose'
+  RunProcessor: True
+  RunPlotter: False
+  LogLevel: 2
+  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  MCWeight:
+    - 'MC_weight'
+    - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
+  SkipNomRescale: False # Nominal re-scaling should be added automatically by default
+  Blinding: 0.00333
+
+Variables:
+  1D:
+    - Name: alt_bdt_tH
+      Label: 'AltBDT(tH)'
+      Method:
+        - bdt_tH
+        - ['BDT']
+      Binning: 0,1,20
+
+    - Name: alt_bdt_ttb
+      Label: 'AltBDT(ttb)'
+      Method:
+        - bdt_ttb
+        - ['BDT']
+      Binning: 0,1,20
+
+    - Name: njets
+      Label: '$n_{j}$'
+      Method: njets
+      Binning: -0.5,9.5,11
+
+    - Name: nbjets
+      Label: '$n_{b}$'
+      Method: nbjets
+      Binning: -0.5,9.5,11
+
+    - Name: nlights
+      Label: '$n_{q}$'
+      Method:
+        -  nlights
+        - ['njets','nbjets']
+      Binning: -0.5,9.5,11
+
+    - Name: tagnonb_topb_m
+      Label: '$M(b_{top} + q_{tag})$'
+      Method:
+        - tagnonb_topb_m
+        - ['tagnonb_topb_m']
+      Binning: 20,2500,40
+
+    - Name: tagnonb_eta
+      Label: '$\eta(q_{tag})$'
+      Method: tagnonb_eta
+      Binning: [0,1,2,3,4,5]
+
+    - Name: n_tophad_jets_CBT4
+      Label: '$N(j_{top}, CBT = 4)$'
+      Method: n_tophad_jets_CBT4
+      Binning: -0.5,9.5,11
+
+    - Name: n_tophad_jets_CBT4_ttAll
+      Label: '$N(j_{top}, CBT = 4, ttAll)$'
+      Method: n_tophad_jets_CBT4_ttAll
+      Binning: -0.5,4.5,6
+
+    - Name: n_tophad_jets_CBT123_ttAll
+      Label: '$N(j_{top}, CBT = 123, ttAll)$'
+      Method: n_tophad_jets_CBT123_ttAll
+      Binning: -0.5,4.5,6
+
+Supersamples:
+  - Name: ttbar_AFII
+    NtuplesRgxs: ['410470_AFII*']
+    SubSamples:
+      - Name: ttb_AFII
+        Label: '$t\bar{t}+\geq1b$ (AFII)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#e6beff'
+
+      - Name: ttlight_AFII
+        Label: '$t\bar{t}+\geq0l$ (AFII)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+
+      - Name: ttc_AFII
+        Label: '$t\bar{t}+\geq1c$ (AFII)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+
+
+  - Name: ttbar
+    NtuplesRgxs: ['410470_user*']
+    SubSamples:
+      - Name: ttb
+        Label: '$t\bar{t}+\geq1b$'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#e6beff'
+
+      - Name: ttlight
+        Label: '$t\bar{t}+\geq0l$'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+
+      - Name: ttc
+        Label: '$t\bar{t}+\geq1c$'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+
+      - Name: ttb_5FS_1bB
+        Label: '$t\bar{t}+1b/B$ (5FS)'
+        Type: 'BKG'
+        Selection:
+          - tt1b_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: '#3cb44b'
+
+      - Name: ttb_5FS_2b
+        Label: '$t\bar{t}+2b$ (5FS)'
+        Type: 'BKG'
+        Selection:
+          - ttbb_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: '#3cb44b'
+
+  - Name: ttbar_pThard1
+    NTuplesDirs: ["/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_GRID/mc16a/","/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_GRID/mc16d/","/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_GRID/mc16e/"]
+    NtuplesRgxs: ['*601497*_a875*/*', '*601491*_a875*/*']
+    SubSamples:
+      - Name: ttb_pThard1
+        Label: '$t\bar{t}+\geq1b$ (pThard = 1)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#e6beff'
+
+      - Name: ttlight_pThard1
+        Label: '$t\bar{t}+\geq0l$ (pThard = 1)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+
+      - Name: ttc_pThard1
+        Label: '$t\bar{t}+\geq1c$ (pThard = 1)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+
+  - Name: ttbar_aMCH7
+    NtuplesRgxs: ['412116_AFII*', '412117_AFII*']
+    Subsamples:
+
+      - Name: ttlight_aMCH7
+        Label: '$t\bar{t}+\geq0l$ (aMC@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+      - Name: ttc_aMCH7
+        Label: '$t\bar{t}+\geq1c$ (aMC@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+      - Name: ttb_aMCH7
+        Label: '$t\bar{t}+\geq1b$ (aMC@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+  - Name: ttbar_PH7
+    NtuplesRgxs: ['411233_AFII*','411234_AFII*']
+    Subsamples:
+
+      - Name: ttlight_PH7
+        Label: '$t\bar{t}+\geq0l$ (Pow@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+      - Name: ttc_PH7
+        Label: '$t\bar{t}+\geq1c$ (Pow@H7@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+      - Name: ttb_PH7
+        Label: '$t\bar{t}+\geq1b$ (Pow@H7@H7)'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#3cb44b'
+
+  - Name: ttb_4FS
+    NtuplesRgxs: ['411180_AFII*','411179_AFII*','411178_AFII*']
+    Subsamples:
+
+      - Name: ttb_4FS_1bB
+        Label: '$t\bar{t}+1b/B$ (4FS)'
+        Type: 'BKG'
+        Selection:
+          - tt1b_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: '#3cb44b'
+
+      - Name: ttb_4FS_2b
+        Label: '$t\bar{t}+2b$ (4FS)'
+        Type: 'BKG'
+        Selection:
+          - ttbb_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: '#3cb44b'
+
+
+Samples:
+
+  - Name: tH
+    Label: 'tHjb'
+    Type: 'SIG'
+    NtuplesRgxs: ['346676*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#e6194b'
+
+  - Name: tWH
+    Label: 'tWH'
+    Type: 'SIG'
+    NtuplesRgxs: ['346678*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#3cb44b'
+
+  - Name: ttH
+    Label: '$t\bar{t}+H$'
+    Type: 'BKG'
+    NtuplesRgxs: ['346343_user*', '346344_user*', '346345_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#911eb4'
+
+  - Name: ttZ
+    Label: '$t\bar{t}+Z$'
+    Type: 'BKG'
+    NtuplesRgxs: ['410156_user*', '410157_user*', '410218_user*', '410219_user*', '410220_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#46f0f0'
+    Category: 'ttV'
+
+  - Name: ttW
+    Label: '$t\bar{t}+W$'
+    Type: 'BKG'
+    NtuplesRgxs: ['412123_user*', '410155_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#f032e6'
+    Category: 'ttV'
+
+  - Name: tZq
+    Label: 'tZq'
+    Type: 'BKG'
+    NtuplesRgxs: ['410560_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#bcf60c'
+    Category: 'Minor'
+
+  - Name: tWZ
+    Label: 'tWZ'
+    Type: 'BKG'
+    NtuplesRgxs: ['410408*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#fabebe'
+    Category: 'Minor'
+
+  - Name: singletop_Wtchannel
+    Label: 't (s-chan)'
+    Type: 'BKG'
+    NtuplesRgxs: ['410646_user*', '410647_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#008080'
+    Category: 'Single-top'
+
+  - Name: singletop_tchan
+    Label: 't (t-chan)'
+    Type: 'BKG'
+    NtuplesRgxs: ['410658_user*', '410659_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#f58231'
+    Category: 'Single-top'
+
+  - Name: singletop_schannel
+    Label: 'tW'
+    Type: 'BKG'
+    NtuplesRgxs: ['410644_user*', '410645_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#9a6324'
+    Category: 'Single-top'
+
+  - Name: Wjets
+    Label: 'W+jets'
+    Type: 'BKG'
+    NtuplesRgxs: ['364156*', '364159*', '364162*', '364165*', '364170*', '364173*', '364176*', '364179*', '364184*', '364187*', '364190*', '364193*', '364157*', '364160*', '364163*', '364166*', '364171*', '364174*', '364177*', '364180*', '364185*', '364188*', '364191*', '364194*', '364158*', '364161*', '364164*', '364167*', '364172*', '364175*', '364178*', '364181*', '364186*', '364189*', '364192*', '364195*', '364168*', '364169*', '364182*', '364183*', '364196*', '364197*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#fffac8'
+    Category: 'V+jets'
+
+  - Name: Zjets
+    Label: 'Z+jets'
+    Type: 'BKG'
+    NtuplesRgxs: ['364100*', '364103*', '364106*', '364109*', '364114*', '364117*', '364120*', '364123*', '364128*', '364131*', '364134*', '364137*', '364101*', '364104*', '364107*', '364110*', '364115*', '364118*', '364121*', '364124*', '364129*', '364132*', '364135*', '364138*', '364102*', '364105*', '364108*', '364111*', '364116*', '364119*', '364122*', '364125*', '364130*', '364133*', '364136*', '364139*', '364112*', '364113*', '364126*', '364127*', '364140*', '364141*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#800000'
+    Category: 'V+jets'
+
+  - Name: VV
+    Label: 'VV'
+    Type: 'BKG'
+    NtuplesRgxs: ['364250_user*', '364253_user*', '364254_user*', '364255_user*', '364288_user*', '364289_user*', '364290_user*', '363355_user*', '363356_user*', '363357_user*', '363358_user*', '363359_user*', '363360_user*', '363489_user*', '363494_user*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#aaffc3'
+    Category: 'Minor'
+
+  - Name: otherHiggs
+    Label: 'Higgs'
+    Type: 'BKG'
+    NtuplesRgxs: ['342282*', '342283*', '342284*', '342285*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#808000'
+    Category: 'Minor'
+
+  - Name: raretop
+    Label: 'Rare Tops'
+    Type: 'BKG'
+    NtuplesRgxs: ['304014*', '412043*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#ffd8b1'
+    Category: 'Minor'
+
+  - Name: Fakes
+    Label: 'Fakes'
+    Type: 'BKG'
+    NtuplesRgxs: ['data15*', 'data16*', 'data17*', 'data18*']
+    Weight:
+      - MM_weight
+      - ['mm_weight']
+    IgnoreMCweight: True
+    Color: '#ffe119'
+
+  - Name: Data
+    Label: 'Data'
+    Type: 'DATA'
+    NtuplesRgxs: ['data15*', 'data16*', 'data17*', 'data18*']
+    Selection:
+      - tight_lepton
+      - leptons_PLIVtight
+    Color: '#808080'
+    RefMC: False
+
+Regions:
+
+  - Name: PR
+    Label: 'PR'
+    Selection:
+      - PR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5', 'nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+
+  - Name: CR
+    Label: 'CR'
+    Selection:
+      - CR_ttb_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['ttb']
+
+  - Name: SR
+    Label: 'SR'
+    Selection:
+      - SR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['tH', 'tWH']
