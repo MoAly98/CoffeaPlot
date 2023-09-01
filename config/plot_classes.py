@@ -51,6 +51,15 @@ class MCMCSettings(PlotWithRatioSettings):
         self.refsamples = None
         super(MCMCSettings, self).__init__()
 
+class SeparationSettings(PlotWithRatioSettings):
+    """
+    Separation plots have all settings of a PlotWithRatioSettings object, but also have settings
+    to allow writing the separation values on the plot.
+    """
+    def __init__(self):
+        self.wrtiesep = None
+        super(SeparationSettings, self).__init__()
+
 class PanelSettings(object):
     """
     This class contains all the settings that apply to a single panel on a plot. It holds

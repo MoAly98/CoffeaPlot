@@ -1,7 +1,7 @@
 General:
   DumpDir: "./outputs/AltBDT_4v5FS_studies/5FS_1b_v_2b/"
-  InputHistos: /eos/user/m/maly/thbb/coffeaplot/outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
-  Helpers: '/eos/user/m/maly/thbb/coffeaplot/configs/config_helper.py'
+  InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
+  Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
   RunProcessor: False
   RunPlotter: True
@@ -14,7 +14,7 @@ General:
     - 'MC_weight'
     - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
   Blinding: 0.00333
-  makeplots: ['MCMC']
+  makeplots: ['SEPARATION','MCMC']
 
 Variables:
   1D:
@@ -149,3 +149,6 @@ MCMC:
     Ynorm: True
   #Ratio:
     #YRange: [0, 2]
+SEPARATION:
+    Main:
+      YLog: False

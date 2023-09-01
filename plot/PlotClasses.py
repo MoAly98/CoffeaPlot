@@ -562,6 +562,7 @@ class PlotterSettings(object):
         self.data_over_mc_ratio = None
         self.mc_over_mc_ratio = None
         self.signif_ratios  = None
+        self.sep_stack = None
 
 
 class PlotIdentifier(object):

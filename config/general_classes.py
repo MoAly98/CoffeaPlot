@@ -40,6 +40,7 @@ class CoffeaPlotSettings(object):
         self.datamc_plot_settings = None
         self.mcmc_plot_settings = None
         self.significance_plot_settings = None
+        self.separation_plot_settings = None
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -142,6 +143,10 @@ class CoffeaPlotSettings(object):
                 datamcdir = f'{self.dumpdir}/plots/{tree}/DataMC'
                 self.tree_to_dir[tree]['datamcdir'] = datamcdir
                 os.makedirs(datamcdir, exist_ok=True)
+            if 'SEPARATION' in self.makeplots:
+                separationdir = f'{self.dumpdir}/plots/{tree}/Separation'
+                self.tree_to_dir[tree]['separationdir'] = separationdir
+                os.makedirs(separationdir, exist_ok=True)
 
             # ==== Create the directories to store tables from plotter ==== #
             tablesdir = f'{self.dumpdir}/tables/{tree}'

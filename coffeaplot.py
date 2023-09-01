@@ -107,6 +107,8 @@ def main():
             CoffeaPlotSettings.mcmc_plot_settings         = parse_special_plot_settings(validated['mcmc'], 'MCMC', GeneralPlotSettings)
         if 'SIGNIF' in CoffeaPlotSettings.makeplots:
             CoffeaPlotSettings.significance_plot_settings = parse_special_plot_settings(validated['significance'], 'SIGNIF', GeneralPlotSettings)
+        if 'SEPARATION' in CoffeaPlotSettings.makeplots:
+            CoffeaPlotSettings.separation_plot_settings   = parse_special_plot_settings(validated['separation'], 'SEPARATION', GeneralPlotSettings)
 
     # =========== Set up fileset =========== #
     fileset = {}

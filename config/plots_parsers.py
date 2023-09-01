@@ -3,6 +3,7 @@ import logging
 log = logging.getLogger(__name__)
 # ================ CoffeaPlot Imports ================ #
 from config.plot_classes import (DataMCSettings, MCMCSettings,
+                                SeparationSettings,
                                 MainPanelSettings, PanelSettings,
                                 GeneralPlotSettings as GPS)
 
@@ -112,6 +113,9 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
     elif plot_type == 'DATAMC':
         PlotSettings = DataMCSettings()
 
+    elif plot_type == 'SEPARATION':
+        PlotSettings = SeparationSettings()
+
     else:
         PlotSettings = PlotWithRatioSettings()
 
@@ -119,5 +123,10 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
     # for settings that are set by user (not None)
     for key, value in filtered_settings.items():
         setattr(PlotSettings, key, value)
+
+    if plot_type == 'SEPARATION':
+        if PlotSettings.main.ynorm:
+            log.warning('Setting ynorm to False for separation plots, overriding the config')
+        PlotSettings.main.ynorm = True
 
     return PlotSettings

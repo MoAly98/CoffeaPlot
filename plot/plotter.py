@@ -151,8 +151,8 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
         total_histogram.rebin(rebin)
     total_histogram.label = variable_label
     total_histogram.stylish_sample = 'Total'
-    tot_signals_histogram.stylish_region = region.label
-    tot_signals_histogram.stylish_rescale = rescale.label
+    total_histogram.stylish_region = region.label
+    total_histogram.stylish_rescale = rescale.label
 
     PlotSettings.total_mc_histo = total_histogram
 
@@ -189,13 +189,13 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
     for variable in CoffeaPlotSettings.variables_list:
         #if variable.tree != tree: continue
         if variable.dim  != 1:    continue
-        log.info(f"Setting up variable {variable.name}")
+        log.debug(f"Setting up variable {variable.name}")
 
         for region in CoffeaPlotSettings.regions_list:
-            log.info(f"Setting up region {region.name}")
+            log.debug(f"Setting up region {region.name}")
 
             for rescale in CoffeaPlotSettings.rescales_list:
-                log.info(f"Setting up rescale {rescale.name}")
+                log.debug(f"Setting up rescale {rescale.name}")
 
                 PlotSettings = PlotterSettings(variable, region, rescale )
                 # Sort samples and save them to PlotSettings
@@ -240,6 +240,23 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                 # Apply blinding
                 data_stack.blinder = blinder
                 PlotSettings.data_stack = data_stack
+
+                # ================================================ #
+                # ============== Create the Separation stack ============== #
+                # ================================================ #
+                sep_stack              = Stack(stackatinos = [], bar_type = 'step', error_type = 'stat', plottersettings = PlotSettings)
+                signals_histograms = PlotSettings.signals_histos
+                for signal_histogram in signals_histograms:
+                    signal_stackatino = Stackatino([signal_histogram], label = signal_histogram.stylish_sample, color = signal_histogram.color, fill = None, linewidth=3)
+                    sep_stack.append(signal_stackatino)
+                    signal_stackatino.sum_histograms()
+
+                background_histogram = PlotSettings.tot_backgrounds_histo
+                background_stackatino = Stackatino([background_histogram], label = background_histogram.stylish_sample, color = background_histogram.color, fill = None, linewidth=3)
+                background_stackatino.sum_histograms()
+
+                sep_stack.append(background_stackatino)
+                PlotSettings.sep_stack = sep_stack
 
                 # ================================================ #
                 # ============== Create the Data/MC ratio ============== #
@@ -307,6 +324,8 @@ def make_datamc(plot, settings, outpath):
     data_over_mc_ratio = deepcopy(plot.data_over_mc_ratio)
 
     stack_with_datamc = CoffeaPlot([mc_stack, data_stack], data_over_mc_ratio, settings)
+
+    log.info(f"Plotting Data v MC plots")
     stack_with_datamc.plot(outpath)
 
 
@@ -321,7 +340,16 @@ def make_mcmc(plot, settings, outpath):
     mc_stack.bar_type = 'step'
 
     mcmc_plot = CoffeaPlot(mc_stack, mc_over_mc_ratio, settings)
+    log.info(f"Plotting MC v MC plots")
     mcmc_plot.plot(outpath)
+
+def make_separation(plot, settings, outpath):
+    sep_stack = deepcopy(plot.sep_stack)
+
+    sep_stack.stack = False
+    sep_plot = CoffeaPlot(sep_stack, [], settings)
+    log.info(f"Plotting Separation plots")
+    sep_plot.plot(outpath)
 
 def make_significance(plot, settings, outpath):
     mc_stack = deepcopy(plot.mc_stack)
@@ -329,12 +357,15 @@ def make_significance(plot, settings, outpath):
     signif_ratios = plot.signif_ratios
 
     stack_with_signif = CoffeaPlot([mc_stack, data_stack], signif_ratios, settings)
+    log.info(f"Plotting Significance plots")
     stack_with_signif.plot(outpath)
 
 
 def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
     makeplots = CoffeaPlotSettings.makeplots
     for plot in plot_settings_list:
+
+        log.info(f"Making plots for {plot.variable.name} in {plot.region.name} with {plot.rescale.name} rescale")
 
         if 'DATAMC' in makeplots:
             outpath = outpaths['datamcdir']
@@ -345,3 +376,6 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
         if 'SIGNIF' in makeplots:
             outpath = outpaths['significancedir']
             make_significance(plot, CoffeaPlotSettings.significance_plot_settings, outpath)
+        if 'SEPARATION' in makeplots:
+            outpath = outpaths['separationdir']
+            make_separation(plot, CoffeaPlotSettings.separation_plot_settings, outpath)
