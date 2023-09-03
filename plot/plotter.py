@@ -6,7 +6,7 @@ import logging
 log = logging.getLogger(__name__)
 
 from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder
-
+from util.utils import compute_total_separation
 
 def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
 
@@ -248,8 +248,8 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                 signals_histograms = PlotSettings.signals_histos
                 for signal_histogram in signals_histograms:
                     signal_stackatino = Stackatino([signal_histogram], label = signal_histogram.stylish_sample, color = signal_histogram.color, fill = None, linewidth=3)
-                    sep_stack.append(signal_stackatino)
                     signal_stackatino.sum_histograms()
+                    sep_stack.append(signal_stackatino)
 
                 background_histogram = PlotSettings.tot_backgrounds_histo
                 background_stackatino = Stackatino([background_histogram], label = background_histogram.stylish_sample, color = background_histogram.color, fill = None, linewidth=3)
@@ -345,9 +345,20 @@ def make_mcmc(plot, settings, outpath):
 
 def make_separation(plot, settings, outpath):
     sep_stack = deepcopy(plot.sep_stack)
-
     sep_stack.stack = False
-    sep_plot = CoffeaPlot(sep_stack, [], settings)
+
+
+    if  settings.writesep:
+
+        signal_stackatinos = sep_stack.stackatinos[:-1]
+        signal_h = sum(stackatino.sum.h for stackatino in signal_stackatinos)
+        background_stackatino = sep_stack.stackatinos[-1]
+        bkg_h = background_stackatino.sum.h
+
+        separation = compute_total_separation(signal_h, bkg_h)
+        separation_str = f"Separation: {separation*100:.2f} %"
+
+    sep_plot = CoffeaPlot(sep_stack, [], settings, add_auto_text = [[separation_str, settings.seploc]])
     log.info(f"Plotting Separation plots")
     sep_plot.plot(outpath)
 
@@ -378,4 +389,6 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
             make_significance(plot, CoffeaPlotSettings.significance_plot_settings, outpath)
         if 'SEPARATION' in makeplots:
             outpath = outpaths['separationdir']
+
+
             make_separation(plot, CoffeaPlotSettings.separation_plot_settings, outpath)

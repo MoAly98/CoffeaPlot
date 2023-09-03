@@ -46,6 +46,38 @@ def string_to_list(value):
         return [value]
     return value
 
+def text_and_loc(value):
+    """
+    This method takes an argument that is either a string or list. If it is a string
+    then this is the text to be written on canvas, and its location is chosen automatically
+    by the code. If it is a list, then first element should be a string, and second should
+    be either a string or a list of length 2, both of which are meant to specify the location
+    of the text on the canvas.
+
+    Parameters
+    ----------
+    value : str or list
+        Argument that is either a string or list.
+
+    Returns
+    -------
+    list
+        List of length 2, where the first element is the text to be written on canvas, and the second element is the location of the text on the canvas.
+    """
+    if isinstance(value, str):
+        return [value, None]
+    elif isinstance(value, list):
+        if len(value) != 2:
+            raise SchemaError("Expecting a list of length 2 here")
+        if not isinstance(value[0], str):
+            raise SchemaError("Expecting a string here")
+        if not isinstance(value[1], str) and not isinstance(value[1], list):
+            raise SchemaError("Expecting a string or list of strings here")
+        if isinstance(value[1], list) and len(value[1]) != 2:
+            raise SchemaError("Expecting a list of length 2 here")
+
+        return value
+
 class CanvasSchema(object):
     """
     Class to handle the schema for a general canvas. It hold generic canvas
@@ -105,6 +137,7 @@ class CanvasSchema(object):
             if plot_type == 'SEPARATION':
                 general_plot_settings_schema.update({
                     Optional('writesep', default = True): bool,
+                    Optional('seploc', default = 'upper center'): Or(str, [Use(float),Use(float)]),
                 })
 
         # set the schema and defaults
@@ -122,19 +155,21 @@ class PanelSchema(object):
         panels_schema = {
             # Y-axis
             Optional('ylabel', default = 'Fraction of Events/bin' if panel_type == 'MAIN' else 'Ratio'): str,
-            Optional('ylabelfontsize', default = 26): int,
+            Optional('ylabelfontsize', default = 30): int,
             Optional('ylog',   default = False): bool,
             Optional('yrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
             # X-axis
             Optional('xrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
             Optional('xlog',   default = False): bool,
-            Optional('xlabelfontsize', default = 26): int,
+            Optional('xlabelfontsize', default = 30): int,
             # Legend
             Optional('legendshow',     default = True if panel_type == 'MAIN' else False): bool,
-            Optional('legendfontsize', default = 26): int,
+            Optional('legendfontsize', default = 30): int,
             Optional('legendloc',      default = 'upper right'): Or(str, And([Use(float)], lambda x: len(x) == 2)),
             Optional('legendncol',     default = 2): int,
             Optional('legendoutside',  default = False): bool,
+            # Text
+            Optional('text', default = [[None, None]]): [Use(text_and_loc)], # ("Hi", (0.1,0.9)) or ("Hi", "upper left")
         }
 
         # ===== Main panels only have the following attributes ===== #

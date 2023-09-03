@@ -150,5 +150,8 @@ MCMC:
   #Ratio:
     #YRange: [0, 2]
 SEPARATION:
+    seploc: [0.6,0.7]
     Main:
+      legendfontsize: 40
       YLog: False
+      yrange: [0, 0.3]

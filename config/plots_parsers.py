@@ -3,7 +3,7 @@ import logging
 log = logging.getLogger(__name__)
 # ================ CoffeaPlot Imports ================ #
 from config.plot_classes import (DataMCSettings, MCMCSettings,
-                                SeparationSettings,
+                                SeparationSettings, PlotWithRatioSettings,
                                 MainPanelSettings, PanelSettings,
                                 GeneralPlotSettings as GPS)
 

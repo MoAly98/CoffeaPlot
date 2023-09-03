@@ -6,12 +6,17 @@ import mplhep
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpl_patches
 
 from containers.histograms import Histogram
+from config.plot_classes import SeparationSettings
+
+import logging
+log = logging.getLogger(__name__)
 
 plt.style.use(mplhep.style.ATLAS)
 plt.rcParams['axes.linewidth'] = 3
-plt.rcParams.update({'font.size': 26})
+plt.rcParams['font.size'] = 30
 plt.rcParams['xtick.major.pad']='10'
 plt.rcParams['ytick.major.pad']='10'
 plt.rcParams['text.latex.preamble'] = r'\centering'
@@ -21,12 +26,19 @@ class CoffeaPlot(object):
     This class can create the figure, the axes, handle Stacks and RatioPlots and Box
     objects to produce a plot that gets saved to a file.
     '''
-    def __init__(self, stacks = [], ratio_plots = [], settings = None):
+    def __init__(self, stacks = [], ratio_plots = [], settings = None, add_auto_text = None):
 
         # Data
         self.stacks = stacks if isinstance(stacks, list) else [stacks]
         self.ratio_plots = ratio_plots if isinstance(ratio_plots, list) else [ratio_plots]
         self.settings = settings
+
+        if add_auto_text is None:
+            self.additional_text = []
+        else:
+            if not isinstance(add_auto_text, list):
+                log.error("Additional text must be a list of list [[text, location]]")
+            self.additional_text = add_auto_text
 
 
     def make_figure(self):
@@ -133,9 +145,11 @@ class CoffeaPlot(object):
 
         if self.settings.main.legendshow:
             if self.settings.main.legendoutside:
-                main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                first_legend = main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                main_ax.add_artist(first_legend)
             else:
-                main_ax.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                first_legend = main_ax.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                main_ax.add_artist(first_legend)
 
         # ==================== X-axis ==================== #
         # If there are ratio plots, don't use an x-axis label on main plot
@@ -174,6 +188,18 @@ class CoffeaPlot(object):
                 main_ax.set_ylim(1., max(max_bin_contents)*20)
             else:
                 main_ax.set_ylim(0., max(max_bin_contents)*1.25)
+
+        # ==================== Add Text to Plot ==================== #
+        # Use legends to benifit from auto placement of text and easy locating
+        for text in self.settings.main.text + self.additional_text:
+            txt, loc = text
+            if txt is None and loc is None : continue
+            if txt is None: continue
+            if loc is None: loc = 'best'
+
+            handle = mpl_patches.Rectangle((0, 0), 1, 1, fc="white", ec="white", lw=0, alpha=0)
+            legend = main_ax.legend([handle], [txt], loc=loc, fontsize=self.settings.main.legendfontsize)
+            main_ax.add_artist(legend)
 
         # COM notworking
         mplhep.atlas.label(self.settings.status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
@@ -254,8 +280,8 @@ class CoffeaPlot(object):
         fig, main_ax, rat_axes = self.make_figure()
 
         max_bin_contents, xrange = self.plot_main_canvas(main_ax)
-        self.decorate_main_canvas(main_ax, max_bin_contents, xrange)
 
+        self.decorate_main_canvas(main_ax, max_bin_contents, xrange)
 
         for i, ratio_plot in enumerate(self.ratio_plots):
             ratio_ax = rat_axes[i]

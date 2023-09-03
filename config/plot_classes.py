@@ -57,7 +57,8 @@ class SeparationSettings(PlotWithRatioSettings):
     to allow writing the separation values on the plot.
     """
     def __init__(self):
-        self.wrtiesep = None
+        self.writesep = None
+        self.seploc   = None
         super(SeparationSettings, self).__init__()
 
 class PanelSettings(object):
@@ -78,6 +79,7 @@ class PanelSettings(object):
         self.legendloc      = None
         self.legendncol     = None
         self.legendfontsize = None
+        self.text           = None
 
     def __getitem__(self, item):
         return getattr(self, item)
