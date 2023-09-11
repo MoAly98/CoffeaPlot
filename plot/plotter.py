@@ -2,6 +2,7 @@
 from collections import defaultdict
 from copy import copy, deepcopy
 import os, re
+import numpy as np
 import logging
 log = logging.getLogger(__name__)
 
@@ -92,6 +93,7 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
             sig.stylish_rescale = rescale.label
             if rebin is not None:
                 sig.rebin(rebin)
+
             signals.append(sig)
 
         # ============== Data ============== #
@@ -120,7 +122,16 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
     PlotSettings.data_histo = data
 
     # ============== Backgrounds Histo ============== #
-    tot_backgrounds_histogram = sum(backgrounds)
+    if backgrounds != []:
+        tot_backgrounds_histogram = sum(backgrounds)
+    else:
+        tot_backgrounds_histogram = deepcopy(data)
+        values = np.full_like(tot_backgrounds_histogram.values(), 1e-6)
+        variances = np.full_like(tot_backgrounds_histogram.values(), 1e-8)
+        tot_backgrounds_histogram.h[...] = np.stack([values, variances], axis=-1)
+
+
+
     tot_backgrounds_histogram.sample         = 'background'
     tot_backgrounds_histogram.label = variable_label
     tot_backgrounds_histogram.stylish_sample = 'Background'
@@ -133,8 +144,9 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
     if signals != []:
         tot_signals_histogram = sum(signals)
     else:
-        tot_signals_histogram = deepcopy(tot_backgrounds_histogram)
-        tot_signals_histogram *= 0
+        tot_signals_histogram = deepcopy(data)
+        variances = np.full_like(tot_signals_histogram.values(), 1e-8)
+        tot_signals_histogram.h[...] = np.stack([values, variances], axis=-1)
 
     tot_signals_histogram.sample = 'signal'
     tot_signals_histogram.label = variable_label
@@ -177,7 +189,6 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
             unpacked_samples.extend(sample.subsamples)
         else:
             unpacked_samples.append(sample)
-
 
     if all(s.type != 'DATA' for s in unpacked_samples):
         log.warning("No data sample found, using total MC as data")
@@ -389,6 +400,4 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
             make_significance(plot, CoffeaPlotSettings.significance_plot_settings, outpath)
         if 'SEPARATION' in makeplots:
             outpath = outpaths['separationdir']
-
-
             make_separation(plot, CoffeaPlotSettings.separation_plot_settings, outpath)
