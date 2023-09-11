@@ -2,7 +2,7 @@
 import numpy as np
 import logging
 log = logging.getLogger(__name__)
-
+print(logging.getLogger('coffeaplot').level)
 # ======= CoffeaPlot Imports ======= #
 from containers.samples import Sample, SuperSample
 from containers.regions import Region
@@ -170,6 +170,7 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
             is_supersample = True
         else:
             subsamples = [sample]
+
         for subsample in subsamples:
             sample_name = subsample['name']
             log.info(f"Setting up sample {sample_name}")
@@ -195,28 +196,36 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
                 log.error(f"Sample {sample_name} is marked as reference MC but is of type data. This is not allowed.")
 
             # ============ Check n-tuples dir is available for this sample ============ #
-            get_dirs_from = None
-            # If no ntuples directory is given in general settings, one must be given in the sample settings
-            if CoffeaPlotSettings.ntuplesdirs is None:
-                # Break if no ntuples directory is given for this sample and it is not a subsample
-                if subsample['ntuplesdirs'] is None and not is_supersample:
-                    log.error(f"No ntuples directory given for sample {sample_name} and none given in general settings.")
+            get_dirs_from = CoffeaPlotSettings
 
-                # If this is a subsample, try to get the ntuples directory from the supersample
-                elif subsample['ntuplesdirs'] is None and is_supersample:
-                    # Break if no ntuples directory is given in supersample either
-                    if sample['ntuplesdirs'] is None:
-                        log.error(f"No ntuples directory given for sample {sample_name} and none given in general settings or supersample.")
-                    get_dirs_from = sample
+            # Deal with standalone samples first
+            if not is_supersample:
                 # If an ntuples directory is given for this sample, use it
+                if subsample['ntuplesdirs'] is not None:
+                    get_dirs_from = subsample
+                # If no ntuples directory is given for this sample, and none is given in general settings, break
+                elif subsample['ntuplesdirs'] is  None and CoffeaPlotSettings.ntuplesdirs is None:
+                    log.error(f"No ntuples directory given for sample {sample_name} and none given in general settings.")
                 else:
+                    # Directory is given in general settings, use it
+                    pass
+            # Now deal with supersamples
+            else:
+                # If an ntuples directory is given for this subsample, use it
+                if subsample['ntuplesdirs'] is not None :
                     get_dirs_from = subsample
 
-            else:
-                # If an ntuples directory is given in gneral settings and none were found
-                # in the sample settings, use the one from general settings
-                if get_dirs_from is None:
-                    get_dirs_from = CoffeaPlotSettings
+                # If ntuples directory is not given for this subsample, try to get it from the supersample
+                elif subsample['ntuplesdirs'] is None and sample['ntuplesdirs'] is not None:
+                    get_dirs_from = sample
+
+                # If no ntuples directory is given for this subsample, and none is given in the supersample and none is given in general settings, break
+                elif subsample['ntuplesdirs'] is None and sample['ntuplesdirs'] is None and CoffeaPlotSettings.ntuplesdirs is None:
+                    log.error(f"No ntuples directory given for sample {sample_name} and none given in general settings or supersample.")
+
+                else:
+                    # Directory is given in general settings, use it
+                    pass
 
             # Get the ntuples directory to use
             look_in = get_dirs_from['ntuplesdirs']
@@ -227,7 +236,9 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
             selection = subsample['selection']
             selection_functor = None
             if selection is not None:
-                selection_fn      = CoffeaPlotSettings.functions[selection[0]]
+                selection_fn      = CoffeaPlotSettings.functions.get(selection[0], None)
+                if selection_fn is None:
+                    log.error(f"Function {selection[0]} is not defined in any helper module. Please check your configuration file.")
                 selection_functor = Functor(selection_fn, selection[1])
                 log.debug(f"Sample selector set to use function {selection[0]} with arguments {selection[1]}")
             else:
@@ -289,9 +300,7 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
                 # Set regex and directories to use for this supersample
                 supersample.regexes = sample_regexes
                 supersample.direcs = look_in
-                # Set the sample object we store in the list to the supersample
-                # loop over subsamples will be done in processor/plotter
-                sample_obj = supersample
+                continue
 
             # Create fileset for sample to be passed to processor, if processor is to be run
             if CoffeaPlotSettings.runprocessor:
@@ -300,9 +309,16 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
             # Add sample to list of samples
             samples_list.append(sample_obj)
 
-        # Count sample for logging
-        if is_supersample:  num_samples += len(sample_obj)
-        else:   num_samples += 1
+            # Count sample for logging
+            num_samples += 1
+
+        if is_supersample:
+            if CoffeaPlotSettings.runprocessor:
+                supersample.create_fileset()
+            samples_list.append(supersample)
+            num_samples += len(supersample)
+
+
 
     # Set the list of samples and the number of samples in the settings object
     CoffeaPlotSettings.samples_list = samples_list

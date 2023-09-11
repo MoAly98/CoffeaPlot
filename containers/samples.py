@@ -51,7 +51,7 @@ class Sample(object):
             globbed.extend(glob(wild))
 
         self.files = globbed
-        assert self.files != [], f'NO files found for sample {self.name} with any regexes: {self.regexes}'
+        assert self.files != [], f'NO files found for sample {self.name} with any regexes: {self.regexes} in any of the directories: {self.direcs}'
 
 
     def __eq__(self, other):
@@ -59,6 +59,9 @@ class Sample(object):
 
     def __str__(self):
         sample_str = f"Sample: {self.name} \n Type: {self.type} \n Category: {self.category} \n Files: {self.regexes} \n Selection: {self.sel} \n Weight: {self.weight} \n MC Weight: {self.mc_weight} \n Color: {self.color} \n Label: {self.label} \n Use as reference MC: {self.ref}"
+
+    def __hash__(self):
+            return hash(self.name)
 
 class SuperSample(Sample):
 
