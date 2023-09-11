@@ -1,0 +1,87 @@
+General:
+  DumpDir: "./outputs/AltBDT_ttjets_studies/ttb_v_ttc_v_ttlight_in_CRSR/"
+  InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
+  Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
+  Trees: 'nominal_Loose'
+  RunProcessor: False
+  RunPlotter: True
+  LogLevel: 2
+  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  MCWeight:
+    - 'MC_weight'
+    - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
+  Blinding: 0.00333
+  makeplots: ['SEPARATION','MCMC']
+
+Variables:
+  1D:
+    - Name: alt_bdt_tH
+      Label: 'AltBDT(tH)'
+      Method:
+        - bdt_tH
+        - ['BDT']
+      Binning: [0, 0.3528, 0.6, 0.78, 1]
+
+    - Name: alt_bdt_ttb
+      Label: 'AltBDT(ttb)'
+      Method:
+        - bdt_ttb
+        - ['BDT']
+      Binning: [0, 0.2, 0.4, 0.6, 0.8, 1]
+      Rebin: [0, 0.2, 0.3, 0.4, 0.5, 1]
+
+Supersamples:
+
+  - Name: ttb_5FS
+    NtuplesRgxs: ['410470_user*']
+    SubSamples:
+      - Name: ttb
+        Label: '$t\bar{t}+\geq1b$'
+        Type: 'SIG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: 'orange'
+
+      - Name: ttc
+        Label: '$t\bar{t}+\geq1c$'
+        Type: 'SIG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: 'green'
+
+      - Name: ttlight
+        Label: '$t\bar{t}+lights$'
+        Type: 'SIG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: 'darkblue'
+
+Regions:
+
+  - Name: CR
+    Label: 'CR'
+    Selection:
+      - CR_ttb_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['ttb']
+
+  - Name: SR
+    Label: 'SR'
+    Selection:
+      - SR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['tH', 'tWH']
+
+
+SEPARATION:
+    seploc: [0.6,0.7]
+    Main:
+      legendfontsize: 40
+      YLog: False
+      yrange: [0, 0.3]
