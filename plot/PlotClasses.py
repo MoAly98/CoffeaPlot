@@ -108,10 +108,13 @@ class CoffeaPlot(object):
                 else:
                     # Don't allow log scale if normalizing
                     if self.settings.main.ylog:
-                        print("WARNING:: Cannot set log scale when normalizing to unity")
+                        log.warning("Cannot set log scale when normalizing to unity")
                         self.main.ylog = False
                     # Divide each bin by integral
-                    histograms.append(stackatino.sum.h/stackatino.sum.h.values().sum())
+                    if not all(v == 1e-6 for v in stackatino.sum.h.values()):
+                        histograms.append(stackatino.sum.h/stackatino.sum.h.values().sum())
+                    else:
+                        histograms.append(stackatino.sum.h*0)
 
                 # Add the styling for each stackatino
                 for stackitem, style in stackatino.styling.items():
@@ -137,19 +140,10 @@ class CoffeaPlot(object):
 
             # Plot the stack
             mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=stack.stack, flow='hint', **styles)
+
         return max_bin_contents, xrange
 
     def decorate_main_canvas(self, main_ax, max_bin_contents, xrange):
-
-        # ==================== Legend ==================== #
-
-        if self.settings.main.legendshow:
-            if self.settings.main.legendoutside:
-                first_legend = main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
-                main_ax.add_artist(first_legend)
-            else:
-                first_legend = main_ax.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
-                main_ax.add_artist(first_legend)
 
         # ==================== X-axis ==================== #
         # If there are ratio plots, don't use an x-axis label on main plot
@@ -200,6 +194,13 @@ class CoffeaPlot(object):
             handle = mpl_patches.Rectangle((0, 0), 1, 1, fc="white", ec="white", lw=0, alpha=0)
             legend = main_ax.legend([handle], [txt], loc=loc, fontsize=self.settings.main.legendfontsize)
             main_ax.add_artist(legend)
+
+        # ==================== Legend ==================== #
+        if self.settings.main.legendshow:
+            if self.settings.main.legendoutside:
+                plt.legend(bbox_to_anchor=(1.04, 1), loc='upper right', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+            else:
+                plt.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
 
         # COM notworking
         mplhep.atlas.label(self.settings.status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
@@ -295,6 +296,9 @@ class CoffeaPlot(object):
         plt.savefig(f"{outpath}/{filename}.pdf", bbox_inches='tight')
         plt.close('all')
 
+
+class PieChart(CoffeaPlot):
+    pass
 
 class StylableObject(object):
 
@@ -518,10 +522,6 @@ class Stackatino(StylableObject):
     def sum_histograms(self):
         self.sum =  sum(self.histograms)
         return self
-
-    # def __repr__(self):
-    #     return f"<Stackatino {self.label}: {', '.join([h for h in self.histograms])}>"
-
 
 class SpanBox(StylableObject):
     '''
