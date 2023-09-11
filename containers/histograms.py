@@ -55,10 +55,15 @@ class Histogram(object):
         return self.__mul__(other)
 
     def __add__(self, other):
-        if self.name == other.name:
-            if (self.sample != other.sample and (self.sample != '___DUMMY___' and other.sample != '___DUMMY___')) or self.region != other.region or self.rescale != other.rescale:
-                print("BAD!! Adding histograms", self.sample, other.sample, self.region, other.region, self.rescale, other.rescale)
-            self.h += other.h
+        if isinstance(other, Histogram):
+            if self.name == other.name:
+                if (self.sample != other.sample and (self.sample != '___DUMMY___' and other.sample != '___DUMMY___')) or self.region != other.region or self.rescale != other.rescale:
+                    print("BAD!! Adding histograms", self.sample, other.sample, self.region, other.region, self.rescale, other.rescale)
+                self.h += other.h
+
+        elif isinstance(other, (int, float)):
+            self.h += other
+
         return self
 
 
