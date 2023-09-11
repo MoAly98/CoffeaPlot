@@ -100,7 +100,7 @@ class CanvasSchema(object):
             Optional('heightratios',        default = None): And([int]), # Ratio of main to ratio canvas
         }
 
-        # ========== If non-general schema is being built, set defaults to None ========== #
+        # ========== If non-general canvas (e.g. DATAMC) schema is being built, set defaults to None ========== #
         # This allows later to check if a setting is set for specific plots that
         # should override the general settings
         if canvas_type != 'GENERAL':
@@ -140,9 +140,17 @@ class CanvasSchema(object):
                     Optional('seploc', default = 'upper center'): Or(str, [Use(float),Use(float)]),
                 })
 
+        if canvas_type == 'GENERAL':
+            if plot_type == 'PIECHART':
+                general_plot_settings_schema.update({
+                    'samples': [str],
+                    # Default is total MC. If set, samples should be fractions of sumsample adding to 1.
+                    Optional('sumsample', default = None): str,
+                })
+
         # set the schema and defaults
         self.schema = general_plot_settings_schema
-        self.defaults  = {k.key: k.default for k in self.schema.keys()}
+        self.defaults  = {k.key: k.default for k in self.schema.keys() if isinstance(k, Optional)}
 
 class PanelSchema(object):
     """
@@ -315,7 +323,7 @@ plots_with_ratio_schema = CanvasSchema('MPLUSR', 'GENERAL')
 datamc_schema           = CanvasSchema('MPLUSR', 'DATAMC')
 mcmc_schema             = CanvasSchema('MPLUSR', 'MCMC')
 separation_schema       = CanvasSchema('MPLUSR', 'SEPARATION')
-
+piechart_schema         = CanvasSchema('GENERAL', 'PIECHART')
 
 schema = Schema({
                 'general': general_schema.schema ,
@@ -329,4 +337,6 @@ schema = Schema({
                 Optional('mcmc',         default = mcmc_schema.defaults):   mcmc_schema.schema,
                 Optional('separation',   default = separation_schema.defaults):   separation_schema.schema,
                 Optional('significance', default = plots_with_ratio_schema.defaults): plots_with_ratio_schema.schema,
+                Optional('piechart',     default = piechart_schema.defaults): piechart_schema.schema,
+
                 })

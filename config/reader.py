@@ -25,6 +25,21 @@ def validate(indict):
     if  validated['samples'] == [] and validated['supersamples'] == []:
         log.error("No samples specified in config file, need at least one sample/supersample !")
 
+    if 'samples' in validated['piechart']:
+        for piechart_sample in validated['piechart']['samples'] + [validated['piechart']['sumsample']]:
+            # in case sumsample is not set
+            if piechart_sample is None: continue
+
+            bad_piecharts_sample = True
+
+            if any(s['name'] == piechart_sample for s in validated['samples']):
+                bad_piecharts_sample = False
+            if any(s['name'] == piechart_sample for supersample in validated['supersamples'] for s in supersample['subsamples'] ):
+                bad_piecharts_sample = False
+
+            if bad_piecharts_sample:
+                log.error(f"Sample {piechart_sample} not found in samples list!")
+
     return validated
 
 def process(cfgp):
