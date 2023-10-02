@@ -111,7 +111,7 @@ class CanvasSchema(object):
         if canvas_type == 'MPLUSR':
 
             # Get the schema for main and ratio panels
-            main_axis_schema = PanelSchema('MAIN')
+            main_axis_schema = PanelSchema('MAIN', plot_type)
             ratio_axis_schema = PanelSchema('RATIO')
 
             # Add the schema for main and ratio panels to the canvas schema
@@ -158,7 +158,7 @@ class PanelSchema(object):
     options and sensible defaults for them. Each option will have a corrspinding
     class attribute in the class PanelSettings (and its child classes).
     """
-    def __init__(self, panel_type='MAIN'):
+    def __init__(self, panel_type='MAIN', plot_type='GENERAL'):
         # ===== All panels have the following attributes ===== #
         panels_schema = {
             # Y-axis
@@ -182,8 +182,12 @@ class PanelSchema(object):
 
         # ===== Main panels only have the following attributes ===== #
         if panel_type == 'MAIN':
+            if plot_type == 'SIGNIF' or plot_type == 'DATAMC':
+                ynorm = False
+            else:
+                ynorm = True
             panels_schema.update({
-               Optional('ynorm',  default = True):  bool,
+               Optional('ynorm',  default = ynorm):  bool,
             })
 
          # set the schema and defaults
