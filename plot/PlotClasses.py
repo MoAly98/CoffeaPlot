@@ -54,7 +54,7 @@ class CoffeaPlot(object):
             assert len(self.settings.heightratios) == nrows, f"Number of height ratios ({len(self.settings.heightratios)}) does not match number of axes ({len(self.ratio_plots)})"
             height_ratios = self.settings.heightratios
 
-        gs     = fig.add_gridspec(ncols=1, nrows=nrows, height_ratios=height_ratios, hspace=0.1)
+        gs     = fig.add_gridspec(ncols=1, nrows=nrows, height_ratios=height_ratios, hspace=0.2)
         main_ax     = fig.add_subplot(gs[0, 0])
         rat_axes = []
         for i in range(nrows-1):
@@ -198,14 +198,18 @@ class CoffeaPlot(object):
         # ==================== Legend ==================== #
         if self.settings.main.legendshow:
             if self.settings.main.legendoutside:
-                plt.legend(bbox_to_anchor=(1.04, 1), loc='upper right', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper right', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
             else:
-                plt.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                main_ax.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
 
         # COM notworking
         mplhep.atlas.label(self.settings.status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
 
     def plot_ratio_canvases(self, ratio_plot, ratio_ax):
+
+        blinded_bins = []
+        if ratio_plot.blinder is not None:
+            blinded_bins = ratio_plot.blinder.get_blinded_bins()
 
         # Loop over ratio items in the ratio plot
         for ratio_item in ratio_plot.ratio_items:
@@ -224,6 +228,36 @@ class CoffeaPlot(object):
             ratio_vals = ratio_item.get_ratio_vals()
             ratio_err  = ratio_item.err()
 
+            # If the stack needs to blinded, shade the blinded bins and set the bin contents to 0
+            if ratio_plot.blinder is not None:
+                self.apply_blinder(ratio_ax, ratio_plot.blinder, [ratio_item.numerator.h], 0, 1e-20)
+                ratio_vals = ratio_item.get_ratio_vals()
+
+            if self.settings.ratio.yrange is not None:
+                uplim = self.settings.ratio.yrange[1]
+                lowlim = self.settings.ratio.yrange[0]
+
+                for i, binval in enumerate(ratio_vals):
+                    if lowlim is not None and binval < lowlim:
+                        if lowlim > 0:   sign = 1
+                        else:           sign = -1
+
+                        if i in blinded_bins:
+                            continue
+
+                        ratio_ax.annotate("", xytext=(bin_centers[i], lowlim*(1+sign*0.1)), xy=(bin_centers[i], lowlim), arrowprops=dict(arrowstyle="->", color='blue', linewidth=3))
+
+                    if uplim is not None and binval > uplim:
+                        if uplim > 0:   sign = -1
+                        else:           sign = 1
+
+                        if i in blinded_bins:
+                            continue
+
+                        ratio_ax.annotate("", xytext=(bin_centers[i], uplim*(1+sign*0.1)), xy=(bin_centers[i], uplim), arrowprops=dict(arrowstyle="->", color='blue', linewidth=3))
+
+
+
             # Plot the ratio and error bars
             mplhep.histplot(ratio_vals, bins=bin_edges, yerr=ratio_err, label = ratio_item.label, ax = ratio_ax, histtype=ratio_plot.bar_type, stack=ratio_plot.stack, **ratio_item.styling)
 
@@ -234,18 +268,13 @@ class CoffeaPlot(object):
                 # Plot the uncertainty band
                 ratio_ax.bar(bin_centers, 2*mc_err, width= bin_widths, bottom=(1.0-mc_err), fill=False, linewidth=0, edgecolor="gray", hatch=3 * "/",)
 
-        # If the stack needs to blinded, shade the blinded bins and set the bin contents to 0
-        if ratio_plot.blinder is not None:
-            numerators = [ratio_item.numerator.h for ratio_item in ratio_plot.ratio_items]
-            self.apply_blinder(ratio_ax, ratio_plot.blinder, numerators, 0, 1e-20)
-
 
     def decorate_ratio_canvases(self, ratio_plot, ratio_ax, last_canvas):
 
         # ================= Legends ==================== #
         if self.settings.ratio.legendshow:
             if self.settings.ratio.legendoutside:
-                ratio_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
+                ratio_ax.legend(bbox_to_anchor=(1.04, 1), ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
             else:
                 ratio_ax.legend(loc=self.settings.ratio.legend_loc, ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
 
@@ -266,11 +295,14 @@ class CoffeaPlot(object):
         if self.settings.ratio.yrange is not None:
             ratio_ax.set_ylim(self.settings.ratio.yrange)
 
+
         # Set the y-axis label
         if ratio_plot.ylabel is not None:
             ratio_ax.set_ylabel(ratio_plot.ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
         if self.settings.ratio.ylabel is not None:
             ratio_ax.set_ylabel(self.settings.ratio.ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
+        if ratio_plot.ratio_items[0].ylabel is not None:
+            ratio_ax.set_ylabel(ratio_plot.ratio_items[0].ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
 
         # ==================== Grid ==================== #
         ratio_ax.grid(True)
@@ -396,6 +428,7 @@ class RatioItem(StylableObject):
         self.numerator = numerator
         self.denominator = denominator
         self.label = label
+        self.ylabel = ylabel
 
         StylableObject.__init__(self, **styling)
 
@@ -468,7 +501,7 @@ class Significance(RatioItem):
 
         sqrt_bkg_histo = Histogram(bkg.name, sqrt_bkg_h, bkg.sample, bkg.region, bkg.rescale)
 
-        better_ylabel = fr'{signal.sample}/$\sqrt(B)$'
+        better_ylabel = fr'{signal.sample}'+r'/$\sqrt{B}$'
 
         RatioItem.__init__(self, signal, sqrt_bkg_histo, label, better_ylabel, **styling)
 
