@@ -88,7 +88,6 @@ class Histogram(object):
         # Need to match storage of incoming histogram
         histo = self.h
         new_axis = hist.axis.Variable(new_edges, name=histo.axes[0].name)
-        hnew = hist.Hist.new.Var(new_edges, name=histo.axes[0].name, label=histo.label, flow=True).Weight()
         new_edges = new_axis.edges
         sw =  np.array(histo.values())
         sw2 =  np.array(histo.variances())
@@ -102,15 +101,28 @@ class Histogram(object):
             edges_correct.append(available)
 
         assert all(edges_correct)
-        binmap = np.digitize(histo.axes[0].centers, new_edges)
+
+        centers = histo.axes[0].centers
+
+        binmap = np.digitize(centers, new_edges)
         new_sw, new_sw2 = [], []
 
         for bin_num in sorted(set(binmap)):
             old_bins_in_this_bin = np.where(binmap == bin_num)[0]
+
+            if new_edges[0] == histo.axes[0].edges[0] and new_edges[-1] != histo.axes[0].edges[-1]:
+                if old_bins_in_this_bin == histo.axes[0].edges[-1]:
+                    continue
+            if new_edges[-1] == histo.axes[0].edges[-1] and new_edges[0] != histo.axes[0].edges[0]:
+                if old_bins_in_this_bin == histo.axes[0].edges[0]:
+                    continue
+
             w_slice = sw[old_bins_in_this_bin].sum()
             sw2_slice = sw2[old_bins_in_this_bin].sum()
             new_sw.append(w_slice)
             new_sw2.append(sw2_slice)
+
+        hnew = hist.Hist.new.Var(new_edges, name=histo.axes[0].name, label=histo.label, flow=True).Weight()
         hnew[...] = np.stack([new_sw, new_sw2], axis=-1)
 
         self.h = hnew
@@ -145,7 +157,7 @@ class Histograms(AccumulatorABC):
     def clone(self):
         # Create a copy of the accumulator
         acc = MyAccumulator()
-        acc.histograms = self.to_plot.copy()
+        acc.histograms = deepcopy(self.to_plot)
         return acc
 
     def __setitem__(self, histo, h ):
