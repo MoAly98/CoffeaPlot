@@ -48,8 +48,8 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
         else:
             samples = [the_sample]
 
-        for sample in samples:
 
+        for sample in samples:
             presel_events['weights'] = 1.0
             mc_weight = sample.mc_weight.evaluate(presel_events)
             sample_weights = sample.weight.evaluate(presel_events)
@@ -84,10 +84,9 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                     if isinstance(variable, Eff):
                         eff_mask = eff_mask_functor.evaluate(filt_reg)
 
-
                     # ================ Empty histogram for this region for this sample ===========
                     if ak.num(filt_reg['weights'], axis=0) == 0:
-                        return accum
+                        continue
 
                     # =============== Non empty histogram for this region for this sample ==========
                     if variable.dim == 1:
