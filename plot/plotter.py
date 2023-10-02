@@ -3,10 +3,12 @@ from collections import defaultdict
 from copy import copy, deepcopy
 import os, re
 import numpy as np
+import hist
 import logging
 log = logging.getLogger(__name__)
 
-from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder
+from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder, PieStack
+from containers.histograms import Histogram
 from util.utils import compute_total_separation
 from containers.variables import Eff
 
@@ -343,6 +345,39 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
                 PlotSettings.signif_ratios = signif_ratios_for_one_stack
 
+
+                # ================================================ #
+                # ============== Create the Piechart stack ============== #
+                # ================================================ #
+                pie_stack = PieStack(stackatinos = [], bar_type = 'pie', error_type = 'stat', plottersettings = PlotSettings)
+
+                sumsample = next((cat_sample_histogram for category, cat_samples_histograms in PlotSettings.category_to_samples_histos.items() for cat_sample_histogram in cat_samples_histograms if cat_sample_histogram.sample == CoffeaPlotSettings.piechart_plot_settings.sumsample), None)
+                if sumsample is None:
+                    sumsample = PlotSettings.total_mc_histo
+
+                for category, cat_samples_histograms in PlotSettings.category_to_samples_histos.items():
+                    for cat_sample_histogram in cat_samples_histograms:
+                        if cat_sample_histogram.sample not in CoffeaPlotSettings.piechart_plot_settings.samples: continue
+                        # ============== Create a Stackatino for each sample ============== #
+                        log.debug(f"Adding sample:  {cat_sample_histogram.sample} to Pie")
+                        fraction = cat_sample_histogram.values().sum()/sumsample.values().sum()
+
+                        err1 = cat_sample_histogram.variances().sum()/cat_sample_histogram.values().sum()**2
+                        err2 = sumsample.variances().sum()/sumsample.values().sum()**2
+                        err = fraction*np.sqrt(err1 + err2)
+
+                        hcat = hist.Hist.new.StrCat([cat_sample_histogram.sample], name="c", label=cat_sample_histogram.label).Weight()
+
+                        hcat.fill([cat_sample_histogram.sample], weight=fraction)
+                        hcat.variances()[0] = err
+                        cat_histo = Histogram(variable.name, hcat, sample.name, region.name , rescale.name)
+                        stackatino = Stackatino(histograms=[cat_histo], label=category, color=cat_sample_histogram.color, facecolor=cat_sample_histogram.color)
+                        # Add up all the histograms in the stackatino
+                        stackatino.sum_histograms(sample=cat_sample_histogram.sample)
+                        # Add the stackatino to the stack
+                        pie_stack.append(stackatino)
+
+                PlotSettings.pie_stack = pie_stack
                 # ================================================ #
                 #================= Save plot objects in PlotSettings ============== #
                 plot_settings_list.append(PlotSettings)
@@ -414,6 +449,12 @@ def make_significance(plot, settings, outpath):
     log.info(f"Plotting Significance plots")
     stack_with_signif.plot(outpath)
 
+def make_piechart(plot, settings, outpath):
+    pie_stack = deepcopy(plot.pie_stack)
+    piechart = CoffeaPlot([pie_stack], [], settings)
+    log.info(f"Plotting Pie Charts")
+    piechart.plot(outpath, plot_type='PIE')
+
 
 def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
     makeplots = CoffeaPlotSettings.makeplots
@@ -436,3 +477,6 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
         if 'EFF' in makeplots:
             outpath = outpaths['effdir']
             make_eff(plot, CoffeaPlotSettings.eff_plot_settings, outpath)
+        if 'PIECHART' in makeplots:
+            outpath = outpaths['piechartdir']
+            make_piechart(plot, CoffeaPlotSettings.piechart_plot_settings, outpath)

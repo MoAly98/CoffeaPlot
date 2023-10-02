@@ -250,7 +250,7 @@ class GeneralSettingsSchema(object):
                             Optional('helpers',        default = None): Use(string_to_list),
                             Optional('runprocessor',   default = False): bool,
                             Optional('runplotter',     default = False): bool,
-                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF'] for y in x])),
+                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART'] for y in x])),
                             Optional('skipnomrescale', default = False): bool,
                             Optional('loglevel',       default = 3): int,
                             Optional('nworkers',       default = 8): int, # 0 is Iterative executor...
