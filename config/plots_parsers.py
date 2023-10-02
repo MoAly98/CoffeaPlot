@@ -124,13 +124,18 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
         setattr(PlotSettings, key, value)
 
     if plot_type == 'SEPARATION':
-        if PlotSettings.main.ynorm:
+        if not PlotSettings.main.ynorm:
             log.warning('You are setting ynorm to False for separation plots, overriding the config to make it True')
         PlotSettings.main.ynorm = True
 
     if plot_type == 'EFF':
         if PlotSettings.main.ynorm:
             log.warning('You are setting ynorm to True for efficiency plots, overriding the config to make it False')
+        PlotSettings.main.ynorm = False
+
+    if plot_type == 'SIGNIF' or plot_type == 'DATAMC':
+        if PlotSettings.main.ynorm:
+            log.warning('You are setting ynorm to True for SIGNIF/DATAMC plots, overriding the config to make it False')
         PlotSettings.main.ynorm = False
 
     return PlotSettings
