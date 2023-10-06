@@ -84,12 +84,14 @@ class CoffeaPlotSettings(object):
             for ntupsdir in self.ntuplesdirs:
                 if not os.path.exists(ntupsdir):
                     log.error(f'Ntuple directory {ntupsdir} does not exist')
+
+        # If the user wants to run the processor, warn them that the histogram files will be ignored
+        if self.runprocessor:
+            if self.inputhistos is not None:
+                log.warning(f'You provided a histogram files {self.inputhistos} but you are running the processor. The histogram file will be ignored')
+            self.inputhistos = None
         # If input histogram files are specified, check them
         if self.inputhistos is not None:
-            # If the user wants to run the processor, warn them that the histogram files will be ignored
-            if self.runprocessor:
-                log.warning(f'You provided a histogram files {self.inputhistos} but you are running the processor. The histogram file will be ignored')
-                self.inputhistos = None
             # If the user wants to run the plotter, check that the histogram files exist
             for inhistofile in self.inputhistos:
                 if not os.path.exists(inhistofile):
@@ -117,6 +119,7 @@ class CoffeaPlotSettings(object):
                                 'separationdir': None,
                                 'significancedir': None,
                                 'tablesdir': None,
+                                'effdir': None,
                                 }
                         for tree in self.trees
                         }
@@ -147,6 +150,10 @@ class CoffeaPlotSettings(object):
                 separationdir = f'{self.dumpdir}/plots/{tree}/Separation'
                 self.tree_to_dir[tree]['separationdir'] = separationdir
                 os.makedirs(separationdir, exist_ok=True)
+            if 'EFF' in self.makeplots:
+                effdir = f'{self.dumpdir}/plots/{tree}/Efficiency'
+                self.tree_to_dir[tree]['effdir'] = effdir
+                os.makedirs(effdir, exist_ok=True)
 
             # ==== Create the directories to store tables from plotter ==== #
             tablesdir = f'{self.dumpdir}/tables/{tree}'
