@@ -339,7 +339,7 @@ schema = Schema({
                 'general': general_schema.schema ,
                 'variables': {'1d': [variable_1d_schema.schema], Optional('2d', default=[]): [variable_2d_schema.schema]},
                 'regions':                              [region_schema.schema],
-                Optional('effs',         default = []): {'1d': [eff_schema.schema]},
+                Optional('effs',         default = {'1d': [], '2d': []}): {'1d': [eff_schema.schema]},
                 Optional('rescales',     default = []): [rescale_schema.schema],
                 Optional('samples',      default = []): [sample_schema.schema],
                 Optional('supersamples', default = []): [supersample_schema.schema],

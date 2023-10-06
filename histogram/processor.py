@@ -28,8 +28,12 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
         self.samples_list   = CoffeaPlotSettings.samples_list
         self.regions_list   = CoffeaPlotSettings.regions_list
         self.rescales_list  = CoffeaPlotSettings.rescales_list
-        self.pie_sumsample  = CoffeaPlotSettings.piechart_plot_settings.sumsample
-        self.pie_samples    = CoffeaPlotSettings.piechart_plot_settings.samples
+        if CoffeaPlotSettings.piechart_plot_settings is not None:
+            self.pie_sumsample  = CoffeaPlotSettings.piechart_plot_settings.sumsample
+            self.pie_samples    = CoffeaPlotSettings.piechart_plot_settings.samples
+        else:
+            self.pie_sumsample  = None
+            self.pie_samples    = None
 
     def process(self, presel_events):
 
@@ -150,13 +154,10 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                 for rescaling in self.rescales_list:
                     for sample in sample_names:
                         done_vars = []
-
-
-
                         for variable in self.variables_list:
 
-                            if self.pie_samples is not None and sample.name in self.pie_samples:
-                                sumsample_histogram  = accumulator[(variable.name, self.pie_sample, region_to_plot.name , rescaling.name)]
+                            if self.pie_samples is not None and sample in self.pie_samples:
+                                sumsample_histogram  = accumulator[(variable.name, self.pie_sumsample, region_to_plot.name , rescaling.name)]
                                 pie_sample_histogram = accumulator[(variable.name, sample, region_to_plot.name , rescaling.name)]
 
                                 fraction = pie_sample_histogram.values().sum()/sumsample_histogram.values().sum()
@@ -169,7 +170,7 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                 hcat.fill([pie_sample_histogram.sample], weight=fraction)
                                 hcat.variances()[0] = err
 
-                                cat_histo = Histogram(variable.name+":pie", hcat, sample.name, region.name , rescale.name)
+                                cat_histo = Histogram(variable.name+":pie", hcat, sample, region_to_plot.name , rescaling.name)
                                 accumulator[cat_histo] = cat_histo
 
                             if isinstance(variable, Eff):
