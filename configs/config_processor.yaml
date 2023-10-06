@@ -31,6 +31,27 @@ Variables:
         - ['BDT_alt']
       Binning: 0,1,21
 
+      - Name: alt_bdt_ttc
+      Label: 'AltBDT(ttc)'
+      Method:
+        - bdt_ttc
+        - ['BDT_alt']
+      Binning: 0,1,21
+
+    - Name: alt_bdt_ttl
+      Label: 'AltBDT(ttl)'
+      Method:
+        - bdt_ttl
+        - ['BDT_alt']
+      Binning: 0,1,21
+
+    - Name: alt_bdt_others
+      Label: 'AltBDT(others)'
+      Method:
+        - bdt_others
+        - ['BDT_alt']
+      Binning: 0,1,21
+
     - Name: njets
       Label: '$n_{j}$'
       Method: njets
@@ -74,6 +95,27 @@ Variables:
       Label: '$N(j_{top}, CBT = 123, ttAll)$'
       Method: n_tophad_jets_CBT123_ttAll
       Binning: -0.5,4.5,6
+
+    - Name: jet0_pcbt
+      Label: 'PCBT_{j0}'
+      Method:
+        - jet0_x
+        - ['jets_tagWeightBin_DL1r_Continuous']
+      Binning: 0,5,6
+
+    - Name: jet1_pcbt
+      Label: 'PCBT_{j1}'
+      Method:
+        - jet1_x
+        - ['jets_tagWeightBin_DL1r_Continuous']
+      Binning: 0,5,6
+
+    - Name: jet2_pcbt
+      Label: 'PCBT_{j2}'
+      Method:
+        - jet2_x
+        - ['jets_tagWeightBin_DL1r_Continuous']
+      Binning: 0,5,6
 
 Supersamples:
   - Name: ttbar_AFII
