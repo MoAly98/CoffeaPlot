@@ -168,7 +168,7 @@ class CoffeaPlot(object):
                 patches, texts = plt.pie(vals, labels=labels, colors=colors, startangle=90, wedgeprops={'linewidth': 3.0, 'edgecolor': 'white'}, labeldistance=1.05)
 
             plt.axis('equal')
-            plt.legend(patches, labels, bbox_to_anchor=(0.1, 1), loc="lower left", fontsize=30)
+            plt.legend(patches, labels, loc=self.settings.main.legendloc, fontsize=self.settings.main.legendfontsize)
 
 
     def decorate_main_canvas(self, main_ax, max_bin_contents, xrange):

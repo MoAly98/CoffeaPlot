@@ -103,9 +103,10 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
     for key, value in GeneralPlotSettings.__dict__.items():
         filtered_settings[key] = value
 
+    filtered_settings['main']   = parse_panel_settings(filtered_settings['main'],  'MAIN')
+
     # Parse the panel settings
     if plot_type != 'PIECHART':
-        filtered_settings['main']   = parse_panel_settings(filtered_settings['main'],  'MAIN')
         filtered_settings['ratio']  = parse_panel_settings(filtered_settings['ratio'], 'RATIO')
 
     # Prepare class to hold the individual plot settings

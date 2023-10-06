@@ -111,7 +111,7 @@ class CanvasSchema(object):
         if canvas_type == 'MPLUSR':
 
             # Get the schema for main and ratio panels
-            main_axis_schema = PanelSchema('MAIN', plot_type)
+            main_axis_schema = PanelSchema('MAIN', plot_type, axes=True)
             ratio_axis_schema = PanelSchema('RATIO')
 
             # Add the schema for main and ratio panels to the canvas schema
@@ -142,10 +142,12 @@ class CanvasSchema(object):
 
         if canvas_type == 'GENERAL':
             if plot_type == 'PIECHART':
+                main_axis_schema = PanelSchema('MAIN', plot_type, axes=False)
                 general_plot_settings_schema.update({
                     'samples': [str],
                     # Default is total MC. If set, samples should be fractions of sumsample adding to 1.
                     Optional('sumsample', default = None): str,
+                    Optional('main',  default = main_axis_schema.defaults): main_axis_schema.schema,
                 })
 
         # set the schema and defaults
@@ -158,18 +160,9 @@ class PanelSchema(object):
     options and sensible defaults for them. Each option will have a corrspinding
     class attribute in the class PanelSettings (and its child classes).
     """
-    def __init__(self, panel_type='MAIN', plot_type='GENERAL'):
+    def __init__(self, panel_type='MAIN', plot_type='GENERAL', axes=True):
         # ===== All panels have the following attributes ===== #
         panels_schema = {
-            # Y-axis
-            Optional('ylabel', default = None): str,
-            Optional('ylabelfontsize', default = 30): int,
-            Optional('ylog',   default = False): bool,
-            Optional('yrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
-            # X-axis
-            Optional('xrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
-            Optional('xlog',   default = False): bool,
-            Optional('xlabelfontsize', default = 30): int,
             # Legend
             Optional('legendshow',     default = True if panel_type == 'MAIN' else False): bool,
             Optional('legendfontsize', default = 30): int,
@@ -179,6 +172,18 @@ class PanelSchema(object):
             # Text
             Optional('text', default = [[None, None]]): [Use(text_and_loc)], # ("Hi", (0.1,0.9)) or ("Hi", "upper left")
         }
+
+        if axes:
+            panels_schema.update({
+                # Y-axis
+                Optional('ylabel', default = None): str,
+                Optional('ylabelfontsize', default = 30): int,
+                Optional('ylog',   default = False): bool,
+                Optional('yrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
+                # X-axis
+                Optional('xrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
+                Optional('xlog',   default = False): bool,
+                Optional('xlabelfontsize', default = 30): int })
 
         # ===== Main panels only have the following attributes ===== #
         if panel_type == 'MAIN':
