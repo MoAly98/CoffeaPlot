@@ -7,7 +7,7 @@ print(logging.getLogger('coffeaplot').level)
 from containers.samples import Sample, SuperSample
 from containers.regions import Region
 from containers.rescales import Rescale
-from containers.variables import Variable, Variables
+from containers.variables import Variable, Variables, Eff
 from containers.functors import Functor
 from config.general_classes import CoffeaPlotSettings as CPS
 
@@ -431,14 +431,57 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
 
 
         # ====== Create Variable instance and pass it to list ====== #
-        variables_list.append(Variable(name = variable_name,
-                                          howto = howto_functor,
-                                          binning = binning,
-                                          label = variable['label'],
-                                          regions = variable['regions'],
-                                          idx_by = variable['idxby'],
-                                          dim = 1,
-                                          rebin = variable['rebin']))
+
+        if variable.get('numsel', None) is  None:
+            variables_list.append(Variable(name = variable_name,
+                                            howto = howto_functor,
+                                            binning = binning,
+                                            label = variable['label'],
+                                            regions = variable['regions'],
+                                            idx_by = variable['idxby'],
+                                            dim = 1,
+                                            rebin = variable['rebin']))
+        else:
+            numsel = variable['numsel']
+            if isinstance(numsel, list):
+                # Method is a functor
+                method_fn = CoffeaPlotSettings.functions[numsel[0]]
+                numsel_functor = Functor(method_fn, numsel[1])
+            else:
+                # Method is simply a branch name
+                numsel_functor = Functor(lambda x: x, [numsel])
+
+            denomsel = variable['denomsel']
+            if isinstance(denomsel, list):
+                # Method is a functor
+                method_fn = CoffeaPlotSettings.functions[denomsel[0]]
+                denomsel_functor = Functor(method_fn, denomsel[1])
+            else:
+                # Method is simply a branch name
+                denomsel_functor = Functor(lambda x: x, [denomsel])
+
+            # Enter with 2 histograms
+            variables_list.append(Eff(name = variable_name+":Num",
+                                      howto = howto_functor,
+                                      binning = binning,
+                                      numsel = numsel_functor,
+                                      denomsel = denomsel_functor,
+                                      label = variable['label'],
+                                      regions = variable['regions'],
+                                      idx_by = variable['idxby'],
+                                      dim = 1,
+                                      rebin = variable['rebin']))
+
+            variables_list.append(Eff(name = variable_name+":Denom",
+                                      howto = howto_functor,
+                                      binning = binning,
+                                      numsel = numsel_functor,
+                                      denomsel = denomsel_functor,
+                                      label = variable['label'],
+                                      regions = variable['regions'],
+                                      idx_by = variable['idxby'],
+                                      dim = 1,
+                                      rebin = variable['rebin']))
 
     # Loop over 2D variables
     for variable in variables_cfg['2d']:

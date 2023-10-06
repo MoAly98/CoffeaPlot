@@ -19,6 +19,13 @@ class Variable(object):
     def __eq__(self, other):
         return self.name == other.name
 
+class Eff(Variable):
+    def __init__(self, name, howto, numsel, denomsel, binning, label, regions=['.*'], idx_by = 'event', dim = None, rebin = None):
+        self.numsel = numsel
+        self.denomsel = denomsel
+        Variable.__init__(self, name, howto, binning, label, regions=regions, idx_by = idx_by, dim = dim, rebin = rebin)
+
+
 class Variables(object):
     def __init__(self, dim, tree, to_plot = []):
         if dim != 1 and dim != 2:

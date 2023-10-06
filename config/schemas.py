@@ -162,7 +162,7 @@ class PanelSchema(object):
         # ===== All panels have the following attributes ===== #
         panels_schema = {
             # Y-axis
-            Optional('ylabel', default = 'Fraction of Events/bin' if panel_type == 'MAIN' else 'Ratio'): str,
+            Optional('ylabel', default = None): str,
             Optional('ylabelfontsize', default = 30): int,
             Optional('ylog',   default = False): bool,
             Optional('yrange', default = None):  And([Use(float)], lambda x: len(x) == 2),
@@ -246,7 +246,7 @@ class GeneralSettingsSchema(object):
                             Optional('helpers',        default = None): Use(string_to_list),
                             Optional('runprocessor',   default = False): bool,
                             Optional('runplotter',     default = False): bool,
-                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION'] for y in x])),
+                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF'] for y in x])),
                             Optional('skipnomrescale', default = False): bool,
                             Optional('loglevel',       default = 3): int,
                             Optional('nworkers',       default = 8): int, # 0 is Iterative executor...
@@ -259,7 +259,7 @@ class VariableSchema(object):
     Class to handle the schema for a variable. It holds generic
     options and sensible defaults for them. It handles both 1D and 2D variables.
     """
-    def __init__(self, dim = 1):
+    def __init__(self, dim = 1, result='HIST'):
         if dim == 1:
             variable_schema = {
                                 'name': str,
@@ -270,6 +270,11 @@ class VariableSchema(object):
                                 Optional('idxby',   default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
                                 Optional('rebin',   default = None): [Use(float)],
                             }
+            if result == 'EFF':
+                variable_schema.update({
+                    'numsel':  Or(str, Use(functor_input)), # Name of branch, or functor args
+                    'denomsel':  Or(str, Use(functor_input)), # Name of branch, or functor args
+                })
         else:
             # Not implemented yet
             variable_schema = {}
@@ -312,6 +317,7 @@ class RescaleSchema(object):
 general_schema          = GeneralSettingsSchema()
 variable_1d_schema      = VariableSchema(dim=1)
 variable_2d_schema      = VariableSchema(dim=2)
+eff_schema              = VariableSchema(dim=1, result='EFF')
 region_schema           = RegionSchema()
 rescale_schema          = RescaleSchema()
 sample_schema           = SampleSchema('SAMPLE')
@@ -328,13 +334,15 @@ piechart_schema         = CanvasSchema('GENERAL', 'PIECHART')
 schema = Schema({
                 'general': general_schema.schema ,
                 'variables': {'1d': [variable_1d_schema.schema], Optional('2d', default=[]): [variable_2d_schema.schema]},
-                'regions': [region_schema.schema],
-                Optional('rescales', default = []): [rescale_schema.schema],
-                Optional('samples',     default = []):  [sample_schema.schema],
+                'regions':                              [region_schema.schema],
+                Optional('effs',         default = []): {'1d': [eff_schema.schema]},
+                Optional('rescales',     default = []): [rescale_schema.schema],
+                Optional('samples',      default = []): [sample_schema.schema],
                 Optional('supersamples', default = []): [supersample_schema.schema],
                 Optional('plots',        default = plots_schema.defaults):  plots_schema.schema,
                 Optional('datamc',       default = datamc_schema.defaults): datamc_schema.schema,
                 Optional('mcmc',         default = mcmc_schema.defaults):   mcmc_schema.schema,
+                Optional('eff',          default = mcmc_schema.defaults):   mcmc_schema.schema,
                 Optional('separation',   default = separation_schema.defaults):   separation_schema.schema,
                 Optional('significance', default = plots_with_ratio_schema.defaults): plots_with_ratio_schema.schema,
                 Optional('piechart',     default = piechart_schema.defaults): piechart_schema.schema,

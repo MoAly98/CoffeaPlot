@@ -19,6 +19,7 @@ os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 # CoffeaPlot imports
 from containers.histograms import Histogram, Histograms
 from containers.samples import SuperSample
+from containers.variables import Eff
 
 class CoffeaPlotProcessor(processor.ProcessorABC):
 
@@ -66,11 +67,22 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                 label          = variable.label
                 histo_compute  = variable.howto
 
+                # For efficiency-type variables, we compute 2 histograms,
+                # one for the numerator and one for the denominator
+                if isinstance(variable, Eff):
+                    # Numerator and denominator are differentiated by selections
+                    eff_mask_functor = variable.numsel if ':Num' in name else variable.denomsel
+
+
                 for region_to_plot in self.regions_list:
 
                     if all(re.match(region_to_use, region_to_plot.name) is None for region_to_use in regions_to_use): continue
 
                     filt_reg = filt_sample[region_to_plot.sel.evaluate(filt_sample)]
+
+                    # Get the bool mask for the efficiency variable component
+                    if isinstance(variable, Eff):
+                        eff_mask = eff_mask_functor.evaluate(filt_reg)
 
 
                     # ================ Empty histogram for this region for this sample ===========
@@ -90,17 +102,26 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                 rescaled_weights = filt_reg['weights']
 
                             if idxing == 'nonevent':
-                                if len(histo_compute.args) != 1:
-                                    raise NotImplementedError("Composite variables are not supported when indexing by nonevent")
-                                w, arg = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute.args[0]])
-                                data = histo_compute.fn(arg)
+                                # Compute variable of interest
+                                var = histo_compute.evaluate(filt_reg)
+                                # Expect all args going into the histogram variable have same shape, make weights have same shape
+                                w, _ = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute.args[0]])
+                                # TODO:: Make this more general than just flattening operations
                                 w = ak.flatten(w)
+
+                                if isinstance(variable, Eff):
+                                    var = var[eff_mask]
+                                    w   = w[eff_mask]
+
                             else:
-                                data = histo_compute.evaluate(filt_reg)
+                                var = histo_compute.evaluate(filt_reg)
                                 w = rescaled_weights
+                                if isinstance(variable, Eff):
+                                    var = var[eff_mask]
+                                    w   = w[eff_mask]
 
                             # Fill the histogram
-                            h.fill(data, weight = w)
+                            h.fill(var, weight = w)
 
                             # Save the histogram
                             samp_histo_obj = Histogram(name, h, sample.name, region_to_plot.name , rescaling.name)
@@ -115,12 +136,44 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                 accum[tot_histo_obj] = tot_histo_obj
                             else:
                                 accum[tot_histo_obj] += tot_histo_obj
-
                     else:
                         # TODO:: 2D
                         pass
-
         return accum
 
     def postprocess(self, accumulator):
-        pass
+
+        for a_sample in self.samples_list:
+
+            if isinstance(a_sample, SuperSample):   samples = a_sample.subsamples
+            else:   samples = [a_sample]
+
+            sample_names = [sample.name for sample in samples]+['total']
+            for region_to_plot in self.regions_list:
+                for rescaling in self.rescales_list:
+                    for sample in sample_names:
+                        done_vars = []
+                        for variable in self.variables_list:
+                            if isinstance(variable, Eff):
+                                variable_name = variable.name.replace(':Num', '').replace(':Denom', '')
+                                if variable_name in done_vars: continue
+
+                                numerator   = accumulator[(variable_name+":Num", sample, region_to_plot.name , rescaling.name)]
+                                denominator = accumulator[(variable_name+":Denom", sample, region_to_plot.name , rescaling.name)]
+
+                                eff  = np.divide(numerator.values(), denominator.values(), out=np.zeros_like(numerator.values()), where=denominator.values()!=0)
+
+                                err1 = (1. - 2. * eff) * numerator.variances()
+                                err2 = (eff**2) * np.divide(denominator.variances(), denominator.values()**2, out=np.zeros_like(denominator.values()), where=denominator.values()!=0)
+                                err3 = np.divide(1, denominator.values()**2, out=np.zeros_like(denominator.values()), where=denominator.values()!=0)
+                                errsq  = abs((err1+err2)*err3)
+
+                                binning = numerator.h.axes[0].edges
+                                hnew = hist.Hist.new.Variable(binning, name=variable.name, label=variable.label).Weight()
+                                hnew[...] = np.stack([eff, errsq], axis=-1)
+
+                                eff_histo = Histogram(variable_name, hnew, sample, region_to_plot.name , rescaling.name)
+                                accumulator[eff_histo] = eff_histo
+
+                                done_vars.append(variable_name)
+        return accumulator

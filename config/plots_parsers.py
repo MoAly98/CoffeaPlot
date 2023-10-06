@@ -115,7 +115,6 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
 
     elif plot_type == 'SEPARATION':
         PlotSettings = SeparationSettings()
-
     else:
         PlotSettings = PlotWithRatioSettings()
 
@@ -126,7 +125,12 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
 
     if plot_type == 'SEPARATION':
         if PlotSettings.main.ynorm:
-            log.warning('Setting ynorm to False for separation plots, overriding the config')
+            log.warning('You are setting ynorm to False for separation plots, overriding the config to make it True')
         PlotSettings.main.ynorm = True
+
+    if plot_type == 'EFF':
+        if PlotSettings.main.ynorm:
+            log.warning('You are setting ynorm to True for efficiency plots, overriding the config to make it False')
+        PlotSettings.main.ynorm = False
 
     return PlotSettings
