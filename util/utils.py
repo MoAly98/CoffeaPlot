@@ -13,6 +13,20 @@ def keys_to_lower(mydict):
 
     return newdict
 
+def concat_dicts(*dicts):
+    nom_dict = dicts[0]
+    for each_dict in dicts:
+        for (key, val) in each_dict.items():
+            if nom_vals := nom_dict.get(key):
+                if isinstance(nom_vals, list):
+                    nom_vals = set(nom_vals)
+                if isinstance(val, list):
+                    val = set(val)
+                nom_dict[key] = nom_vals | val
+            else:
+                nom_dict[key] = val
+    return nom_dict
+
 def compute_total_separation(signal_h, bkg_h):
 
     n_bins       = len(signal_h.values())
@@ -35,3 +49,6 @@ def compute_total_separation(signal_h, bkg_h):
         separation = 0
 
     return separation
+
+if __name__ == "__main__":
+    print(concat_dicts({'1D': {'a'}}, {'1D': {'b'}}))
