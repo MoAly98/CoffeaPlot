@@ -25,12 +25,11 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
 
     def __init__(self, CoffeaPlotSettings):
         self.variables_list = CoffeaPlotSettings.variables_list
-        self.samples_list = CoffeaPlotSettings.samples_list
-        self.regions_list = CoffeaPlotSettings.regions_list
-        self.rescales_list = CoffeaPlotSettings.rescales_list
-
-    def dd(self):
-        return defaultdict(dict)
+        self.samples_list   = CoffeaPlotSettings.samples_list
+        self.regions_list   = CoffeaPlotSettings.regions_list
+        self.rescales_list  = CoffeaPlotSettings.rescales_list
+        self.pie_sumsample  = CoffeaPlotSettings.piechart_plot_settings.sumsample
+        self.pie_samples    = CoffeaPlotSettings.piechart_plot_settings.samples
 
     def process(self, presel_events):
 
@@ -72,7 +71,6 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                 if isinstance(variable, Eff):
                     # Numerator and denominator are differentiated by selections
                     eff_mask_functor = variable.numsel if ':Num' in name else variable.denomsel
-
 
                 for region_to_plot in self.regions_list:
 
@@ -152,7 +150,28 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                 for rescaling in self.rescales_list:
                     for sample in sample_names:
                         done_vars = []
+
+
+
                         for variable in self.variables_list:
+
+                            if self.pie_samples is not None and sample.name in self.pie_samples:
+                                sumsample_histogram  = accumulator[(variable.name, self.pie_sample, region_to_plot.name , rescaling.name)]
+                                pie_sample_histogram = accumulator[(variable.name, sample, region_to_plot.name , rescaling.name)]
+
+                                fraction = pie_sample_histogram.values().sum()/sumsample_histogram.values().sum()
+
+                                err1 = pie_sample_histogram.variances().sum()/pie_sample_histogram.values().sum()**2
+                                err2 = sumsample_histogram.variances().sum()/sumsample_histogram.values().sum()**2
+                                err = fraction*np.sqrt(err1 + err2)
+
+                                hcat = hist.Hist.new.StrCat([pie_sample_histogram.sample], name="c", label=pie_sample_histogram.label).Weight()
+                                hcat.fill([pie_sample_histogram.sample], weight=fraction)
+                                hcat.variances()[0] = err
+
+                                cat_histo = Histogram(variable.name+":pie", hcat, sample.name, region.name , rescale.name)
+                                accumulator[cat_histo] = cat_histo
+
                             if isinstance(variable, Eff):
                                 variable_name = variable.name.replace(':Num', '').replace(':Denom', '')
                                 if variable_name in done_vars: continue
