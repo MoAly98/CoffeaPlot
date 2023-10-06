@@ -1,0 +1,72 @@
+General:
+  DumpDir: "./outputs/btag_mc_eff/"
+  InputHistos: ./outputs/btag_mc_eff/data/data___nominal_Loose.pkl
+  Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
+  Trees: 'nominal_Loose'
+  RunProcessor: True
+  RunPlotter: True
+  LogLevel: 2
+  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  MCWeight:
+    - 'MC_weight'
+    - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
+  Blinding: 0.00333
+  makeplots: ['EFF']
+
+Variables:
+  1D:
+    - Name: alt_bdt_tH
+      Label: 'AltBDT(tH)'
+      Method:
+        - bdt_tH
+        - ['BDT']
+      Binning: [0, 0.3528, 0.6, 0.78, 1]
+
+Effs:
+  1D:
+    - Name: b_MC_eff
+      Label: 'Jet $p^T$' #'$\epsilon_{b}^{MC}$'
+      NumSel:
+        - b_70_pass
+        - ['jets_truthflav','jets_tagWeightBin_DL1r_Continuous']
+      DenomSel:
+        - b_truth
+        - ['jets_truthflav']
+      Method:
+        - flatten_x_gev
+        - jets_pt
+      idxby: nonevent
+      Binning: 25,300,21
+
+Samples:
+  - Name: ttbar
+    Label: '$t\bar{t}$'
+    Type: 'BKG'
+    NtuplesRgxs: ['410470_user*']
+    Selection:
+      - tight_lepton
+      - leptons_PLIVtight
+    Color: 'red'
+
+Regions:
+  - Name: CR
+    Label: 'CR'
+    Selection:
+      - CR_ttb_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    #Targets: ['ttb']
+
+  - Name: SR
+    Label: 'SR'
+    Selection:
+      - SR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    #Targets: ['tH', 'tWH']
+
+Eff:
+  Main:
+    YNorm: False
+    YRange: [0.8, 1.0]
