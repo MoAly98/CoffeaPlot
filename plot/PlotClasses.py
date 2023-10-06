@@ -519,9 +519,12 @@ class Stackatino(StylableObject):
     def append(self, histogram):
         self.histograms.append(histogram)
 
-    def sum_histograms(self):
+    def sum_histograms(self, sample=None):
         self.sum =  sum(self.histograms)
+        if sample is not None:
+            self.sum.sample = sample
         return self
+
 
 class SpanBox(StylableObject):
     '''
@@ -589,6 +592,7 @@ class PlotterSettings(object):
         self.mc_over_mc_ratio = None
         self.signif_ratios  = None
         self.sep_stack = None
+        self.eff_stack = None
 
 
 class PlotIdentifier(object):

@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder
 from util.utils import compute_total_separation
+from containers.variables import Eff
 
 def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
 
@@ -20,12 +21,12 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
     data = None
     refMC = None
 
-
     # ============== Loop over subsamples ============== #
     for sample in samples_list:
 
         # =========== Categorise MC according to config =========== #
         if sample.type != 'DATA':
+
             category_histogram = histograms[(variable.name, sample.name, region.name, rescale.name)]
             category_histogram.label = variable_label
             category_histogram.color = sample.color
@@ -131,7 +132,6 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
         tot_backgrounds_histogram.h[...] = np.stack([values, variances], axis=-1)
 
 
-
     tot_backgrounds_histogram.sample         = 'background'
     tot_backgrounds_histogram.label = variable_label
     tot_backgrounds_histogram.stylish_sample = 'Background'
@@ -145,6 +145,7 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
         tot_signals_histogram = sum(signals)
     else:
         tot_signals_histogram = deepcopy(data)
+        values    = np.full_like(tot_signals_histogram.values(), 1e-6)
         variances = np.full_like(tot_signals_histogram.values(), 1e-8)
         tot_signals_histogram.h[...] = np.stack([values, variances], axis=-1)
 
@@ -197,9 +198,13 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
     if all(not s.ref  for s in unpacked_samples):
         log.warning("No reference MC sample found, expect no MC/MC ratio plot")
 
+    dont_double_count = []
     for variable in CoffeaPlotSettings.variables_list:
         #if variable.tree != tree: continue
         if variable.dim  != 1:    continue
+
+        if variable.name in dont_double_count:  continue
+
         log.debug(f"Setting up variable {variable.name}")
 
         for region in CoffeaPlotSettings.regions_list:
@@ -208,7 +213,14 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
             for rescale in CoffeaPlotSettings.rescales_list:
                 log.debug(f"Setting up rescale {rescale.name}")
 
+                dont_double_count.append(variable.name.replace(':Num', '').replace(':Denom', ''))
+
+                if isinstance(variable, Eff):
+                    variable.name = variable.name.replace(':Num', '').replace(':Denom', '')
+
+
                 PlotSettings = PlotterSettings(variable, region, rescale )
+
                 # Sort samples and save them to PlotSettings
                 sort_samples(histograms, unpacked_samples, PlotSettings, variable.rebin)
 
@@ -270,6 +282,23 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                 PlotSettings.sep_stack = sep_stack
 
                 # ================================================ #
+                # ============== Create the Efficiency stack ============== #
+                # ================================================ #
+                if isinstance(variable, Eff):
+                    eff_stack              = Stack(stackatinos = [], bar_type = 'points', error_type = 'stat', plottersettings = PlotSettings)
+                    # ============== Make a Stackatino for each category ============== #
+                    for category, cat_samples_histograms in PlotSettings.category_to_samples_histos.items():
+                        log.debug(f"Adding sample category:  {category} to stack")
+                        # ============== Create a Stackatino for each category ============== #
+                        # Category color is the color of the first sample in the category
+                        for cat_sample_histogram in cat_samples_histograms:
+                            stackatino = Stackatino(histograms=[cat_sample_histogram], label=cat_sample_histogram.stylish_sample, color=cat_sample_histogram.color)
+                            stackatino.sum_histograms(sample=cat_sample_histogram.sample)
+                            eff_stack.append(stackatino)
+
+                    PlotSettings.eff_stack = eff_stack
+
+                # ================================================ #
                 # ============== Create the Data/MC ratio ============== #
                 # ================================================ #
                 log.debug(f"Preparing Data/MC ratio")
@@ -278,6 +307,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                 data_over_mc_ratio.append(data_over_mc_ratioitem)
                 data_over_mc_ratio.blinder = blinder
                 PlotSettings.data_over_mc_ratio = data_over_mc_ratio
+
                 # ================================================ #
                 # ============== Create the MC/MC ratio ============== #
                 # ================================================ #
@@ -291,6 +321,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                     mc_over_mc_ratio = None
 
                 PlotSettings.mc_over_mc_ratio = mc_over_mc_ratio
+
                 # ================================================ #
                 # ============== Create the Significance Plot ============== #
                 # ================================================ #
@@ -319,15 +350,6 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
     return plot_settings_list
 
 
-# # ====== How many plots to make? ====== #
-# num_plots = len(mc_stacks) # x2 for data_over_mc and Significance
-
-# # ======= Now we make 4 CoffeaPlots per region, rescaling, variable ======= #
-# # 1. Stack with Data/MC
-# # 2. Stack with significance
-# # 3. Non-stack with MC/MC (Normalised or Not depending on config)
-# # 4. Separation Plots
-
 def make_datamc(plot, settings, outpath):
 
     mc_stack = deepcopy(plot.mc_stack)
@@ -338,7 +360,6 @@ def make_datamc(plot, settings, outpath):
 
     log.info(f"Plotting Data v MC plots")
     stack_with_datamc.plot(outpath)
-
 
 def make_mcmc(plot, settings, outpath):
     mc_stack = deepcopy(plot.mc_stack)
@@ -354,10 +375,21 @@ def make_mcmc(plot, settings, outpath):
     log.info(f"Plotting MC v MC plots")
     mcmc_plot.plot(outpath)
 
+def make_eff(plot, settings, outpath):
+    if plot.eff_stack is None:
+        log.warning("No efficiency stack found")
+        return
+
+    eff_stack = deepcopy(plot.eff_stack)
+    settings.main.ynorm = False
+    eff_plot = CoffeaPlot(eff_stack, [], settings)
+
+    log.info(f"Plotting Efficiency plots")
+    eff_plot.plot(outpath)
+
 def make_separation(plot, settings, outpath):
     sep_stack = deepcopy(plot.sep_stack)
     sep_stack.stack = False
-
 
     if  settings.writesep:
 
@@ -401,3 +433,6 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
         if 'SEPARATION' in makeplots:
             outpath = outpaths['separationdir']
             make_separation(plot, CoffeaPlotSettings.separation_plot_settings, outpath)
+        if 'EFF' in makeplots:
+            outpath = outpaths['effdir']
+            make_eff(plot, CoffeaPlotSettings.eff_plot_settings, outpath)
