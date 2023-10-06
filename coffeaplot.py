@@ -84,6 +84,10 @@ def main():
     all_samples_cfg = validated['samples'] + validated['supersamples']
     parse_samples(all_samples_cfg, CoffeaPlotSettings)
     parse_regions(validated['regions'], CoffeaPlotSettings)
+
+    validated['variables']['1d'].extend(validated['effs']['1d'])
+    #validated['variables']['2d'].update( validated['effs']['2d'])
+
     parse_variables(validated['variables'], CoffeaPlotSettings)
     parse_rescales(validated['rescales'], CoffeaPlotSettings)
 
@@ -109,7 +113,12 @@ def main():
             CoffeaPlotSettings.significance_plot_settings = parse_special_plot_settings(validated['significance'], 'SIGNIF', GeneralPlotSettings)
         if 'SEPARATION' in CoffeaPlotSettings.makeplots:
             CoffeaPlotSettings.separation_plot_settings   = parse_special_plot_settings(validated['separation'], 'SEPARATION', GeneralPlotSettings)
+        if 'EFF' in CoffeaPlotSettings.makeplots:
+            CoffeaPlotSettings.eff_plot_settings          = parse_special_plot_settings(validated['eff'], 'EFF', GeneralPlotSettings)
 
+    if not (CoffeaPlotSettings.runplotter or CoffeaPlotSettings.runprocessor):
+        log.warning("Setup everything but you are not running plotting or processing ... is that intentional?")
+        return 0
     # =========== Set up fileset =========== #
     fileset = {}
     for sample in CoffeaPlotSettings.samples_list:
@@ -142,54 +151,6 @@ def main():
                 for inputhistos_file in CoffeaPlotSettings.inputhistos:
                     with open(inputhistos_file, "rb") as f:
                         out.update(pickle.load(f))
-
-        # ====== Loop over 1D plots ====== #
-        #pprint(out)
-
-        # print("tH, nom", sum(out[('alt_bdt_tH', 'tH', 'SR', 'Nominal')].values()))
-
-        # print("ttlight, PH7", "SR", sum(out[('alt_bdt_tH', 'ttlight_PH7', 'SR', 'Nominal')].values()))
-        # print("ttlight, aMCH7", "SR", sum(out[('alt_bdt_tH', 'ttlight_aMCH7', 'SR', 'Nominal')].values()))
-        # print("ttlight, pThard1", "SR", sum(out[('alt_bdt_tH', 'ttlight_pThard1', 'SR', 'Nominal')].values()))
-        # print("ttlight, AFII", "SR", sum(out[('alt_bdt_tH', 'ttlight_AFII', 'SR', 'Nominal')].values()))
-
-        # print("ttc, PH7", "SR", sum(out[('alt_bdt_tH', 'ttc_PH7', 'SR', 'Nominal')].values()))
-        # print("ttc, aMCH7", "SR", sum(out[('alt_bdt_tH', 'ttc_aMCH7', 'SR', 'Nominal')].values()))
-        # print("ttc, pThard1", "SR", sum(out[('alt_bdt_tH', 'ttc_pThard1', 'SR', 'Nominal')].values()))
-        # print("ttc, AFII", "SR", sum(out[('alt_bdt_tH', 'ttc_AFII', 'SR', 'Nominal')].values()))
-
-        # print("ttb, PH7", "SR", sum(out[('alt_bdt_tH', 'ttb_PH7', 'SR', 'Nominal')].values()))
-        # print("ttb, aMCH7", "SR", sum(out[('alt_bdt_tH', 'ttb_aMCH7', 'SR', 'Nominal')].values()))
-        # print("ttb, pThard1", "SR", sum(out[('alt_bdt_tH', 'ttb_pThard1', 'SR', 'Nominal')].values()))
-        print("ttb, FS", "PR", sum(out[('alt_bdt_tH', 'ttb', 'PR', 'Nominal')].values()))
-        print("ttb_5FS_1bB, FS", "PR", sum(out[('alt_bdt_tH', 'ttb_5FS_1bB', 'PR', 'Nominal')].values()))
-        print("ttb_5FS_2b, FS", "PR", sum(out[('alt_bdt_tH', 'ttb_5FS_2b', 'PR', 'Nominal')].values()))
-
-        print("ttb, FS", "SR", sum(out[('alt_bdt_tH', 'ttb', 'SR', 'Nominal')].values()))
-        print("ttb_5FS_1bB, FS", "SR", sum(out[('alt_bdt_tH', 'ttb_5FS_1bB', 'SR', 'Nominal')].values()))
-        print("ttb_5FS_2b, FS", "SR", sum(out[('alt_bdt_tH', 'ttb_5FS_2b', 'SR', 'Nominal')].values()))
-
-
-        # print("ttlight, PH7", "PR", sum(out[('alt_bdt_tH', 'ttlight_PH7', 'PR', 'Nominal')].values()))
-        # print("ttlight, aMCH7", "PR", sum(out[('alt_bdt_tH', 'ttlight_aMCH7', 'PR', 'Nominal')].values()))
-        # print("ttlight, pThard1", "PR", sum(out[('alt_bdt_tH', 'ttlight_pThard1', 'PR', 'Nominal')].values()))
-        # print("ttlight, AFII", "PR", sum(out[('alt_bdt_tH', 'ttlight_AFII', 'PR', 'Nominal')].values()))
-
-        # print("ttc, PH7", "PR", sum(out[('alt_bdt_tH', 'ttc_PH7', 'PR', 'Nominal')].values()))
-        # print("ttc, aMCH7", "PR", sum(out[('alt_bdt_tH', 'ttc_aMCH7', 'PR', 'Nominal')].values()))
-        # print("ttc, pThard1", "PR", sum(out[('alt_bdt_tH', 'ttc_pThard1', 'PR', 'Nominal')].values()))
-        # print("ttc, AFII", "PR", sum(out[('alt_bdt_tH', 'ttc_AFII', 'PR', 'Nominal')].values()))
-
-        # print("ttb, PH7", "PR", sum(out[('alt_bdt_tH', 'ttb_PH7', 'PR', 'Nominal')].values()))
-        # print("ttb, aMCH7", "PR", sum(out[('alt_bdt_tH', 'ttb_aMCH7', 'PR', 'Nominal')].values()))
-        # print("ttb, pThard1", "PR", sum(out[('alt_bdt_tH', 'ttb_pThard1', 'PR', 'Nominal')].values()))
-        # print("ttb, AFII", "PR", sum(out[('alt_bdt_tH', 'ttb_AFII', 'PR', 'Nominal')].values()))
-
-        # print(out[('new_bdt_tH', 'ttc', 'SR', 'Nominal')].values())
-        # print(out[('new_bdt_tH', 'ttb', 'SR', 'Nominal')].values())
-        # print(out[('new_bdt_tH', 'tH', 'SR', 'Nominal')].values())
-        # print(out[('new_bdt_tH', 'total', 'SR', 'Nominal')].values())
-        # print(out[('njets', 'total', 'SR', 'Nominal')].values())
 
         if CoffeaPlotSettings.runplotter:
             # =========== Set up samples, regions, variables, and rescales =========== #
