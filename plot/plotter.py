@@ -3,12 +3,10 @@ from collections import defaultdict
 from copy import copy, deepcopy
 import os, re
 import numpy as np
-import hist
 import logging
 log = logging.getLogger(__name__)
 
 from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder, PieStack
-from containers.histograms import Histogram
 from util.utils import compute_total_separation
 from containers.variables import Eff
 
@@ -219,7 +217,6 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
                 if isinstance(variable, Eff):
                     variable.name = variable.name.replace(':Num', '').replace(':Denom', '')
-
 
                 PlotSettings = PlotterSettings(variable, region, rescale )
 
