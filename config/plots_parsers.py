@@ -4,6 +4,7 @@ log = logging.getLogger(__name__)
 # ================ CoffeaPlot Imports ================ #
 from config.plot_classes import (DataMCSettings, MCMCSettings,
                                 SeparationSettings, PlotWithRatioSettings,
+                                PieChartSettings,
                                 MainPanelSettings, PanelSettings,
                                 GeneralPlotSettings as GPS)
 
@@ -102,9 +103,11 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
     for key, value in GeneralPlotSettings.__dict__.items():
         filtered_settings[key] = value
 
-    # Parse the panel settings
     filtered_settings['main']   = parse_panel_settings(filtered_settings['main'],  'MAIN')
-    filtered_settings['ratio']  = parse_panel_settings(filtered_settings['ratio'], 'RATIO')
+
+    # Parse the panel settings
+    if plot_type != 'PIECHART':
+        filtered_settings['ratio']  = parse_panel_settings(filtered_settings['ratio'], 'RATIO')
 
     # Prepare class to hold the individual plot settings
     if plot_type   == 'MCMC':
@@ -115,6 +118,10 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
 
     elif plot_type == 'SEPARATION':
         PlotSettings = SeparationSettings()
+
+    elif plot_type == 'PIECHART':
+        PlotSettings = PieChartSettings()
+
     else:
         PlotSettings = PlotWithRatioSettings()
 
@@ -124,13 +131,18 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
         setattr(PlotSettings, key, value)
 
     if plot_type == 'SEPARATION':
-        if PlotSettings.main.ynorm:
+        if not PlotSettings.main.ynorm:
             log.warning('You are setting ynorm to False for separation plots, overriding the config to make it True')
         PlotSettings.main.ynorm = True
 
     if plot_type == 'EFF':
         if PlotSettings.main.ynorm:
             log.warning('You are setting ynorm to True for efficiency plots, overriding the config to make it False')
+        PlotSettings.main.ynorm = False
+
+    if plot_type == 'SIGNIF' or plot_type == 'DATAMC':
+        if PlotSettings.main.ynorm:
+            log.warning('You are setting ynorm to True for SIGNIF/DATAMC plots, overriding the config to make it False')
         PlotSettings.main.ynorm = False
 
     return PlotSettings

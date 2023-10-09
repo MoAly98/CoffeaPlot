@@ -54,7 +54,7 @@ class CoffeaPlot(object):
             assert len(self.settings.heightratios) == nrows, f"Number of height ratios ({len(self.settings.heightratios)}) does not match number of axes ({len(self.ratio_plots)})"
             height_ratios = self.settings.heightratios
 
-        gs     = fig.add_gridspec(ncols=1, nrows=nrows, height_ratios=height_ratios, hspace=0.1)
+        gs     = fig.add_gridspec(ncols=1, nrows=nrows, height_ratios=height_ratios, hspace=0.2)
         main_ax     = fig.add_subplot(gs[0, 0])
         rat_axes = []
         for i in range(nrows-1):
@@ -141,7 +141,35 @@ class CoffeaPlot(object):
             # Plot the stack
             mplhep.histplot(histograms, label = labels, ax = main_ax, histtype=stack.bar_type, stack=stack.stack, flow='hint', **styles)
 
+
         return max_bin_contents, xrange
+
+    def plot_pie_canvas(self, main_ax):
+        # Loop over stacks being overlaid on the plot
+        for i, stack in enumerate(self.stacks):
+            # Sort stackatinos by sum of bin contents so that biggest stack element goes first
+            sorted_stackatinos = sorted(stack.stackatinos, key=lambda stackatino: stackatino.sum.values().sum(), reverse=True)
+            # mplhep expects lists of stacks and corresponding settings
+            styles = defaultdict(list)
+            histograms, labels, samples, colors = [], [], [], []
+            # A stackatino can be the sum of some yields (stackatino = category, items are samples)
+            for stackatino in sorted_stackatinos:
+                histograms.append(stackatino.sum.h)
+                labels.append(stackatino.label)
+                samples.append(stackatino.sum.sample)
+                colors.append(stackatino.styling['color'])
+
+            vals = [h.values()[0] for h, s in zip(histograms, samples)]
+            labels = [l+rf' ( {histograms[i].values()[0]*100:.1f} $\pm$ {histograms[i].variances()[0]*100:.1f} %)' for i, l in enumerate(labels)]
+
+            if len(vals) > 4:
+                patches, texts = plt.pie(vals, colors=colors, startangle=90, wedgeprops={'linewidth': 3.0, 'edgecolor': 'white'})
+            else:
+                patches, texts = plt.pie(vals, labels=labels, colors=colors, startangle=90, wedgeprops={'linewidth': 3.0, 'edgecolor': 'white'}, labeldistance=1.05)
+
+            plt.axis('equal')
+            plt.legend(patches, labels, loc=self.settings.main.legendloc, fontsize=self.settings.main.legendfontsize)
+
 
     def decorate_main_canvas(self, main_ax, max_bin_contents, xrange):
 
@@ -198,14 +226,18 @@ class CoffeaPlot(object):
         # ==================== Legend ==================== #
         if self.settings.main.legendshow:
             if self.settings.main.legendoutside:
-                plt.legend(bbox_to_anchor=(1.04, 1), loc='upper right', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                main_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper right', ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
             else:
-                plt.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
+                main_ax.legend(loc=self.settings.main.legendloc, ncol=self.settings.main.legendncol, fontsize=self.settings.main.legendfontsize)
 
         # COM notworking
         mplhep.atlas.label(self.settings.status, data=True, lumi=self.settings.lumi, com=self.settings.energy, ax = main_ax, fontsize=30)
 
     def plot_ratio_canvases(self, ratio_plot, ratio_ax):
+
+        blinded_bins = []
+        if ratio_plot.blinder is not None:
+            blinded_bins = ratio_plot.blinder.get_blinded_bins()
 
         # Loop over ratio items in the ratio plot
         for ratio_item in ratio_plot.ratio_items:
@@ -224,6 +256,36 @@ class CoffeaPlot(object):
             ratio_vals = ratio_item.get_ratio_vals()
             ratio_err  = ratio_item.err()
 
+            # If the stack needs to blinded, shade the blinded bins and set the bin contents to 0
+            if ratio_plot.blinder is not None:
+                self.apply_blinder(ratio_ax, ratio_plot.blinder, [ratio_item.numerator.h], 0, 1e-20)
+                ratio_vals = ratio_item.get_ratio_vals()
+
+            if self.settings.ratio.yrange is not None:
+                uplim = self.settings.ratio.yrange[1]
+                lowlim = self.settings.ratio.yrange[0]
+
+                for i, binval in enumerate(ratio_vals):
+                    if lowlim is not None and binval < lowlim:
+                        if lowlim > 0:   sign = 1
+                        else:           sign = -1
+
+                        if i in blinded_bins:
+                            continue
+
+                        ratio_ax.annotate("", xytext=(bin_centers[i], lowlim*(1+sign*0.1)), xy=(bin_centers[i], lowlim), arrowprops=dict(arrowstyle="->", color='blue', linewidth=3))
+
+                    if uplim is not None and binval > uplim:
+                        if uplim > 0:   sign = -1
+                        else:           sign = 1
+
+                        if i in blinded_bins:
+                            continue
+
+                        ratio_ax.annotate("", xytext=(bin_centers[i], uplim*(1+sign*0.1)), xy=(bin_centers[i], uplim), arrowprops=dict(arrowstyle="->", color='blue', linewidth=3))
+
+
+
             # Plot the ratio and error bars
             mplhep.histplot(ratio_vals, bins=bin_edges, yerr=ratio_err, label = ratio_item.label, ax = ratio_ax, histtype=ratio_plot.bar_type, stack=ratio_plot.stack, **ratio_item.styling)
 
@@ -234,18 +296,13 @@ class CoffeaPlot(object):
                 # Plot the uncertainty band
                 ratio_ax.bar(bin_centers, 2*mc_err, width= bin_widths, bottom=(1.0-mc_err), fill=False, linewidth=0, edgecolor="gray", hatch=3 * "/",)
 
-        # If the stack needs to blinded, shade the blinded bins and set the bin contents to 0
-        if ratio_plot.blinder is not None:
-            numerators = [ratio_item.numerator.h for ratio_item in ratio_plot.ratio_items]
-            self.apply_blinder(ratio_ax, ratio_plot.blinder, numerators, 0, 1e-20)
-
 
     def decorate_ratio_canvases(self, ratio_plot, ratio_ax, last_canvas):
 
         # ================= Legends ==================== #
         if self.settings.ratio.legendshow:
             if self.settings.ratio.legendoutside:
-                ratio_ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left', ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
+                ratio_ax.legend(bbox_to_anchor=(1.04, 1), ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
             else:
                 ratio_ax.legend(loc=self.settings.ratio.legend_loc, ncol=self.settings.ratio.legendncol, fontsize=self.settings.ratio.legendfontsize)
 
@@ -266,31 +323,38 @@ class CoffeaPlot(object):
         if self.settings.ratio.yrange is not None:
             ratio_ax.set_ylim(self.settings.ratio.yrange)
 
+
         # Set the y-axis label
         if ratio_plot.ylabel is not None:
             ratio_ax.set_ylabel(ratio_plot.ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
         if self.settings.ratio.ylabel is not None:
             ratio_ax.set_ylabel(self.settings.ratio.ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
+        if ratio_plot.ratio_items[0].ylabel is not None:
+            ratio_ax.set_ylabel(ratio_plot.ratio_items[0].ylabel, loc='center', verticalalignment='center', labelpad=20, fontsize=self.settings.ratio.ylabelfontsize)
 
         # ==================== Grid ==================== #
         ratio_ax.grid(True)
 
 
-    def plot(self, outpath):
+    def plot(self, outpath, plot_type='MPLUSR'):
 
         fig, main_ax, rat_axes = self.make_figure()
 
-        max_bin_contents, xrange = self.plot_main_canvas(main_ax)
+        if plot_type == 'MPLUSR':
+            max_bin_contents, xrange = self.plot_main_canvas(main_ax)
 
-        self.decorate_main_canvas(main_ax, max_bin_contents, xrange)
+            self.decorate_main_canvas(main_ax, max_bin_contents, xrange)
 
-        for i, ratio_plot in enumerate(self.ratio_plots):
-            ratio_ax = rat_axes[i]
-            if len(ratio_plot.ratio_items) == 0:    continue
-            last_canvas = False
-            if i == len(self.ratio_plots)-1:        last_canvas = True
-            self.plot_ratio_canvases(ratio_plot, ratio_ax)
-            self.decorate_ratio_canvases(ratio_plot, ratio_ax, last_canvas)
+            for i, ratio_plot in enumerate(self.ratio_plots):
+                ratio_ax = rat_axes[i]
+                if len(ratio_plot.ratio_items) == 0:    continue
+                last_canvas = False
+                if i == len(self.ratio_plots)-1:        last_canvas = True
+                self.plot_ratio_canvases(ratio_plot, ratio_ax)
+                self.decorate_ratio_canvases(ratio_plot, ratio_ax, last_canvas)
+
+        if plot_type == 'PIE':
+            self.plot_pie_canvas(main_ax)
 
         filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.rescale
         plt.savefig(f"{outpath}/{filename}.pdf", bbox_inches='tight')
@@ -342,7 +406,7 @@ class DistWithUncObjects(object):
     ALLOW_ERROR_TYPES = ["none", "stat", "syst", "stat"]
     SUPPORT_ERROR_TYPES = ["none", "stat"]
 
-    TO_MPL = {'stepfilled': 'fill', 'points': 'errorbar', 'step': 'step'}
+    TO_MPL = {'stepfilled': 'fill', 'points': 'errorbar', 'step': 'step', 'pie': None}
 
     def __init__(self, bar_type, error_type = 'stat', stack=True, ylabel = None, blinder = None, plottersettings = None):
 
@@ -396,6 +460,7 @@ class RatioItem(StylableObject):
         self.numerator = numerator
         self.denominator = denominator
         self.label = label
+        self.ylabel = ylabel
 
         StylableObject.__init__(self, **styling)
 
@@ -468,7 +533,7 @@ class Significance(RatioItem):
 
         sqrt_bkg_histo = Histogram(bkg.name, sqrt_bkg_h, bkg.sample, bkg.region, bkg.rescale)
 
-        better_ylabel = fr'{signal.sample}/$\sqrt(B)$'
+        better_ylabel = fr'{signal.sample}'+r'/$\sqrt{B}$'
 
         RatioItem.__init__(self, signal, sqrt_bkg_histo, label, better_ylabel, **styling)
 
@@ -502,6 +567,23 @@ class Stack(DistWithUncObjects):
 
     def append(self, stackatino):
         self.stackatinos.append(stackatino)
+
+class PieStack(Stack):
+    '''
+    A COLLECTION OF Stackatinos.
+    '''
+
+    # points can be used for data
+    ALLOW_BAR_TYPES = ["pie"]
+    SUPPORT_BAR_TYPES = ["pie"]
+    ALLOW_ERROR_TYPES = ["none", "stat"]
+    SUPPORT_ERROR_TYPES = ["none", "stat"]
+
+    def __init__(self, stackatinos, bar_type = 'pie', error_type = 'stat', stack=False, ylabel=None, blinder = None, plottersettings = None):
+
+        # List of stackatinos
+        self.stackatinos = stackatinos
+        Stack.__init__(self, stackatinos, bar_type, error_type, stack=stack, ylabel=ylabel, blinder=blinder, plottersettings=plottersettings)
 
 class Stackatino(StylableObject):
     '''
@@ -593,6 +675,7 @@ class PlotterSettings(object):
         self.signif_ratios  = None
         self.sep_stack = None
         self.eff_stack = None
+        self.pie_stack = None
 
 
 class PlotIdentifier(object):

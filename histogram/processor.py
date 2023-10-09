@@ -25,12 +25,15 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
 
     def __init__(self, CoffeaPlotSettings):
         self.variables_list = CoffeaPlotSettings.variables_list
-        self.samples_list = CoffeaPlotSettings.samples_list
-        self.regions_list = CoffeaPlotSettings.regions_list
-        self.rescales_list = CoffeaPlotSettings.rescales_list
-
-    def dd(self):
-        return defaultdict(dict)
+        self.samples_list   = CoffeaPlotSettings.samples_list
+        self.regions_list   = CoffeaPlotSettings.regions_list
+        self.rescales_list  = CoffeaPlotSettings.rescales_list
+        if CoffeaPlotSettings.piechart_plot_settings is not None:
+            self.pie_sumsample  = CoffeaPlotSettings.piechart_plot_settings.sumsample
+            self.pie_samples    = CoffeaPlotSettings.piechart_plot_settings.samples
+        else:
+            self.pie_sumsample  = None
+            self.pie_samples    = None
 
     def process(self, presel_events):
 
@@ -48,8 +51,8 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
         else:
             samples = [the_sample]
 
-        for sample in samples:
 
+        for sample in samples:
             presel_events['weights'] = 1.0
             mc_weight = sample.mc_weight.evaluate(presel_events)
             sample_weights = sample.weight.evaluate(presel_events)
@@ -73,7 +76,6 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                     # Numerator and denominator are differentiated by selections
                     eff_mask_functor = variable.numsel if ':Num' in name else variable.denomsel
 
-
                 for region_to_plot in self.regions_list:
 
                     if all(re.match(region_to_use, region_to_plot.name) is None for region_to_use in regions_to_use): continue
@@ -84,10 +86,9 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                     if isinstance(variable, Eff):
                         eff_mask = eff_mask_functor.evaluate(filt_reg)
 
-
                     # ================ Empty histogram for this region for this sample ===========
                     if ak.num(filt_reg['weights'], axis=0) == 0:
-                        return accum
+                        continue
 
                     # =============== Non empty histogram for this region for this sample ==========
                     if variable.dim == 1:
@@ -154,6 +155,24 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                     for sample in sample_names:
                         done_vars = []
                         for variable in self.variables_list:
+
+                            if self.pie_samples is not None and sample in self.pie_samples:
+                                sumsample_histogram  = accumulator[(variable.name, self.pie_sumsample, region_to_plot.name , rescaling.name)]
+                                pie_sample_histogram = accumulator[(variable.name, sample, region_to_plot.name , rescaling.name)]
+
+                                fraction = pie_sample_histogram.values().sum()/sumsample_histogram.values().sum()
+
+                                err1 = pie_sample_histogram.variances().sum()/pie_sample_histogram.values().sum()**2
+                                err2 = sumsample_histogram.variances().sum()/sumsample_histogram.values().sum()**2
+                                err = fraction*np.sqrt(err1 + err2)
+
+                                hcat = hist.Hist.new.StrCat([pie_sample_histogram.sample], name="c", label=pie_sample_histogram.label).Weight()
+                                hcat.fill([pie_sample_histogram.sample], weight=fraction)
+                                hcat.variances()[0] = err
+
+                                cat_histo = Histogram(variable.name+":pie", hcat, sample, region_to_plot.name , rescaling.name)
+                                accumulator[cat_histo] = cat_histo
+
                             if isinstance(variable, Eff):
                                 variable_name = variable.name.replace(':Num', '').replace(':Denom', '')
                                 if variable_name in done_vars: continue

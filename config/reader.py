@@ -40,6 +40,8 @@ def validate(indict):
             if bad_piecharts_sample:
                 log.error(f"Sample {piechart_sample} not found in samples list!")
 
+
+
     return validated
 
 def process(cfgp):

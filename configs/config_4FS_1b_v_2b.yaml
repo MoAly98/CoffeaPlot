@@ -98,7 +98,7 @@ Supersamples:
         Label: '$t\bar{t}+1b/B$ (4FS)'
         Type: 'BKG'
         Selection:
-          - tt1b_cut
+          - tt1bB_cut
           - ['leptons_PLIVtight','HF_Classification']
         Color: 'brown'
 

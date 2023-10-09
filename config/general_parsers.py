@@ -2,7 +2,6 @@
 import numpy as np
 import logging
 log = logging.getLogger(__name__)
-print(logging.getLogger('coffeaplot').level)
 # ======= CoffeaPlot Imports ======= #
 from containers.samples import Sample, SuperSample
 from containers.regions import Region
@@ -535,7 +534,7 @@ def parse_rescales(rescales_cfg, CoffeaPlotSettings):
         # ====== Create Rescale instance and pass it to list ====== #
         rescales_list.append(Rescale(name = rescale['name'],
                                      affected_samples_names = rescale['affects'],
-                                     howto = Functor(CoffeaPlotSettings.functions[rescale['method'][0]], rescale['method'][1]),
+                                     howto = howto_functor,
                                      label = rescale['label']))
 
     # ====== Add nominal rescale if not skipped by user ====== #

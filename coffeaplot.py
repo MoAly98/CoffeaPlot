@@ -11,7 +11,8 @@ from coffea.nanoevents import  BaseSchema
 from pprint import pprint
 import cloudpickle as pickle
 import argparse
-
+import numpy as np
+import logging
 from util.logger import ColoredLogger as logger
 # Prepare logger
 log = logger(name='coffeaplot')
@@ -26,7 +27,7 @@ from plot.plotter import prepare_1d_plots, make_plots
 # ========================================= #
 # =========== Set up functions =========== #
 # ========================================= #
-def setup_logging(log: logger,loglevel: int):
+def setup_logging(loglevel: int):
     '''
     Set up logging for the coffeaplot package. The loglevel is set by the user
     in the configuration file. The loglevel is passed to this function as an
@@ -48,11 +49,11 @@ def setup_logging(log: logger,loglevel: int):
         log.setLevel(40)
     elif loglevel == 1:
         # WARNING
-        log.setLevel(30)
+        logging.root.setLevel(30)
     elif loglevel == 2:
         # INFO
         log.setLevel(20)
-    elif loglevel == 3:
+    elif loglevel >= 3:
         # DEBUG
         log.setLevel(10)
 
@@ -73,7 +74,7 @@ def main():
     validated = process_config(cfgp)
 
     # Update logging level
-    setup_logging(log, validated['general']['loglevel'])
+    setup_logging(validated['general']['loglevel'])
 
     # =========== Set up general settings =========== #
     CoffeaPlotSettings = parse_general(validated['general'])
@@ -115,6 +116,8 @@ def main():
             CoffeaPlotSettings.separation_plot_settings   = parse_special_plot_settings(validated['separation'], 'SEPARATION', GeneralPlotSettings)
         if 'EFF' in CoffeaPlotSettings.makeplots:
             CoffeaPlotSettings.eff_plot_settings          = parse_special_plot_settings(validated['eff'], 'EFF', GeneralPlotSettings)
+        if 'PIECHART' in CoffeaPlotSettings.makeplots:
+            CoffeaPlotSettings.piechart_plot_settings     = parse_special_plot_settings(validated['piechart'], 'PIECHART', GeneralPlotSettings)
 
     if not (CoffeaPlotSettings.runplotter or CoffeaPlotSettings.runprocessor):
         log.warning("Setup everything but you are not running plotting or processing ... is that intentional?")
@@ -157,12 +160,6 @@ def main():
 
             plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings)
             make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

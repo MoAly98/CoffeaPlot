@@ -61,6 +61,17 @@ class SeparationSettings(PlotWithRatioSettings):
         self.seploc   = None
         super(SeparationSettings, self).__init__()
 
+class PieChartSettings(PlotWithRatioSettings):
+    """
+    PieChart plots have all settings of a GeneralPlotSettings object, but also have settings
+    to allow writing the separation values on the plot.
+    """
+    def __init__(self):
+        self.samples = None
+        self.sumsample = None
+        super(PieChartSettings, self).__init__()
+
+
 class PanelSettings(object):
     """
     This class contains all the settings that apply to a single panel on a plot. It holds

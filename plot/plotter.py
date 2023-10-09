@@ -6,7 +6,7 @@ import numpy as np
 import logging
 log = logging.getLogger(__name__)
 
-from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder
+from plot.PlotClasses import PlotterSettings, CoffeaPlot, Stack, Stackatino, RatioPlot, RatioItem, DataOverMC, Significance, Blinder, PieStack
 from util.utils import compute_total_separation
 from containers.variables import Eff
 
@@ -218,7 +218,6 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                 if isinstance(variable, Eff):
                     variable.name = variable.name.replace(':Num', '').replace(':Denom', '')
 
-
                 PlotSettings = PlotterSettings(variable, region, rescale )
 
                 # Sort samples and save them to PlotSettings
@@ -343,6 +342,25 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
                 PlotSettings.signif_ratios = signif_ratios_for_one_stack
 
+
+                # ================================================ #
+                # ============== Create the Piechart stack ============== #
+                # ================================================ #
+                if CoffeaPlotSettings.piechart_plot_settings is not None:
+                    pie_stack = PieStack(stackatinos = [], bar_type = 'pie', error_type = 'stat', plottersettings = PlotSettings)
+                    for category, cat_samples_histograms in PlotSettings.category_to_samples_histos.items():
+                        for cat_sample_histogram in cat_samples_histograms:
+                            if cat_sample_histogram.sample not in CoffeaPlotSettings.piechart_plot_settings.samples: continue
+                            # ============== Create a Stackatino for each sample ============== #
+                            log.debug(f"Adding sample:  {cat_sample_histogram.sample} to Pie")
+                            hpie = histograms[(variable.name+':pie', cat_sample_histogram.sample, region.name , rescale.name)]
+                            stackatino = Stackatino(histograms=[hpie], label=cat_sample_histogram.stylish_sample, color=cat_sample_histogram.color, facecolor=cat_sample_histogram.color)
+                            # Add up all the histograms in the stackatino
+                            stackatino.sum_histograms(sample=cat_sample_histogram.sample)
+                            # Add the stackatino to the stack
+                            pie_stack.append(stackatino)
+
+                    PlotSettings.pie_stack = pie_stack
                 # ================================================ #
                 #================= Save plot objects in PlotSettings ============== #
                 plot_settings_list.append(PlotSettings)
@@ -414,6 +432,17 @@ def make_significance(plot, settings, outpath):
     log.info(f"Plotting Significance plots")
     stack_with_signif.plot(outpath)
 
+def make_piechart(plot, settings, outpath):
+
+    if plot.pie_stack is None:
+        log.warning("No pie stack found")
+        return
+
+    pie_stack = deepcopy(plot.pie_stack)
+    piechart = CoffeaPlot([pie_stack], [], settings)
+    log.info(f"Plotting Pie Charts")
+    piechart.plot(outpath, plot_type='PIE')
+
 
 def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
     makeplots = CoffeaPlotSettings.makeplots
@@ -436,3 +465,6 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
         if 'EFF' in makeplots:
             outpath = outpaths['effdir']
             make_eff(plot, CoffeaPlotSettings.eff_plot_settings, outpath)
+        if 'PIECHART' in makeplots:
+            outpath = outpaths['piechartdir']
+            make_piechart(plot, CoffeaPlotSettings.piechart_plot_settings, outpath)
