@@ -40,7 +40,11 @@ def validate(indict):
             if bad_piecharts_sample:
                 log.error(f"Sample {piechart_sample} not found in samples list!")
 
-
+    for variable in validated['variables']['1d']:
+        if variable['type'] != 'GHOST' and variable["binning"] is None:
+            log.error(f"Variable {variable.name} has no binning specified!")
+        if variable['type'] == 'GHOST' and variable["binning"] is not None:
+            log.warning(f"Variable {variable.name} is a ghost variable with binning, this is meaningless!")
 
     return validated
 

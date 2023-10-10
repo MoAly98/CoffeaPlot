@@ -439,6 +439,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                             regions = variable['regions'],
                                             idx_by = variable['idxby'],
                                             dim = 1,
+                                            vtype=variable['type'],
                                             rebin = variable['rebin']))
         else:
             numsel = variable['numsel']
@@ -469,6 +470,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                       regions = variable['regions'],
                                       idx_by = variable['idxby'],
                                       dim = 1,
+                                      vtype=variable['type'],
                                       rebin = variable['rebin']))
 
             variables_list.append(Eff(name = variable_name+":Denom",
@@ -480,6 +482,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                       regions = variable['regions'],
                                       idx_by = variable['idxby'],
                                       dim = 1,
+                                      vtype=variable['type'],
                                       rebin = variable['rebin']))
 
     # Loop over 2D variables

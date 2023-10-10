@@ -6,10 +6,11 @@ General:
   RunProcessor: True
   RunPlotter: True
   LogLevel: 2
-  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
-                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
-                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
-                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  # NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+  #               '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+  #               '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+  #               '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  NTuplesDirs: ['/eos/user/m/maly/thbb/NoCutsNomOnly/L1/']
   MCWeight:
     - 'MC_weight'
     - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
@@ -24,6 +25,17 @@ Variables:
         - bdt_tH
         - ['BDT']
       Binning: [0, 0.3528, 0.6, 0.78, 1]
+
+    - Name: good_jets_truthFlavExt
+      Method:
+        - good_jets_truthFlavExt
+        - ["jets_pt", "jets_eta", "jets_truthflavExtended"]
+      Type: "GHOST"
+
+    - Name: good_jets_truthFlavExt_h
+      Label: 'Jet Extended Truth Falvour'
+      Method: good_jets_truthFlavExt
+      Binning: 0, 300, 21
 
 Effs:
   1D:
@@ -45,7 +57,7 @@ Samples:
   - Name: ttbar
     Label: '$t\bar{t}$'
     Type: 'BKG'
-    NtuplesRgxs: ['410470_user*']
+    NtuplesRgxs: ['*410470*/*']
     Selection:
       - tight_lepton
       - leptons_PLIVtight

@@ -161,7 +161,6 @@ def main():
             plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings)
             make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
 
-
 if __name__ == '__main__':
     main()
 
