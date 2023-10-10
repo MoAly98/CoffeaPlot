@@ -76,6 +76,10 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                     # Numerator and denominator are differentiated by selections
                     eff_mask_functor = variable.numsel if ':Num' in name else variable.denomsel
 
+                if variable.type == 'GHOST':
+                    filt_sample[name] = histo_compute.evaluate(filt_sample)
+                    continue
+
                 for region_to_plot in self.regions_list:
 
                     if all(re.match(region_to_use, region_to_plot.name) is None for region_to_use in regions_to_use): continue
@@ -189,6 +193,8 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                     for sample in sample_names:
                         done_vars = []
                         for variable in self.variables_list:
+
+                            if variable.type == 'GHOST': continue
 
                             if self.pie_samples is not None and sample in self.pie_samples:
                                 sumsample_histogram  = accumulator[(variable.name, self.pie_sumsample, region_to_plot.name , rescaling.name)]

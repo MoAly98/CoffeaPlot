@@ -206,11 +206,10 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
     for variable in CoffeaPlotSettings.variables_list:
         #if variable.tree != tree: continue
         if variable.dim  != 1:    continue
-
         if variable.name in dont_double_count:  continue
+        if variable.type == 'GHOST': continue
 
         log.debug(f"Setting up variable {variable.name}")
-
         for region in CoffeaPlotSettings.regions_list:
             log.debug(f"Setting up region {region.name}")
 

@@ -465,6 +465,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                             idx_by = variable['idxby'],
                                             dim = 2 if var_2d else 1,
                                             rebin = variable['rebin'],
+                                            vtype=variable['type'],
                                             nice_vals=variable['interestingvals'] if var_2d else None))
         else:
             # This is only possible for 1D plots by schema implementation but should be generalised for 2D eff
@@ -496,6 +497,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                       regions = variable['regions'],
                                       idx_by = variable['idxby'],
                                       dim = 1,
+                                      vtype=variable['type'],
                                       rebin = variable['rebin']))
 
             variables_list.append(Eff(name = variable_name+":Denom",
@@ -507,6 +509,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                       regions = variable['regions'],
                                       idx_by = variable['idxby'],
                                       dim = 1,
+                                      vtype=variable['type'],
                                       rebin = variable['rebin']))
 
     # Loop over 2D variables

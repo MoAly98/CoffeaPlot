@@ -282,11 +282,13 @@ class VariableSchema(object):
                                 'name': str,
                                 'method':  Or(str, Use(functor_input)), # Name of branch, or functor args
                                 Optional('binning', default = None): Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)]),
+                                Optional('type',    default = 'HIST'): And(str, lambda x: x in ['HIST', 'EFF', 'GHOST']),
                                 Optional('regions', default = ['.*']): Use(string_to_list),
                                 Optional('label',   default = None): str,
                                 Optional('idxby',   default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
                                 Optional('rebin',   default = None): [Use(float)],
                             }
+
             if result == 'EFF':
                 variable_schema.update({
                     'numsel':  Or(str, Use(functor_input)), # Name of branch, or functor args

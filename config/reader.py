@@ -43,6 +43,15 @@ def validate(indict):
     if validated['variables']['1d'] == [] and validated['variables']['2d'] == []:
         log.error(f"You must specify either 1D or 2D variables")
 
+    for variable in validated['variables']['1d']:
+        if variable['type'] != 'GHOST' and variable["binning"] is None:
+            log.error(f"Variable {variable.name} has no binning specified!")
+        if variable['type'] == 'GHOST' and variable["binning"] is not None:
+            log.warning(f"Variable {variable.name} is a ghost variable with binning, this is meaningless!")
+
+    for variable in validated['variables']['1d']:
+        if variable['type'] == 'GHOST':
+            log.error(f"Variable {variable.name} is 2D and cannot be of type GHOST")
 
     return validated
 

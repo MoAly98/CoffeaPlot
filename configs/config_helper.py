@@ -52,6 +52,10 @@ def obj2_x_gev(x):
 flatten_x = lambda x: ak.flatten(x)
 flatten_x_gev = lambda x: ak.flatten(x/1e3)
 
+def good_jets_truthFlavExt(pt, eta, truthflavExt):
+    good_jets = (pt > 25e3) & (abs(eta) < 2.5)
+    return truthflavExt[good_jets]
+
 # ====== Efficiency ====== #
 
 def b_70_pass(jets_truthFlav, jets_tagWeightBin_DL1r_Continuous):
