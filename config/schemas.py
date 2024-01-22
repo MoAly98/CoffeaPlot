@@ -255,7 +255,7 @@ class GeneralSettingsSchema(object):
                             Optional('helpers',        default = None): Use(string_to_list),
                             Optional('runprocessor',   default = False): bool,
                             Optional('runplotter',     default = False): bool,
-                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART'] for y in x])),
+                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART', '2D']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART', '2D'] for y in x])),
                             Optional('skipnomrescale', default = False): bool,
                             Optional('loglevel',       default = 3): int,
                             Optional('nworkers',       default = 8): int, # 0 is Iterative executor...
@@ -350,6 +350,7 @@ datamc_schema           = CanvasSchema('MPLUSR', 'DATAMC')
 mcmc_schema             = CanvasSchema('MPLUSR', 'MCMC')
 separation_schema       = CanvasSchema('MPLUSR', 'SEPARATION')
 piechart_schema         = CanvasSchema('GENERAL', 'PIECHART')
+hist2d_schema           = CanvasSchema('MPLUSR', '2D')
 
 schema = Schema({
                 'general': general_schema.schema ,
@@ -366,5 +367,6 @@ schema = Schema({
                 Optional('separation',   default = separation_schema.defaults):   separation_schema.schema,
                 Optional('significance', default = plots_with_ratio_schema.defaults): plots_with_ratio_schema.schema,
                 Optional('piechart',     default = piechart_schema.defaults): piechart_schema.schema,
+                Optional('histo2d',      default = hist2d_schema.defaults): hist2d_schema.schema,
 
                 })

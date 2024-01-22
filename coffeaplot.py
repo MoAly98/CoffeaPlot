@@ -22,7 +22,7 @@ from config.reader import process as process_config
 from config.general_parsers import parse_general, parse_samples, parse_regions, parse_variables, parse_rescales
 from config.plots_parsers import parse_special_plot_settings, parse_general_plot_settings
 from histogram.processor import CoffeaPlotProcessor
-from plot.plotter import prepare_1d_plots, make_plots
+from plot.plotter import prepare_1d_plots, make_plots, prepare_2d_plots, make_2d_plots
 
 # ========================================= #
 # =========== Set up functions =========== #
@@ -118,6 +118,8 @@ def main():
             CoffeaPlotSettings.eff_plot_settings          = parse_special_plot_settings(validated['eff'], 'EFF', GeneralPlotSettings)
         if 'PIECHART' in CoffeaPlotSettings.makeplots:
             CoffeaPlotSettings.piechart_plot_settings     = parse_special_plot_settings(validated['piechart'], 'PIECHART', GeneralPlotSettings)
+        if '2D' in CoffeaPlotSettings.makeplots:
+            CoffeaPlotSettings.heatmap_plot_settings     = parse_special_plot_settings(validated['histo2d'], '2D', GeneralPlotSettings)
 
     if not (CoffeaPlotSettings.runplotter or CoffeaPlotSettings.runprocessor):
         log.warning("Setup everything but you are not running plotting or processing ... is that intentional?")
@@ -160,8 +162,11 @@ def main():
             # =========== Set up samples, regions, variables, and rescales =========== #
 
             plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings)
-            make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
+            if plot_settings_list is not None:
+                make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
 
+            plot_settings_list = prepare_2d_plots(out, tree, CoffeaPlotSettings)
+            make_2d_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
 if __name__ == '__main__':
     main()
 

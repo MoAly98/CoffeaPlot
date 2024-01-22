@@ -409,9 +409,11 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
             log.error(f"Variable {variable_name} is defined more than once. Please check your configuration file.")
 
 
+        var_2d = False
         # ====== Set up the method for creating the variable ====== #
         # Method can be a functor or a branch name
         if 'methodx' in variable and 'methody' in variable:
+            var_2d = True
             howto = [variable['methodx']] + [variable['methody']]
             howto_functor = []
             for axis_method in howto:
@@ -435,13 +437,22 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                 howto_functor = Functor(lambda x: x, [howto])
 
         # ====== Set up the binning for the variable histogram ====== #
-        # Binning can be a list of bin edges or a list with [min, max, nbins]
-        if isinstance(variable['binning'], str):
-            minbin, maxbin, nbins = variable['binning'].strip().split(',')
-            binning = np.linspace(float(minbin), float(maxbin), int(nbins))
+        if var_2d:
+            binning = []
+            for axis in variable['binning']:
+                # Binning can be a list of bin edges or a list with [min, max, nbins]
+                if isinstance(axis, str):
+                    minbin, maxbin, nbins = axis.strip().split(',')
+                    binning.append(np.linspace(float(minbin), float(maxbin), int(nbins)))
+                else:
+                    binning.append(axis)
         else:
-            binning = variable['binning']
-
+            # Binning can be a list of bin edges or a list with [min, max, nbins]
+            if isinstance(variable['binning'], str):
+                minbin, maxbin, nbins = variable['binning'].strip().split(',')
+                binning = np.linspace(float(minbin), float(maxbin), int(nbins))
+            else:
+                binning = variable['binning']
 
         # ====== Create Variable instance and pass it to list ====== #
 

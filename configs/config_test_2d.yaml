@@ -3,8 +3,8 @@ General:
   InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/TEST/2D_PLOTS_TEST/data/data___nominal_Loose.pkl
   Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
-  RunProcessor: False
-  RunPlotter: False
+  RunProcessor: True
+  RunPlotter: True
   LogLevel: 2
   NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
                 '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
@@ -14,23 +14,23 @@ General:
     - 'MC_weight'
     - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
   Blinding: 0.00333
-  makeplots: []
+  makeplots: ['2D']
 
 Variables:
   2D:
-    - Name: bdt_tH_v_ttb
+    - Name: tagnonb_topb_m_v_bdt_ttb
       Label:
-        - 'AltBDT(tH)'
-        - 'AltBDT(tH)'
+        - '$M_{j_{light-tag},b_{top}}$'
+        - 'AltBDT(ttb)'
       MethodX:
-          - bdt_tH
-          - ['BDT']
+          - x_gev
+          - ['tagnonb_topb_m']
       MethodY:
           - bdt_ttb
-          - ['BDT']
+          - ['BDT_alt']
       Binning:
-        - [0, 0.3528, 0.6, 0.78, 1]
-        - [0, 0.3528, 0.6, 0.78, 1]
+        - 0,600,51
+        - 0,1,41
 
 Samples:
 
@@ -44,14 +44,42 @@ Samples:
     Color: '#e6194b'
     RefMC: True
 
-  - Name: ttb
-    Label: '$t\bar{t}+\geq1b$'
-    Type: 'BKG'
+Supersamples:
+
+  - Name: ttb_5FS
     NtuplesRgxs: ['410470_user*']
-    Selection:
-      - ttb_cut
-      - ['leptons_PLIVtight','HF_SimpleClassification']
-    Color: 'orange'
+    SubSamples:
+      - Name: ttb
+        Label: '$t\bar{t}+\geq1b$'
+        Type: 'BKG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: 'orange'
+
+      - Name: ttb_5FS_1b
+        Label: '$t\bar{t}+1b$ (5FS)'
+        Type: 'BKG'
+        Selection:
+          - tt1b_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: 'green'
+
+      - Name: ttb_5FS_1B
+        Label: '$t\bar{t}+1B$ (5FS)'
+        Type: 'BKG'
+        Selection:
+          - tt1B_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: 'green'
+
+      - Name: ttb_5FS_2b
+        Label: '$t\bar{t}+2b$ (5FS)'
+        Type: 'BKG'
+        Selection:
+          - ttbb_cut
+          - ['leptons_PLIVtight','HF_Classification']
+        Color: 'purple'
 
 Regions:
   - Name: CR

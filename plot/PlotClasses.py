@@ -338,6 +338,8 @@ class CoffeaPlot(object):
 
     def plot(self, outpath, plot_type='MPLUSR'):
 
+
+
         fig, main_ax, rat_axes = self.make_figure()
 
         if plot_type == 'MPLUSR':
@@ -356,7 +358,16 @@ class CoffeaPlot(object):
         if plot_type == 'PIE':
             self.plot_pie_canvas(main_ax)
 
-        filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.rescale
+        if plot_type == '2D':
+            histogram = self.stacks[0].stackatinos[0].sum.h
+            plot = mplhep.hist2dplot(histogram, label = self.stacks[0].stackatinos[0].label, ax = main_ax, cbar=False, cmap=plt.colormaps['coolwarm'])#, **self.stacks[0].stackatinos[0].styling)
+            fig.colorbar(mappable=plot[0], orientation='horizontal')
+            main_ax.grid(False, which='both')
+
+        if plot_type != '2D':
+            filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.rescale
+        else:
+            filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.sample + '__' + self.stacks[0].plotid.rescale
         plt.savefig(f"{outpath}/{filename}.pdf", bbox_inches='tight')
         plt.close('all')
 
@@ -652,10 +663,11 @@ class Blinder(object):
 
 
 class PlotterSettings(object):
-    def __init__(self, variable, region, rescale):
+    def __init__(self, variable, region, rescale, sample=None):
         self.region = region
         self.variable = variable
         self.rescale = rescale
+        self.sample  = sample
 
         # Processed attributes
         self.backgrounds_histos = None
@@ -683,3 +695,4 @@ class PlotIdentifier(object):
         self.variable = plottersettings.variable.name
         self.region   = plottersettings.region.name
         self.rescale  = plottersettings.rescale.name
+        self.sample   = plottersettings.sample.name if plottersettings.sample is not None else ''

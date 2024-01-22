@@ -147,14 +147,14 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                             for axis in range(2):
                                 if idxing == 'nonevent':
                                     # Compute variable of interest
-                                    var = histo_compute[0].evaluate(filt_reg)
+                                    var = histo_compute[axis].evaluate(filt_reg)
                                     # Expect all args going into the histogram variable have same shape, make weights have same shape
-                                    w, _ = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute[0].args[0]])
+                                    w, _ = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute[axis].args[0]])
                                     # TODO:: Make this more general than just flattening operations
                                     w = ak.flatten(w)
 
                                 else:
-                                    var = histo_compute[0].evaluate(filt_reg)
+                                    var = histo_compute[axis].evaluate(filt_reg)
                                     w = rescaled_weights
 
                                 fill_what = 'x' if axis == 0 else 'y'

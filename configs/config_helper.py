@@ -17,7 +17,7 @@ bdt_ttl =  lambda x: x[:,3]
 bdt_others = lambda x: x[:,4]
 
 nlights = lambda njets, nbjets: njets - nbjets
-tagnonb_topb_m = lambda tagnonb_topb_m: tagnonb_topb_m/1e3
+x_gev  = lambda x: x/1e3
 obj0_x = lambda x: x[:,0]
 obj1_x = lambda x: x[:,1]
 obj2_x = lambda x: x[:,2]
