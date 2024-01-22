@@ -338,8 +338,6 @@ class CoffeaPlot(object):
 
     def plot(self, outpath, plot_type='MPLUSR'):
 
-
-
         fig, main_ax, rat_axes = self.make_figure()
 
         if plot_type == 'MPLUSR':
@@ -360,9 +358,21 @@ class CoffeaPlot(object):
 
         if plot_type == '2D':
             histogram = self.stacks[0].stackatinos[0].sum.h
-            plot = mplhep.hist2dplot(histogram, label = self.stacks[0].stackatinos[0].label, ax = main_ax, cbar=False, cmap=plt.colormaps['coolwarm'])#, **self.stacks[0].stackatinos[0].styling)
-            fig.colorbar(mappable=plot[0], orientation='horizontal')
-            main_ax.grid(False, which='both')
+            plot = mplhep.hist2dplot(histogram, label = self.stacks[0].stackatinos[0].label, ax = main_ax, cbar=False, cmap=plt.colormaps[self.settings.colormap], **self.stacks[0].stackatinos[0].styling)
+            if self.settings.colorbarpos in ['bottom', 'top']:
+                fig.colorbar(mappable=plot[0], orientation='horizontal')
+            elif self.settings.colorbarpos in ['left', 'right']:
+                fig.colorbar(mappable=plot[0], orientation='vertical')
+
+            if self.stacks[0].plotid.variable_obj.nice_vals is not None:
+
+                nice_xy = self.stacks[0].plotid.variable_obj.nice_vals
+                nice_x = nice_xy[0]
+                nice_y = nice_xy[1] if len(nice_xy) == 2 else None
+
+                main_ax.axvline(x=nice_x, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
+                if nice_y is not None:
+                    main_ax.axhline(y=nice_y, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
 
         if plot_type != '2D':
             filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.rescale
@@ -696,3 +706,8 @@ class PlotIdentifier(object):
         self.region   = plottersettings.region.name
         self.rescale  = plottersettings.rescale.name
         self.sample   = plottersettings.sample.name if plottersettings.sample is not None else ''
+
+        self.variable_obj = plottersettings.variable
+        self.region_obj   = plottersettings.region
+        self.rescale_obj  = plottersettings.rescale
+        self.sample_obj   = plottersettings.sample

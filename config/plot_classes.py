@@ -61,6 +61,19 @@ class SeparationSettings(PlotWithRatioSettings):
         self.seploc   = None
         super(SeparationSettings, self).__init__()
 
+class Histo2dSettings(PlotWithRatioSettings):
+    """
+    Separation plots have all settings of a PlotWithRatioSettings object, but also have settings
+    to allow writing the separation values on the plot.
+    """
+    def __init__(self):
+        self.vhlinecolors = None
+        self.vhlinewidths = None
+        self.colormap     = None
+        self.colorbarpos  = None
+
+        super(Histo2dSettings, self).__init__()
+
 class PieChartSettings(PlotWithRatioSettings):
     """
     PieChart plots have all settings of a GeneralPlotSettings object, but also have settings

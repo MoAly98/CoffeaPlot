@@ -152,7 +152,6 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                     w, _ = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute[axis].args[0]])
                                     # TODO:: Make this more general than just flattening operations
                                     w = ak.flatten(w)
-
                                 else:
                                     var = histo_compute[axis].evaluate(filt_reg)
                                     w = rescaled_weights

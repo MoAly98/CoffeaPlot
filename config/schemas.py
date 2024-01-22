@@ -140,6 +140,14 @@ class CanvasSchema(object):
                     Optional('seploc', default = 'upper center'): Or(str, [Use(float),Use(float)]),
                 })
 
+            if plot_type == '2D':
+                general_plot_settings_schema.update({
+                    Optional('vhlinecolors', default='black'): Use(str),
+                    Optional('vhlinewidths', default=3): Use(float),
+                    Optional('colormap', default='coolwarm'): Use(str),
+                    Optional('colorbarpos', default='bottom'): And(Use(str), lambda x: x in ['left', 'right', 'top', 'bottom']),
+                })
+
         if canvas_type == 'GENERAL':
             if plot_type == 'PIECHART':
                 main_axis_schema = PanelSchema('MAIN', plot_type, axes=False)
@@ -295,6 +303,7 @@ class VariableSchema(object):
                                 Optional('label',   default = None): And([str], lambda x: len(x)==2),
                                 Optional('idxby',   default = 'event'): [And(str, lambda x: x in ['event', 'nonevent'])],
                                 Optional('rebin',   default = None): And([[Use(float)]] , lambda x: len(x)==2),
+                                Optional('interestingvals', default=None): And([Use(float)], lambda x: len(x) <= 2)
                             }
         else:
             raise NotImplementedError("Histograms can either be 1D or 2D")

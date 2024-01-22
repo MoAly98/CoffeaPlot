@@ -464,9 +464,10 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                             regions = variable['regions'],
                                             idx_by = variable['idxby'],
                                             dim = len(howto_functor),
-                                            rebin = variable['rebin']))
+                                            rebin = variable['rebin'],
+                                            nice_vals=variable['interestingvals']))
         else:
-            # This is only possible for 1D plots by schema implementation
+            # This is only possible for 1D plots by schema implementation but should be generalised for 2D eff
             numsel = variable['numsel']
             if isinstance(numsel, list):
                 # Method is a functor

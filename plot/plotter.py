@@ -181,7 +181,6 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
 
 def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
-
     if not any(variable.dim == 1 for variable in CoffeaPlotSettings.variables_list):
         return
 
@@ -374,6 +373,9 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
 def prepare_2d_plots(histograms, tree, CoffeaPlotSettings):
 
+    if not any(variable.dim == 2 for variable in CoffeaPlotSettings.variables_list):
+        return
+
     # ====== Loop over 1D plots ====== #
     plot_settings_list = []
 
@@ -410,12 +412,11 @@ def prepare_2d_plots(histograms, tree, CoffeaPlotSettings):
                     sample_histo.rebin(variable.rebin)
 
                 # Category color is the color of the first sample in the category
-                stackatino = Stackatino(histograms=[sample_histo], label=sample.label, color=sample.color, linewidth=3)
+                stackatino = Stackatino(histograms=[sample_histo], label=sample.label)
                 # Add up all the histograms in the stackatino
                 stackatino.sum_histograms()
                 # Add the stackatino to the stack
                 mc_stack = Stack(stackatinos = [stackatino], bar_type = 'stepfilled', error_type = 'stat', plottersettings = PlotSettings)
-
 
                 # Append stack to kust of stacks (one per region, rescale, variable)
                 PlotSettings.mc_stack = mc_stack

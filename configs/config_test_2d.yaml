@@ -14,7 +14,7 @@ General:
     - 'MC_weight'
     - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
   Blinding: 0.00333
-  makeplots: ['2D']
+  makeplots: ['2D', 'SEPARATION']
 
 Variables:
   2D:
@@ -31,6 +31,17 @@ Variables:
       Binning:
         - 0,600,51
         - 0,1,41
+      InterestingVals:
+        - 130
+        - 0.4
+
+  # 1D:
+  #   - Name: tagnonb_topb_m
+  #     Label: '$M_{j_{light-tag},b_{top}}$'
+  #     Method:
+  #         - x_gev
+  #         - ['tagnonb_topb_m']
+  #     Binning:  0,600,51
 
 Samples:
 
@@ -88,3 +99,7 @@ Regions:
       - CR_ttb_fn
       - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
     Targets: ['ttb']
+
+# Histo2D:
+#   vline: 130
+#   hline: 0.4

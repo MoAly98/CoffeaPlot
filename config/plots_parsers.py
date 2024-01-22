@@ -4,7 +4,7 @@ log = logging.getLogger(__name__)
 # ================ CoffeaPlot Imports ================ #
 from config.plot_classes import (DataMCSettings, MCMCSettings,
                                 SeparationSettings, PlotWithRatioSettings,
-                                PieChartSettings,
+                                Histo2dSettings, PieChartSettings,
                                 MainPanelSettings, PanelSettings,
                                 GeneralPlotSettings as GPS)
 
@@ -121,6 +121,9 @@ def parse_special_plot_settings(cfg, plot_type, GeneralPlotSettings):
 
     elif plot_type == 'PIECHART':
         PlotSettings = PieChartSettings()
+
+    elif plot_type == '2D':
+        PlotSettings = Histo2dSettings()
 
     else:
         PlotSettings = PlotWithRatioSettings()
