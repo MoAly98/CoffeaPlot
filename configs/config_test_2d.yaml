@@ -1,0 +1,60 @@
+General:
+  DumpDir: "./outputs/TEST/2D_PLOTS_TEST/"
+  InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/TEST/2D_PLOTS_TEST/data/data___nominal_Loose.pkl
+  Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
+  Trees: 'nominal_Loose'
+  RunProcessor: True
+  RunPlotter: False
+  LogLevel: 2
+  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  MCWeight:
+    - 'MC_weight'
+    - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
+  Blinding: 0.00333
+  makeplots: []
+
+Variables:
+  2D:
+    - Name: bdt_tH_v_ttb
+      Label: 'NewBDT(tH)'
+      MethodX:
+          - bdt_tH
+          - ['BDT']
+      MethodY:
+          - bdt_ttb
+          - ['BDT']
+      Binning:
+        - [0, 0.3528, 0.6, 0.78, 1]
+        - [0, 0.3528, 0.6, 0.78, 1]
+
+Samples:
+
+  - Name: tH
+    Label: 'tHjb'
+    Type: 'SIG'
+    NtuplesRgxs: ['346676*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#e6194b'
+    RefMC: True
+
+  - Name: ttb
+    Label: '$t\bar{t}+\geq1b$'
+    Type: 'BKG'
+    NtuplesRgxs: ['410470_user*']
+    Selection:
+      - ttb_cut
+      - ['leptons_PLIVtight','HF_SimpleClassification']
+    Color: 'orange'
+
+Regions:
+  - Name: CR
+    Label: 'CR'
+    Selection:
+      - CR_ttb_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['ttb']
