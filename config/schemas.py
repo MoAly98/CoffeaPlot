@@ -284,9 +284,20 @@ class VariableSchema(object):
                     'numsel':  Or(str, Use(functor_input)), # Name of branch, or functor args
                     'denomsel':  Or(str, Use(functor_input)), # Name of branch, or functor args
                 })
-        else:
+        elif dim == 2:
             # Not implemented yet
-            variable_schema = {}
+            variable_schema = {
+                                'name': str,
+                                'methodx':  Or(str, Use(functor_input)), # Name of branch, or functor args
+                                'methody':  Or(str, Use(functor_input)), # Name of branch, or functor args
+                                Optional('binning', default = None): And([Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)])], lambda x: len(x)==2),
+                                Optional('regions', default = ['.*']): Use(string_to_list),
+                                Optional('label',   default = None): str,
+                                Optional('idxby',   default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
+                                Optional('rebin',   default = None): And([[Use(float)]] , lambda x: len(x)==2),
+                            }
+        else:
+            raise NotImplementedError("Histograms can either be 1D or 2D")
 
         self.schema = variable_schema
 
@@ -342,7 +353,7 @@ piechart_schema         = CanvasSchema('GENERAL', 'PIECHART')
 
 schema = Schema({
                 'general': general_schema.schema ,
-                'variables': {'1d': [variable_1d_schema.schema], Optional('2d', default=[]): [variable_2d_schema.schema]},
+                'variables': {Optional('1d', default=[]): [variable_1d_schema.schema], Optional('2d', default=[]): [variable_2d_schema.schema]},
                 'regions':                              [region_schema.schema],
                 Optional('effs',         default = {'1d': [], '2d': []}): {'1d': [eff_schema.schema]},
                 Optional('rescales',     default = []): [rescale_schema.schema],

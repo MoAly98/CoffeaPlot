@@ -40,6 +40,8 @@ def validate(indict):
             if bad_piecharts_sample:
                 log.error(f"Sample {piechart_sample} not found in samples list!")
 
+    if validated['variables']['1d'] == [] and validated['variables']['2d'] == []:
+        log.error(f"You must specify either 1D or 2D variables")
 
 
     return validated
@@ -61,4 +63,6 @@ def process(cfgp):
     with open(cfgp,'r') as f:
         output = yaml.safe_load(f)
         validated = validate(output)
+
+    exit(1)
     return validated
