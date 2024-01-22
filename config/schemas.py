@@ -273,7 +273,7 @@ class VariableSchema(object):
             variable_schema = {
                                 'name': str,
                                 'method':  Or(str, Use(functor_input)), # Name of branch, or functor args
-                                'binning': Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)]),
+                                Optional('binning', default = None): Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)]),
                                 Optional('regions', default = ['.*']): Use(string_to_list),
                                 Optional('label',   default = None): str,
                                 Optional('idxby',   default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
