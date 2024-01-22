@@ -6,50 +6,90 @@ General:
   RunProcessor: True
   RunPlotter: True
   LogLevel: 2
-  # NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
-  #               '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
-  #               '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
-  #               '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
-  NTuplesDirs: ['/eos/user/m/maly/thbb/NoCutsNomOnly/L1/']
-  MCWeight:
-    - 'MC_weight'
-    - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
-  Blinding: 0.00333
+  NTuplesDirs: ['/eos/user/m/maly/thbb/NoCutsNomOnly/L1/mc16a/', '/eos/user/m/maly/thbb/NoCutsNomOnly/L1/mc16d/','/eos/user/m/maly/thbb/NoCutsNomOnly/L1/mc16e/']
+  MCWeight: 'weight_mc'
   makeplots: ['EFF']
 
 Variables:
   1D:
-    - Name: alt_bdt_tH
-      Label: 'AltBDT(tH)'
+    - Name: good_jets
       Method:
-        - bdt_tH
-        - ['BDT']
-      Binning: [0, 0.3528, 0.6, 0.78, 1]
+        - good_jets
+        - ["jet_pt", "jet_eta", "jet_truthflavExtended", "jet_truthflav", "jet_tagWeightBin_DL1r_Continuous", "jet_DL1r"]
+      Type: "GHOST"
+
+    - Name: good_jets_pcbt
+      Method:
+        - get_pcbt
+        - good_jets
+      Type: "GHOST"
+
+    - Name: good_jets_dl1r
+      Method:
+        - get_dl1r
+        - good_jets
+      Type: "GHOST"
+
+    - Name: good_jets_truthFlav
+      Method:
+        - get_truthFlav
+        - good_jets
+      Type: "GHOST"
 
     - Name: good_jets_truthFlavExt
       Method:
-        - good_jets_truthFlavExt
-        - ["jets_pt", "jets_eta", "jets_truthflavExtended"]
+        - get_truthFlavExt
+        - good_jets
+      Type: "GHOST"
+    - Name: good_jets_pt
+      Method:
+        - get_pt
+        - good_jets
       Type: "GHOST"
 
-    - Name: good_jets_truthFlavExt_h
-      Label: 'Jet Extended Truth Falvour'
-      Method: good_jets_truthFlavExt
-      Binning: 0, 300, 21
 
+    - Name: good_jets_pcbt_0
+      Method:
+        - obj0_x
+        - good_jets_pcbt
+      Type: "GHOST"
+
+    - Name: good_jets_dl1r_0
+      Method:
+        - obj0_x
+        - good_jets_dl1r
+      Type: "GHOST"
+
+    - Name: good_jets_truthFlav_0
+      Method:
+        - obj0_x
+        - good_jets_truthFlav
+      Type: "GHOST"
+
+    - Name: good_jets_truthFlavExt_0
+      Method:
+        - obj0_x
+        - good_jets_truthFlavExt
+      Type: "GHOST"
+
+    - Name: good_jets_pt_0
+      Method:
+        - obj0_x_GeV
+        - good_jets_pt
+      Type: "GHOST"
 Effs:
   1D:
     - Name: b_MC_eff
-      Label: 'Jet $p^T$' #'$\epsilon_{b}^{MC}$'
+      Label: 'Jet $p^T$'
       NumSel:
-        - b_70_pass
-        - ['jets_truthflav','jets_tagWeightBin_DL1r_Continuous']
+        - b_70_pass_FixedCut
+        - ['good_jets_truthFlav','good_jets_dl1r']
       DenomSel:
         - b_truth
-        - ['jets_truthflav']
+        - ['good_jets_truthFlav']
       Method:
         - flatten_x_gev
-        - jets_pt
+        - good_jets_pt
       idxby: nonevent
       Binning: 25,300,21
 
@@ -59,26 +99,25 @@ Samples:
     Type: 'BKG'
     NtuplesRgxs: ['*410470*/*']
     Selection:
-      - tight_lepton
-      - leptons_PLIVtight
+      - at_least_a_jet
+      - jet_pt
     Color: 'red'
 
 Regions:
-  - Name: CR
-    Label: 'CR'
+  - Name: Inclusive
+    Label: 'Inclusive'
     Selection:
-      - CR_ttb_fn
-      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
-    #Targets: ['ttb']
+      - INCL_fn
+      - ['el_Id_TightLH', 'el_Isol_PLImprovedTight', 'mu_Id_Medium', 'mu_Isol_PLImprovedTight', 'jet_pt']
 
-  - Name: SR
-    Label: 'SR'
-    Selection:
-      - SR_fn
-      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
-    #Targets: ['tH', 'tWH']
+  # - Name: SR
+  #   Label: 'SR'
+  #   Selection:
+  #     - SR_fn
+  #     - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+  #   #Targets: ['tH', 'tWH']
 
 Eff:
   Main:
     YNorm: False
-    YRange: [0.8, 1.0]
+    YRange: [0.6, 1.0]
