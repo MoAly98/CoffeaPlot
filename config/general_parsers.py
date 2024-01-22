@@ -401,7 +401,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
     variables_list = []
 
     # Loop over 1D variables
-    for variable in variables_cfg['1d']:
+    for variable in variables_cfg['1d']+variables_cfg['2d']:
 
         # ====== Check for unique variable names ====== #
         variable_name = variable['name']
@@ -411,14 +411,28 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
 
         # ====== Set up the method for creating the variable ====== #
         # Method can be a functor or a branch name
-        howto = variable['method']
-        if isinstance(howto, list):
-            # Method is a functor
-            method_fn = CoffeaPlotSettings.functions[howto[0]]
-            howto_functor = Functor(method_fn, howto[1])
+        if 'methodx' in variable and 'methody' in variable:
+            howto = [variable['methodx']] + [variable['methody']]
+            howto_functor = []
+            for axis_method in howto:
+                if isinstance(axis_method, list):
+                    # Method is a functor
+                    method_fn = CoffeaPlotSettings.functions[axis_method[0]]
+                    func = Functor(method_fn, axis_method[1])
+                else:
+                    # Method is simply a branch name
+                    func = Functor(lambda x: x, [axis_method])
+
+                howto_functor.append(func)
         else:
-            # Method is simply a branch name
-            howto_functor = Functor(lambda x: x, [howto])
+            howto = variable['method']
+            if isinstance(howto, list):
+                # Method is a functor
+                method_fn = CoffeaPlotSettings.functions[howto[0]]
+                howto_functor = Functor(method_fn, howto[1])
+            else:
+                # Method is simply a branch name
+                howto_functor = Functor(lambda x: x, [howto])
 
         # ====== Set up the binning for the variable histogram ====== #
         # Binning can be a list of bin edges or a list with [min, max, nbins]
@@ -438,9 +452,10 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                             label = variable['label'],
                                             regions = variable['regions'],
                                             idx_by = variable['idxby'],
-                                            dim = 1,
+                                            dim = len(howto_functor),
                                             rebin = variable['rebin']))
         else:
+            # This is only possible for 1D plots by schema implementation
             numsel = variable['numsel']
             if isinstance(numsel, list):
                 # Method is a functor

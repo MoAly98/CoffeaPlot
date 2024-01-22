@@ -292,8 +292,8 @@ class VariableSchema(object):
                                 'methody':  Or(str, Use(functor_input)), # Name of branch, or functor args
                                 Optional('binning', default = None): And([Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)])], lambda x: len(x)==2),
                                 Optional('regions', default = ['.*']): Use(string_to_list),
-                                Optional('label',   default = None): str,
-                                Optional('idxby',   default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
+                                Optional('label',   default = None): And([str], lambda x: len(x)==2),
+                                Optional('idxby',   default = 'event'): [And(str, lambda x: x in ['event', 'nonevent'])],
                                 Optional('rebin',   default = None): And([[Use(float)]] , lambda x: len(x)==2),
                             }
         else:

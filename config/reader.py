@@ -64,5 +64,4 @@ def process(cfgp):
         output = yaml.safe_load(f)
         validated = validate(output)
 
-    exit(1)
     return validated

@@ -91,16 +91,16 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                         continue
 
                     # =============== Non empty histogram for this region for this sample ==========
-                    if variable.dim == 1:
+                    for rescaling in self.rescales_list:
 
-                        for rescaling in self.rescales_list:
+                        if any(re.match(affected_sample, sample.name) is not None for affected_sample in rescaling.affects):
+                            rescaled_weights = rescaling.method.evaluate(filt_reg)
+                        else:
+                            rescaled_weights = filt_reg['weights']
+
+                        if variable.dim == 1:
 
                             h = hist.Hist.new.Var(binning, name = name, label=label, flow=True).Weight()
-
-                            if any(re.match(affected_sample, sample.name) is not None for affected_sample in rescaling.affects):
-                                rescaled_weights = rescaling.method.evaluate(filt_reg)
-                            else:
-                                rescaled_weights = filt_reg['weights']
 
                             if idxing == 'nonevent':
                                 # Compute variable of interest
@@ -137,9 +137,44 @@ class CoffeaPlotProcessor(processor.ProcessorABC):
                                 accum[tot_histo_obj] = tot_histo_obj
                             else:
                                 accum[tot_histo_obj] += tot_histo_obj
-                    else:
-                        # TODO:: 2D
-                        pass
+                        else:
+
+                            h = (hist.Hist.new.Var(binning[0], name = "x", label=label[0], flow=True)
+                                .Var(binning[1], name = "y", label=label[1], flow=True)
+                                .Weight()
+                            )
+                            filler = {'x': None, 'y': None}
+                            for axis in range(2):
+                                if idxing == 'nonevent':
+                                    # Compute variable of interest
+                                    var = histo_compute[0].evaluate(filt_reg)
+                                    # Expect all args going into the histogram variable have same shape, make weights have same shape
+                                    w, _ = ak.broadcast_arrays(rescaled_weights[:, np.newaxis], filt_reg[histo_compute[0].args[0]])
+                                    # TODO:: Make this more general than just flattening operations
+                                    w = ak.flatten(w)
+
+                                else:
+                                    var = histo_compute[0].evaluate(filt_reg)
+                                    w = rescaled_weights
+
+                                fill_what = 'x' if axis == 0 else 'y'
+                                filler[fill_what] = (var, w)
+
+                            h.fill(x=filler['x'][0], y=filler['y'][0], weight = filler['x'][1])
+
+                            # Save the histogram
+                            samp_histo_obj = Histogram(name, h, sample.name, region_to_plot.name , rescaling.name)
+                            if sample.type != 'DATA':
+                                tot_histo_obj = Histogram(name, deepcopy(h), 'total', region_to_plot.name , rescaling.name)
+                            else:
+                                tot_histo_obj = Histogram(name, 0, 'total', region_to_plot.name , rescaling.name)
+
+                            accum[samp_histo_obj] = samp_histo_obj
+
+                            if sample == samples[0]:
+                                accum[tot_histo_obj] = tot_histo_obj
+                            else:
+                                accum[tot_histo_obj] += tot_histo_obj
         return accum
 
     def postprocess(self, accumulator):

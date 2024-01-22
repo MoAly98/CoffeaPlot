@@ -3,7 +3,7 @@ General:
   InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/TEST/2D_PLOTS_TEST/data/data___nominal_Loose.pkl
   Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
-  RunProcessor: True
+  RunProcessor: False
   RunPlotter: False
   LogLevel: 2
   NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
@@ -19,7 +19,9 @@ General:
 Variables:
   2D:
     - Name: bdt_tH_v_ttb
-      Label: 'NewBDT(tH)'
+      Label:
+        - 'AltBDT(tH)'
+        - 'AltBDT(tH)'
       MethodX:
           - bdt_tH
           - ['BDT']

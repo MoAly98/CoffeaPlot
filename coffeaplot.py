@@ -121,7 +121,7 @@ def main():
 
     if not (CoffeaPlotSettings.runplotter or CoffeaPlotSettings.runprocessor):
         log.warning("Setup everything but you are not running plotting or processing ... is that intentional?")
-        return 0
+        #return 0
     # =========== Set up fileset =========== #
     fileset = {}
     for sample in CoffeaPlotSettings.samples_list:
@@ -149,6 +149,7 @@ def main():
             if CoffeaPlotSettings.inputhistos is None:
                 with open(f"{datadir}/data___{tree}.pkl", "rb") as f:
                     out = pickle.load(f)
+
             else:
                 out = {}
                 for inputhistos_file in CoffeaPlotSettings.inputhistos:
@@ -160,7 +161,6 @@ def main():
 
             plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings)
             make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
-
 
 if __name__ == '__main__':
     main()
