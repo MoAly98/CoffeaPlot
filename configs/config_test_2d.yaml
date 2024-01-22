@@ -3,7 +3,7 @@ General:
   InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/TEST/2D_PLOTS_TEST/data/data___nominal_Loose.pkl
   Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
-  RunProcessor: True
+  RunProcessor: False
   RunPlotter: True
   LogLevel: 2
   NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
@@ -35,38 +35,38 @@ Variables:
         - 130
         - 0.4
 
-  # 1D:
-  #   - Name: tagnonb_topb_m
-  #     Label: '$M_{j_{light-tag},b_{top}}$'
-  #     Method:
-  #         - x_gev
-  #         - ['tagnonb_topb_m']
-  #     Binning:  0,600,51
+  1D:
+    - Name: tagnonb_topb_m
+      Label: '$M_{j_{light-tag},b_{top}}$'
+      Method:
+          - x_gev
+          - ['tagnonb_topb_m']
+      Binning:  0,600,51
 
-Samples:
+# Samples:
 
-  - Name: tH
-    Label: 'tHjb'
-    Type: 'SIG'
-    NtuplesRgxs: ['346676*']
-    Selection:
-      - tight_lepton
-      - ['leptons_PLIVtight']
-    Color: '#e6194b'
-    RefMC: True
+#   - Name: tH
+#     Label: 'tHjb'
+#     Type: 'SIG'
+#     NtuplesRgxs: ['346676*']
+#     Selection:
+#       - tight_lepton
+#       - ['leptons_PLIVtight']
+#     Color: '#e6194b'
+#     RefMC: True
 
 Supersamples:
 
   - Name: ttb_5FS
     NtuplesRgxs: ['410470_user*']
     SubSamples:
-      - Name: ttb
-        Label: '$t\bar{t}+\geq1b$'
-        Type: 'BKG'
-        Selection:
-          - ttb_cut
-          - ['leptons_PLIVtight','HF_SimpleClassification']
-        Color: 'orange'
+      # - Name: ttb
+      #   Label: '$t\bar{t}+\geq1b$'
+      #   Type: 'BKG'
+      #   Selection:
+      #     - ttb_cut
+      #     - ['leptons_PLIVtight','HF_SimpleClassification']
+      #   Color: 'orange'
 
       - Name: ttb_5FS_1b
         Label: '$t\bar{t}+1b$ (5FS)'
@@ -78,7 +78,7 @@ Supersamples:
 
       - Name: ttb_5FS_1B
         Label: '$t\bar{t}+1B$ (5FS)'
-        Type: 'BKG'
+        Type: 'SIG'
         Selection:
           - tt1B_cut
           - ['leptons_PLIVtight','HF_Classification']
@@ -99,6 +99,9 @@ Regions:
       - CR_ttb_fn
       - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
     Targets: ['ttb']
+
+SEPARATION:
+    seploc: [0.6,0.7]
 
 # Histo2D:
 #   vline: 130

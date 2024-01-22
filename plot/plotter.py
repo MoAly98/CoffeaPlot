@@ -278,7 +278,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                     sep_stack.append(signal_stackatino)
 
                 background_histogram = PlotSettings.tot_backgrounds_histo
-                background_stackatino = Stackatino([background_histogram], label = background_histogram.stylish_sample, color = background_histogram.color, fill = None, linewidth=3)
+                background_stackatino = Stackatino([background_histogram], label = background_histogram.stylish_sample, color = 'black', fill = None, linewidth=3)
                 background_stackatino.sum_histograms()
 
                 sep_stack.append(background_stackatino)

@@ -463,9 +463,9 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                             label = variable['label'],
                                             regions = variable['regions'],
                                             idx_by = variable['idxby'],
-                                            dim = len(howto_functor),
+                                            dim = 2 if var_2d else 1,
                                             rebin = variable['rebin'],
-                                            nice_vals=variable['interestingvals']))
+                                            nice_vals=variable['interestingvals'] if var_2d else None))
         else:
             # This is only possible for 1D plots by schema implementation but should be generalised for 2D eff
             numsel = variable['numsel']
