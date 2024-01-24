@@ -1,0 +1,650 @@
+General:
+  DumpDir: './outputs/variable_importance_for_bdt_ttb_alt/'
+  InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/variable_importance_for_bdt_ttb_alt/data/data___nominal_Loose.pkl
+  Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
+  Trees: 'nominal_Loose'
+  RunProcessor: True
+  RunPlotter: True
+  LogLevel: 2
+  NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16d_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16e_nom/',
+                '/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3_1/data_nom/']
+  MCWeight:
+    - 'MC_weight'
+    - ['xsec_weight','weight_mc','weight_pileup','weight_bTagSF_DL1r_Continuous','weight_jvt','weight_forwardjvt','weight_leptonSF','runNumber','totalEventsWeighted']
+  Blinding: 0.00333
+  nworkers: 8
+  makeplots: ['SEPARATION','2D']
+
+
+Samples:
+  - Name: tH
+    Label: 'tHjb'
+    Type: 'BKG'
+    NtuplesRgxs: ['346676*']
+    Selection:
+      - tight_lepton
+      - ['leptons_PLIVtight']
+    Color: '#e6194b'
+    RefMC: True
+
+Supersamples:
+  - Name: ttbar_5FS
+    NtuplesRgxs: ['410470_user*']
+    SubSamples:
+      - Name: ttb
+        Label: '$t\bar{t}+\geq1b$'
+        Type: 'SIG'
+        Selection:
+          - ttb_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: 'orange'
+
+      - Name: ttlight
+        Label: '$t\bar{t}+\geq0l$'
+        Type: 'BKG'
+        Selection:
+          - ttl_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#4363d8'
+        RefMC: False
+
+      - Name: ttc
+        Label: '$t\bar{t}+\geq1c$'
+        Type: 'BKG'
+        Selection:
+          - ttc_cut
+          - ['leptons_PLIVtight','HF_SimpleClassification']
+        Color: '#000075'
+        RefMC: False
+
+Regions:
+  - Name: CR
+    Label: 'CR'
+    Selection:
+      - CR_ttb_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+    Targets: ['ttb']
+
+  - Name: PR
+    Label: 'Preselectioon'
+    Selection:
+      - PR_fn
+      - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+
+  # - Name: SR
+  #   Label: 'SR'
+  #   Selection:
+  #     - SR_fn
+  #     - ['njets', 'nbjets', 'njets_CBT4', 'njets_CBT5','nalljets', 'njets_CBT0', 'tau_pt', 'nfwdjets']
+  #   Targets: ['tH']
+
+
+Variables:
+
+  1D:
+    # =========================================
+    # Light jets kinematics
+    # =========================================
+    # =============== Light jet 0 =============
+    - Name: nonbjets_tagWeightBin_DL1r_Continuous_0
+      Label: '0th light jet PCBT bin'
+      Method:
+        - obj0_x
+        - ['nonbjets_tagWeightBin_DL1r_Continuous']
+      Binning:  0,6,6
+
+    - Name: nonbjets_pt_0
+      Label: '0th light jet $p_{T}$'
+      Method:
+        - obj0_x_gev
+        - ['nonbjets_pt']
+      Binning:  0,500,50
+
+    - Name: nonbjets_eta_0
+      Label: '0th light jet $\eta$'
+      Method:
+        - obj0_x
+        - ['nonbjets_eta']
+      Binning:  0,5,20
+
+    # =============== Light jet 1 =============
+    - Name: nonbjets_pt_1
+      Label: '1st light jet $p_{T}$'
+      Method:
+        - obj1_x_gev
+        - ['nonbjets_pt']
+      Binning:  0,500,50
+
+    # =============== Light jet 2 =============
+    - Name: nonbjets_pt_2
+      Label: '2nd light jet $p_{T}$'
+      Method:
+        - obj2_x_gev
+        - ['nonbjets_pt']
+      Binning:  0,500,50
+
+    - Name: nonbjets_eta_2
+      Label: '2nd light jet $\eta$'
+      Method:
+        - obj2_x
+        - ['nonbjets_eta']
+      Binning:  0,5,20
+
+    # =========================================
+    # Other jet kinematics
+    # =========================================
+
+    - Name: tagnonb_eta
+      Label:  '$\eta(j_{light-tag})$'
+      Method: tagnonb_eta
+      Binning:  0,5,20
+
+    - Name: tagnonb_topb_m
+      Label: '$M_{j_{light-tag},b_{top}}$'
+      Method:
+          - x_gev
+          - ['tagnonb_topb_m']
+      Binning:  0,600,50
+
+    # - Name: fwdjets_pt_0
+    #   Label: '0th forward jet $p_T$'
+    #   Method:
+    #     - obj0_x_gev
+    #     - ['fwdjets_pt']
+    #   regions: 'SR.*'
+    #   Binning:  0,500,50
+
+    # =========================================
+    # Jet Multiplicity Variables
+    # =========================================
+    # =============== Jets from Hadronic Top =============
+
+    - Name: n_tophad_jets_CBT0
+      Label: '$N_{j}$ from hadornic top in PCBT 0 ($t\bar{t}$ - $\chi^{2}$)'
+      Method: n_tophad_jets_CBT0
+      Binning:  0,6,6
+
+    - Name: n_tophad_jets_CBT123_ttAll
+      Label: ' $N_{j}$ from hadronic top in PCBT 1,2 & 3 ($t\bar{t}+j$ - $\chi^{2}$)'
+      Method: n_tophad_jets_CBT123_ttAll
+      Binning:  0,6,6
+
+    - Name: n_tophad_jets_CBT4_ttAll
+      Label: '$N_{j}$ from hadornic top in PCBT 4 ($t\bar{t}+j$ - $\chi^{2}$)'
+      Method: n_tophad_jets_CBT4_ttAll
+      Binning:  0,6,6
+
+    - Name: n_tophad_jets_CBT4
+      Label: '$N_{j}$ from hadornic top in PCBT 4 ($t\bar{t}$ - $\chi^{2}$)'
+      Method: n_tophad_jets_CBT4
+      Binning:  0,6,6
+
+    # =============== Jets not from Hadronic Top =============
+    - Name: n_nontophad_jets_CBT123
+      Label: ' $N_{j}$ not from hadronic top in PCBT 1,2 & 3 ($t\bar{t}$ - $\chi^{2}$)'
+      Method: n_nontophad_jets_CBT123
+      Binning:  0,6,6
+
+    # =============== Jets in general =============
+    - Name: njets
+      Label: '$N^{central}_{j}$'
+      Method: njets
+      Binning: 0,10,10
+
+    - Name: njets_PCBT5
+      Label: 'Number of jets in PCBT bin 5'
+      Method: njets_CBT5
+      Binning:  0,5,5
+
+    - Name: njets_PCBT4
+      Label: 'Number of jets in PCBT bin 4'
+      Method: njets_CBT4
+      Binning:  0,5,5
+
+    # =========================================
+    # Top and Higgs kinematics
+    # =========================================
+    # ============= Eta between top and Higgs =========
+    - Name: chi2_min_DeltaEta_tH
+      Label: '$\Delta\eta(t, H)$ - $\chi^{2}$'
+      Method: chi2_min_DeltaEta_tH
+      Binning:  0,5,20
+
+    # ============= Mass of the hadronic top =========
+    - Name: chi2_min_tophad_m
+      Label: 'Hadronic top mass ($t\bar{t}$ - $\chi^{2}$)'
+      Method:
+        - x_gev
+        - ['chi2_min_tophad_m']
+      Binning:  0,500,50
+
+    - Name: chi2_min_tophad_m_ttAll
+      Label: 'Hadronic top mass ($t\bar{t}+j$ - $\chi^{2}$)'
+      Method:
+        - x_gev
+        - ['chi2_min_tophad_m_ttAll']
+      Binning:  0,500,50
+
+    # ============= Spacing between quarks from t->Wqq
+    - Name: chi2_min_deltaRq1q2
+      Label:  '$\Delta R(q1, q2)$ ($t\bar{t}$ - $\chi^{2}$'
+      Method: chi2_min_deltaRq1q2
+      Binning:  0,10,40
+
+    # =========================================
+    # Event shapes
+    # =========================================
+
+    - Name: sphericity
+      Label: 'Sphericity'
+      Method: sphericity
+      Binning:  0,1,30
+
+    #  Not even in BDT, but useful
+    - Name: HT
+      Label: '$H_T$'
+      Method:
+        - x_gev
+        - ['Ht']
+      Binning:  0,2000,80
+
+    # =========================================
+    # Chi2 Values
+    # =========================================
+    # =============== From ttbar reconstruction ============
+    - Name: chi2_min_ttl
+      Label:  'Minimum $\chi^{2}$ ($t\bar{t}$)'
+      Method: chi2_min_ttl
+      Binning:  0,50,100
+
+    - Name: chi2_min_ttAll
+      Label: 'Minimum $\chi^{2}$ ($t\bar{t}+j$)'
+      Method: chi2_min_ttAll
+      Binning:  0,50,100
+
+     # =============== From top higgs reconstruction ============
+
+    - Name: tophiggs_chi2_min
+      Label: 'Minimum $\chi^{2}$ (top-higgs)'
+      Method: tophiggs_chi2_min
+      Binning:  0,50,100
+
+    - Name: chi2_min
+      Label: 'Minimum $\chi^{2}$ ($t\bar{t}$)'
+      Method: chi2_min
+      Binning:  0,50,100
+
+  # ===========================================
+  # ===========================================
+  # Histograms 2D
+  # ===========================================
+  # ===========================================
+  2D:
+    # =========================================
+    # Light jets kinematics
+    # =========================================
+    # =============== Light jet 0 =============
+
+    - Name: nonbjets_tagWeightBin_DL1r_Continuous_0_v_bdt_ttb
+      Label:
+        - '0th light jet PCBT bin'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - obj0_x
+        - ['nonbjets_tagWeightBin_DL1r_Continuous']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,6,6
+        - 0,1,40
+
+    - Name: nonbjets_pt_0_v_bdt_ttb
+      Label:
+        - '0th light jet $p_{T}$'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - obj0_x_gev
+        - ['nonbjets_pt']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,200,30
+        - 0,1,40
+
+    - Name: nonbjets_eta_0_v_bdt_ttb
+      Label:
+        - '0th light jet $\eta$'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - obj0_x
+        - ['nonbjets_eta']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,5,20
+        - 0,1,40
+
+    # =============== Light jet 1 =============
+    - Name: nonbjets_pt_1_v_bdt_ttb
+      Label:
+        - '1st light jet $p_{T}$'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - obj1_x_gev
+        - ['nonbjets_pt']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,200,30
+        - 0,1,40
+
+    # =============== Light jet 2 =============
+    - Name: nonbjets_pt_2_v_bdt_ttb
+      Label:
+        - '2nd light jet $p_{T}$'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - obj2_x_gev
+        - ['nonbjets_pt']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,200,30
+        - 0,1,40
+
+    - Name: nonbjets_eta_2_v_bdt_ttb
+      Label:
+        - '2nd light jet $\eta$'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - obj2_x
+        - ['nonbjets_eta']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,5,20
+        - 0,1,40
+
+    # =========================================
+    # Other jet kinematics
+    # =========================================
+
+    - Name: tagnonb_eta_v_bdt_ttb
+      Label:
+        - '$\eta(j_{light-tag})$'
+        - 'AltBDT(ttb)'
+      MethodX: tagnonb_eta
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,5,20
+        - 0,1,40
+
+    # - Name: fwdjets_pt_0
+    #   Label: '0th forward jet $p_T$'
+    #   Method:
+    #     - obj0_x_gev
+    #     - ['fwdjets_pt']
+    #   regions: 'SR.*'
+    #   Binning:  0,500,50
+
+    # =========================================
+    # Jet Multiplicity Variables
+    # =========================================
+    # =============== Jets from Hadronic Top =============
+
+    - Name: n_tophad_jets_CBT0_v_bdt_ttb
+      Label:
+        - '$N_{j}$ from hadornic top in PCBT 0 ($t\bar{t}$ - $\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX: n_tophad_jets_CBT0
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,6,6
+        - 0,1,40
+
+    - Name: n_tophad_jets_CBT123_ttAll_v_bdt_ttb
+      Label:
+        - ' $N_{j}$ from hadronic top in PCBT 1,2 & 3 ($t\bar{t}+j$ - $\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX: n_tophad_jets_CBT123_ttAll
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,6,6
+        - 0,1,40
+
+    - Name: n_tophad_jets_CBT4_ttAll_v_bdt_ttb
+      Label:
+        - '$N_{j}$ from hadornic top in PCBT 4 ($t\bar{t}+j$ - $\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX: n_tophad_jets_CBT4_ttAll
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,6,6
+        - 0,1,40
+
+    - Name: n_tophad_jets_CBT4_v_bdt_ttb
+      Label:
+        - '$N_{j}$ from hadornic top in PCBT 4 ($t\bar{t}$ - $\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX: n_tophad_jets_CBT4
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,6,6
+        - 0,1,40
+
+    # =============== Jets not from Hadronic Top =============
+    - Name: n_nontophad_jets_CBT123_v_bdt_ttb
+      Label:
+        - ' $N_{j}$ not from hadronic top in PCBT 1,2 & 3 ($t\bar{t}$ - $\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX: n_nontophad_jets_CBT123
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,6,6
+        - 0,1,40
+
+    # =============== Jets in general =============
+    - Name: njets_v_bdt_ttb
+      Label:
+        - '$N^{central}_{j}$'
+        - 'AltBDT(ttb)'
+      MethodX: njets
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,10,10
+        - 0,1,40
+
+    - Name: njets_PCBT5_v_bdt_ttb
+      Label:
+        - 'Number of jets in PCBT bin 5'
+        - 'AltBDT(ttb)'
+      MethodX: njets_CBT5
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,5,5
+        - 0,1,40
+
+    - Name: njets_PCBT4_v_bdt_ttb
+      Label:
+        - 'Number of jets in PCBT bin 4'
+        - 'AltBDT(ttb)'
+      MethodX: njets_CBT4
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,5,5
+        - 0,1,40
+
+    # =========================================
+    # Top and Higgs kinematics
+    # =========================================
+    # ============= Eta between top and Higgs =========
+    - Name: chi2_min_DeltaEta_tH_v_bdt_ttb
+      Label:
+        - '$\Delta\eta(t, H)$ - $\chi^{2}$'
+        - 'AltBDT(ttb)'
+      MethodX: chi2_min_DeltaEta_tH
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,5,20
+        - 0,1,40
+
+    # ============= Mass of the hadronic top =========
+    - Name: chi2_min_tophad_m_v_bdt_ttb
+      Label:
+        - 'Hadronic top mass ($t\bar{t}$ - $\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - x_gev
+        - ['chi2_min_tophad_m']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,300,40
+        - 0,1,40
+
+    - Name: chi2_min_tophad_m_ttAll_v_bdt_ttb
+      Label:
+        - 'Hadronic top mass ($t\bar{t}+j$ - $\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - x_gev
+        - ['chi2_min_tophad_m_ttAll']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,300,40
+        - 0,1,40
+
+    # ============= Spacing between quarks from t->Wqq =========
+    - Name: chi2_min_deltaRq1q2_v_bdt_ttb
+      Label:
+        - '$\Delta R(q1, q2)$ ($t\bar{t}$ - $\chi^{2}$'
+        - 'AltBDT(ttb)'
+      MethodX: chi2_min_deltaRq1q2
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,10,40
+        - 0,1,40
+
+    # =========================================
+    # Event shapes
+    # =========================================
+
+    - Name: sphericity_v_bdt_ttb
+      Label:
+        - 'Sphericity'
+        - 'AltBDT(ttb)'
+      MethodX: sphericity
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,1,30
+        - 0,1,40
+
+    #  Not even in BDT, but useful
+    - Name: HT_v_bdt_ttb
+      Label:
+        - '$H_T$'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - x_gev
+        - ['Ht']
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,2000,80
+        - 0,1,40
+
+    # =========================================
+    # Chi2 Values
+    # =========================================
+    # =============== From ttbar reconstruction ============
+    - Name: chi2_min_ttl_v_bdt_ttb
+      Label:
+        - 'Minimum $\chi^{2}$ ($t\bar{t}$)'
+        - 'AltBDT(ttb)'
+      MethodX: chi2_min_ttl
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,15,50
+        - 0,1,40
+
+    - Name: chi2_min_ttAll_v_bdt_ttb
+      Label:
+        - 'Minimum $\chi^{2}$ ($t\bar{t}+j$)'
+        - 'AltBDT(ttb)'
+      MethodX: chi2_min_ttAll
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,15,50
+        - 0,1,40
+
+    # =============== From top higgs reconstruction ============
+
+    - Name: tophiggs_chi2_min_v_bdt_ttb
+      Label:
+        - 'Minimum $\chi^{2}$ (top-higgs)'
+        - 'AltBDT(ttb)'
+      MethodX: tophiggs_chi2_min
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,15,50
+        - 0,1,40
+
+    - Name: chi2_min_v_bdt_ttb
+      Label:
+        - 'Minimum $\chi^{2}$ ($t\bar{t}$)'
+        - 'AltBDT(ttb)'
+      MethodX: chi2_min
+      MethodY:
+        - bdt_ttb
+        - ['BDT']
+      Binning:
+        - 0,15,50
+        - 0,1,40
+
+SEPARATION:
+    seploc: [0.5,0.8]
+
+Histo2D:
+    figuresize: [20,18]

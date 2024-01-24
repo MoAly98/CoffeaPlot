@@ -3,7 +3,7 @@ General:
   InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/TEST/2D_PLOTS_TEST/data/data___nominal_Loose.pkl
   Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
-  RunProcessor: False
+  RunProcessor: True
   RunPlotter: True
   LogLevel: 2
   NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
@@ -29,10 +29,57 @@ Variables:
           - bdt_ttb
           - ['BDT_alt']
       Binning:
-        - 0,600,51
-        - 0,1,41
+        - 0,600,50
+        - 0,1,40
       InterestingVals:
         - 130
+        - 0.4
+
+    - Name: n_tophad_jets_CBT123_ttAll_v_bdt_ttb
+      Label:
+        - 'Number of Hadornic Top Jets in PCBT 123 (ttAll-$\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX:  n_tophad_jets_CBT123_ttAll
+      MethodY:
+          - bdt_ttb
+          - ['BDT_alt']
+      Binning:
+        - 0,3,3
+        - 0,1,40
+      InterestingVals:
+        - 1
+        - 0.4
+
+    - Name: sphericity_v_bdt_ttb
+      Label:
+        - 'Sphericity'
+        - 'AltBDT(ttb)'
+      MethodX:  sphericity
+      MethodY:
+          - bdt_ttb
+          - ['BDT_alt']
+      Binning:
+        - 0,1,30
+        - 0,1,40
+      InterestingVals:
+        - 0.3
+        - 0.4
+
+    - Name: chi2_min_tophad_m_v_bdt_ttb
+      Label:
+        - 'Hadronic Top Mass ($t\bar{t}$-$\chi^{2}$)'
+        - 'AltBDT(ttb)'
+      MethodX:
+        - x_gev
+        - ['chi2_min_tophad_m']
+      MethodY:
+          - bdt_ttb
+          - ['BDT_alt']
+      Binning:
+        - 0,600,50
+        - 0,1,40
+      InterestingVals:
+        - 200
         - 0.4
 
   1D:
@@ -41,7 +88,24 @@ Variables:
       Method:
           - x_gev
           - ['tagnonb_topb_m']
-      Binning:  0,600,51
+      Binning:  0,600,50
+
+    - Name: n_tophad_jets_CBT123_ttAll
+      Label: 'Number of Hadornic Top Jets in PCBT 123 (ttAll-$\chi^{2}$)'
+      Method: n_tophad_jets_CBT123_ttAll
+      Binning:  0,3,3
+
+    - Name: sphericity
+      Label: 'Sphericity'
+      Method: sphericity
+      Binning:  0,1,30
+
+    - Name: chi2_min_tophad_m
+      Label: 'Hadronic Top Mass ($t\bar{t}$-$\chi^{2}$)'
+      Method:
+        - x_gev
+        - ['chi2_min_tophad_m']
+      Binning:  0,600,50
 
 # Samples:
 
@@ -101,7 +165,7 @@ Regions:
     Targets: ['ttb']
 
 SEPARATION:
-    seploc: [0.6,0.7]
+    seploc: [0.5,0.8]
 
 # Histo2D:
 #   vline: 130
