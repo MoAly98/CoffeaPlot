@@ -160,14 +160,15 @@ def main():
 
         if CoffeaPlotSettings.runplotter:
             # =========== Set up samples, regions, variables, and rescales =========== #
+            if CoffeaPlotSettings.makeplots != ['2D']:
+                plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings)
+                if plot_settings_list is not None:
+                    make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
 
-            plot_settings_list = prepare_1d_plots(out, tree, CoffeaPlotSettings)
-            if plot_settings_list is not None:
-                make_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
-
-            plot_settings_list = prepare_2d_plots(out, tree, CoffeaPlotSettings)
-            if plot_settings_list is not None:
-                make_2d_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
+            if '2D' in CoffeaPlotSettings.makeplots:
+                plot_settings_list = prepare_2d_plots(out, tree, CoffeaPlotSettings)
+                if plot_settings_list is not None:
+                    make_2d_plots(plot_settings_list, CoffeaPlotSettings, CoffeaPlotSettings.tree_to_dir[tree])
 if __name__ == '__main__':
     main()
 
