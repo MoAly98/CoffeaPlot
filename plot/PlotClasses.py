@@ -284,8 +284,6 @@ class CoffeaPlot(object):
 
                         ratio_ax.annotate("", xytext=(bin_centers[i], uplim*(1+sign*0.1)), xy=(bin_centers[i], uplim), arrowprops=dict(arrowstyle="->", color='blue', linewidth=3))
 
-
-
             # Plot the ratio and error bars
             mplhep.histplot(ratio_vals, bins=bin_edges, yerr=ratio_err, label = ratio_item.label, ax = ratio_ax, histtype=ratio_plot.bar_type, stack=ratio_plot.stack, **ratio_item.styling)
 
@@ -364,6 +362,9 @@ class CoffeaPlot(object):
             elif self.settings.colorbarpos in ['left', 'right']:
                 fig.colorbar(mappable=plot[0], orientation='vertical')
 
+            sample_label = self.stacks[0].plotid.sample_obj.label
+            region_label = self.stacks[0].plotid.region_obj.label
+            main_ax.set_title(f'{sample_label} in {region_label}', pad=20)
             if self.stacks[0].plotid.variable_obj.nice_vals is not None:
 
                 nice_xy = self.stacks[0].plotid.variable_obj.nice_vals
@@ -373,6 +374,7 @@ class CoffeaPlot(object):
                 main_ax.axvline(x=nice_x, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
                 if nice_y is not None:
                     main_ax.axhline(y=nice_y, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
+
 
         if plot_type != '2D':
             filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.rescale
