@@ -443,14 +443,14 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                 # Binning can be a list of bin edges or a list with [min, max, nbins]
                 if isinstance(axis, str):
                     minbin, maxbin, nbins = axis.strip().split(',')
-                    binning.append(np.linspace(float(minbin), float(maxbin), int(nbins)))
+                    binning.append(np.linspace(float(minbin), float(maxbin), int(nbins)+1)) # nedges = nbins+1
                 else:
                     binning.append(axis)
         else:
             # Binning can be a list of bin edges or a list with [min, max, nbins]
             if isinstance(variable['binning'], str):
                 minbin, maxbin, nbins = variable['binning'].strip().split(',')
-                binning = np.linspace(float(minbin), float(maxbin), int(nbins))
+                binning = np.linspace(float(minbin), float(maxbin), int(nbins)+1) # nedges = nbins+1
             else:
                 binning = variable['binning']
 
