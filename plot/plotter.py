@@ -181,6 +181,9 @@ def sort_samples(histograms, samples_list, PlotSettings, rebin = None):
 
 def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
+    if not any(variable.dim == 1 for variable in CoffeaPlotSettings.variables_list):
+        return
+
     # ====== Loop over 1D plots ====== #
     plot_settings_list = []
 
@@ -190,6 +193,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
             unpacked_samples.extend(sample.subsamples)
         else:
             unpacked_samples.append(sample)
+
 
     if all(s.type != 'DATA' for s in unpacked_samples):
         log.warning("No data sample found, using total MC as data")
@@ -274,7 +278,7 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
                     sep_stack.append(signal_stackatino)
 
                 background_histogram = PlotSettings.tot_backgrounds_histo
-                background_stackatino = Stackatino([background_histogram], label = background_histogram.stylish_sample, color = background_histogram.color, fill = None, linewidth=3)
+                background_stackatino = Stackatino([background_histogram], label = background_histogram.stylish_sample, color = 'black', fill = None, linewidth=3)
                 background_stackatino.sum_histograms()
 
                 sep_stack.append(background_stackatino)
@@ -367,6 +371,57 @@ def prepare_1d_plots(histograms, tree, CoffeaPlotSettings):
 
     return plot_settings_list
 
+def prepare_2d_plots(histograms, tree, CoffeaPlotSettings):
+
+    if not any(variable.dim == 2 for variable in CoffeaPlotSettings.variables_list):
+        return
+
+    # ====== Loop over 1D plots ====== #
+    plot_settings_list = []
+
+    unpacked_samples = []
+    for sample in CoffeaPlotSettings.samples_list:
+        if sample.is_super:
+            unpacked_samples.extend(sample.subsamples)
+        else:
+            unpacked_samples.append(sample)
+
+    for variable in CoffeaPlotSettings.variables_list:
+        #if variable.tree != tree: continue
+        if variable.dim  != 2:    continue
+
+        log.debug(f"Setting up variable {variable.name}")
+
+        for region in CoffeaPlotSettings.regions_list:
+            log.debug(f"Setting up region {region.name}")
+
+            for rescale in CoffeaPlotSettings.rescales_list:
+                log.debug(f"Setting up rescale {rescale.name}")
+
+            for sample in unpacked_samples:
+                PlotSettings = PlotterSettings(variable, region, rescale, sample)
+
+                sample_histo = histograms[(variable.name, sample.name, region.name, rescale.name)]
+
+                sample_histo.label = variable.label
+                sample_histo.color = sample.color
+                sample_histo.stylish_sample = sample.label
+                sample_histo.stylish_region = region.label
+                sample_histo.stylish_rescale = rescale.label
+                if variable.rebin is not None:
+                    sample_histo.rebin(variable.rebin)
+
+                # Category color is the color of the first sample in the category
+                stackatino = Stackatino(histograms=[sample_histo], label=sample.label)
+                # Add up all the histograms in the stackatino
+                stackatino.sum_histograms()
+                # Add the stackatino to the stack
+                mc_stack = Stack(stackatinos = [stackatino], bar_type = 'stepfilled', error_type = 'stat', plottersettings = PlotSettings)
+
+                # Append stack to kust of stacks (one per region, rescale, variable)
+                PlotSettings.mc_stack = mc_stack
+                plot_settings_list.append(PlotSettings)
+    return plot_settings_list
 
 def make_datamc(plot, settings, outpath):
 
@@ -443,6 +498,11 @@ def make_piechart(plot, settings, outpath):
     log.info(f"Plotting Pie Charts")
     piechart.plot(outpath, plot_type='PIE')
 
+def make_heatmap(plot, settings, outpath):
+    mc_stack = deepcopy(plot.mc_stack)
+    heatmap  = CoffeaPlot([mc_stack], [], settings)
+    heatmap.plot(outpath, plot_type='2D')
+
 
 def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
     makeplots = CoffeaPlotSettings.makeplots
@@ -468,3 +528,13 @@ def make_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
         if 'PIECHART' in makeplots:
             outpath = outpaths['piechartdir']
             make_piechart(plot, CoffeaPlotSettings.piechart_plot_settings, outpath)
+
+def make_2d_plots(plot_settings_list, CoffeaPlotSettings, outpaths):
+    makeplots = CoffeaPlotSettings.makeplots
+    if '2D' in makeplots:
+        outpath = outpaths['heatdir']
+        for plot in plot_settings_list:
+            make_heatmap(plot, CoffeaPlotSettings.heatmap_plot_settings, outpath)
+
+
+

@@ -42,6 +42,7 @@ class CoffeaPlotSettings(object):
         self.significance_plot_settings = None
         self.separation_plot_settings = None
         self.piechart_plot_settings = None
+        self.heatmap_plot_settings = None
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -122,6 +123,7 @@ class CoffeaPlotSettings(object):
                                 'tablesdir': None,
                                 'effdir': None,
                                 'piechartdir': None,
+                                'heatdir': None
                                 }
                         for tree in self.trees
                         }
@@ -160,6 +162,10 @@ class CoffeaPlotSettings(object):
                 piechartdir = f'{self.dumpdir}/plots/{tree}/PieChart'
                 self.tree_to_dir[tree]['piechartdir'] = piechartdir
                 os.makedirs(piechartdir, exist_ok=True)
+            if '2D' in self.makeplots:
+                plot2ddir = f'{self.dumpdir}/plots/{tree}/2D'
+                self.tree_to_dir[tree]['heatdir'] = plot2ddir
+                os.makedirs(plot2ddir, exist_ok=True)
 
             # ==== Create the directories to store tables from plotter ==== #
             tablesdir = f'{self.dumpdir}/tables/{tree}'

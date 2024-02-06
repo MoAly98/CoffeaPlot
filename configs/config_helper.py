@@ -17,10 +17,37 @@ bdt_ttl =  lambda x: x[:,3]
 bdt_others = lambda x: x[:,4]
 
 nlights = lambda njets, nbjets: njets - nbjets
-tagnonb_topb_m = lambda tagnonb_topb_m: tagnonb_topb_m/1e3
-obj0_x = lambda x: x[:,0]
-obj1_x = lambda x: x[:,1]
-obj2_x = lambda x: x[:,2]
+x_gev  = lambda x: x/1e3
+
+def obj0_x(x):
+    x = ak.pad_none(x, 1, axis=1)
+    x = ak.fill_none(x, -999, axis=1)
+    return x[:,0]
+
+def obj1_x(x):
+    x = ak.pad_none(x, 2, axis=1)
+    x = ak.fill_none(x, -999, axis=1)
+    return x[:,1]
+
+def obj2_x(x):
+    x = ak.pad_none(x, 3, axis=1)
+    x = ak.fill_none(x, -999, axis=1)
+    return x[:,2]
+
+def obj0_x_gev(x):
+    x = ak.pad_none(x, 1, axis=1)
+    x = ak.fill_none(x, -999, axis=1)
+    return x[:,0]/1e3
+
+def obj1_x_gev(x):
+    x = ak.pad_none(x, 2, axis=1)
+    x = ak.fill_none(x, -999, axis=1)
+    return x[:,1]/1e3
+
+def obj2_x_gev(x):
+    x = ak.pad_none(x, 3, axis=1)
+    x = ak.fill_none(x, -999, axis=1)
+    return x[:,2]/1e3
 
 flatten_x = lambda x: ak.flatten(x)
 flatten_x_gev = lambda x: ak.flatten(x/1e3)

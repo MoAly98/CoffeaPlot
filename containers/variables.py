@@ -1,5 +1,5 @@
 class Variable(object):
-    def __init__(self, name, howto, binning, label, regions=['.*'], idx_by = 'event', dim = None, rebin = None):
+    def __init__(self, name, howto, binning, label, regions=['.*'], idx_by = 'event', dim = None, rebin = None, nice_vals=None):
         self.name = name
         self.howto = howto
         self.binning = binning
@@ -12,6 +12,8 @@ class Variable(object):
         assert self.dim in [1,2]
 
         self.rebin = rebin
+
+        self.nice_vals = nice_vals
 
     def set_dim(self, dim):
         self.dim = dim

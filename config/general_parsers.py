@@ -401,7 +401,7 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
     variables_list = []
 
     # Loop over 1D variables
-    for variable in variables_cfg['1d']:
+    for variable in variables_cfg['1d']+variables_cfg['2d']:
 
         # ====== Check for unique variable names ====== #
         variable_name = variable['name']
@@ -409,25 +409,50 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
             log.error(f"Variable {variable_name} is defined more than once. Please check your configuration file.")
 
 
+        var_2d = False
         # ====== Set up the method for creating the variable ====== #
         # Method can be a functor or a branch name
-        howto = variable['method']
-        if isinstance(howto, list):
-            # Method is a functor
-            method_fn = CoffeaPlotSettings.functions[howto[0]]
-            howto_functor = Functor(method_fn, howto[1])
+        if 'methodx' in variable and 'methody' in variable:
+            var_2d = True
+            howto = [variable['methodx']] + [variable['methody']]
+            howto_functor = []
+            for axis_method in howto:
+                if isinstance(axis_method, list):
+                    # Method is a functor
+                    method_fn = CoffeaPlotSettings.functions[axis_method[0]]
+                    func = Functor(method_fn, axis_method[1])
+                else:
+                    # Method is simply a branch name
+                    func = Functor(lambda x: x, [axis_method])
+
+                howto_functor.append(func)
         else:
-            # Method is simply a branch name
-            howto_functor = Functor(lambda x: x, [howto])
+            howto = variable['method']
+            if isinstance(howto, list):
+                # Method is a functor
+                method_fn = CoffeaPlotSettings.functions[howto[0]]
+                howto_functor = Functor(method_fn, howto[1])
+            else:
+                # Method is simply a branch name
+                howto_functor = Functor(lambda x: x, [howto])
 
         # ====== Set up the binning for the variable histogram ====== #
-        # Binning can be a list of bin edges or a list with [min, max, nbins]
-        if isinstance(variable['binning'], str):
-            minbin, maxbin, nbins = variable['binning'].strip().split(',')
-            binning = np.linspace(float(minbin), float(maxbin), int(nbins))
+        if var_2d:
+            binning = []
+            for axis in variable['binning']:
+                # Binning can be a list of bin edges or a list with [min, max, nbins]
+                if isinstance(axis, str):
+                    minbin, maxbin, nbins = axis.strip().split(',')
+                    binning.append(np.linspace(float(minbin), float(maxbin), int(nbins)+1)) # nedges = nbins+1
+                else:
+                    binning.append(axis)
         else:
-            binning = variable['binning']
-
+            # Binning can be a list of bin edges or a list with [min, max, nbins]
+            if isinstance(variable['binning'], str):
+                minbin, maxbin, nbins = variable['binning'].strip().split(',')
+                binning = np.linspace(float(minbin), float(maxbin), int(nbins)+1) # nedges = nbins+1
+            else:
+                binning = variable['binning']
 
         # ====== Create Variable instance and pass it to list ====== #
 
@@ -438,9 +463,11 @@ def parse_variables(variables_cfg, CoffeaPlotSettings):
                                             label = variable['label'],
                                             regions = variable['regions'],
                                             idx_by = variable['idxby'],
-                                            dim = 1,
-                                            rebin = variable['rebin']))
+                                            dim = 2 if var_2d else 1,
+                                            rebin = variable['rebin'],
+                                            nice_vals=variable['interestingvals'] if var_2d else None))
         else:
+            # This is only possible for 1D plots by schema implementation but should be generalised for 2D eff
             numsel = variable['numsel']
             if isinstance(numsel, list):
                 # Method is a functor

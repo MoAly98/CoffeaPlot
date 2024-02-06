@@ -140,6 +140,14 @@ class CanvasSchema(object):
                     Optional('seploc', default = 'upper center'): Or(str, [Use(float),Use(float)]),
                 })
 
+            if plot_type == '2D':
+                general_plot_settings_schema.update({
+                    Optional('vhlinecolors', default='black'): Use(str),
+                    Optional('vhlinewidths', default=3): Use(float),
+                    Optional('colormap', default='coolwarm'): Use(str),
+                    Optional('colorbarpos', default='bottom'): And(Use(str), lambda x: x in ['left', 'right', 'top', 'bottom']),
+                })
+
         if canvas_type == 'GENERAL':
             if plot_type == 'PIECHART':
                 main_axis_schema = PanelSchema('MAIN', plot_type, axes=False)
@@ -255,7 +263,7 @@ class GeneralSettingsSchema(object):
                             Optional('helpers',        default = None): Use(string_to_list),
                             Optional('runprocessor',   default = False): bool,
                             Optional('runplotter',     default = False): bool,
-                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART'] for y in x])),
+                            Optional('makeplots',      default = ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART', '2D']): And(Use(string_to_list), lambda x: all([y in ['MCMC', 'DATAMC', 'SIGNIF', 'SEPARATION', 'EFF', 'PIECHART', '2D'] for y in x])),
                             Optional('skipnomrescale', default = False): bool,
                             Optional('loglevel',       default = 3): int,
                             Optional('nworkers',       default = 8): int, # 0 is Iterative executor...
@@ -273,7 +281,7 @@ class VariableSchema(object):
             variable_schema = {
                                 'name': str,
                                 'method':  Or(str, Use(functor_input)), # Name of branch, or functor args
-                                'binning': Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)]),
+                                Optional('binning', default = None): Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)]),
                                 Optional('regions', default = ['.*']): Use(string_to_list),
                                 Optional('label',   default = None): str,
                                 Optional('idxby',   default = 'event'): And(str, lambda x: x in ['event', 'nonevent']),
@@ -284,9 +292,21 @@ class VariableSchema(object):
                     'numsel':  Or(str, Use(functor_input)), # Name of branch, or functor args
                     'denomsel':  Or(str, Use(functor_input)), # Name of branch, or functor args
                 })
-        else:
+        elif dim == 2:
             # Not implemented yet
-            variable_schema = {}
+            variable_schema = {
+                                'name': str,
+                                'methodx':  Or(str, Use(functor_input)), # Name of branch, or functor args
+                                'methody':  Or(str, Use(functor_input)), # Name of branch, or functor args
+                                Optional('binning', default = None): And([Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)])], lambda x: len(x)==2),
+                                Optional('regions', default = ['.*']): Use(string_to_list),
+                                Optional('label',   default = None): And([str], lambda x: len(x)==2),
+                                Optional('idxby',   default = 'event'): [And(str, lambda x: x in ['event', 'nonevent'])],
+                                Optional('rebin',   default = None): And([[Use(float)]] , lambda x: len(x)==2),
+                                Optional('interestingvals', default=None): And([Use(float)], lambda x: len(x) <= 2)
+                            }
+        else:
+            raise NotImplementedError("Histograms can either be 1D or 2D")
 
         self.schema = variable_schema
 
@@ -339,10 +359,11 @@ datamc_schema           = CanvasSchema('MPLUSR', 'DATAMC')
 mcmc_schema             = CanvasSchema('MPLUSR', 'MCMC')
 separation_schema       = CanvasSchema('MPLUSR', 'SEPARATION')
 piechart_schema         = CanvasSchema('GENERAL', 'PIECHART')
+hist2d_schema           = CanvasSchema('MPLUSR', '2D')
 
 schema = Schema({
                 'general': general_schema.schema ,
-                'variables': {'1d': [variable_1d_schema.schema], Optional('2d', default=[]): [variable_2d_schema.schema]},
+                'variables': {Optional('1d', default=[]): [variable_1d_schema.schema], Optional('2d', default=[]): [variable_2d_schema.schema]},
                 'regions':                              [region_schema.schema],
                 Optional('effs',         default = {'1d': [], '2d': []}): {'1d': [eff_schema.schema]},
                 Optional('rescales',     default = []): [rescale_schema.schema],
@@ -355,5 +376,6 @@ schema = Schema({
                 Optional('separation',   default = separation_schema.defaults):   separation_schema.schema,
                 Optional('significance', default = plots_with_ratio_schema.defaults): plots_with_ratio_schema.schema,
                 Optional('piechart',     default = piechart_schema.defaults): piechart_schema.schema,
+                Optional('histo2d',      default = hist2d_schema.defaults): hist2d_schema.schema,
 
                 })
