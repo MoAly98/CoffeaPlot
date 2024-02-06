@@ -18,8 +18,6 @@ bdt_others = lambda x: x[:,4]
 
 nlights = lambda njets, nbjets: njets - nbjets
 x_gev  = lambda x: x/1e3
-obj0_x = lambda x: x[:,0]
-obj1_x = lambda x: x[:,1]
 
 def obj0_x(x):
     x = ak.pad_none(x, 1, axis=1)

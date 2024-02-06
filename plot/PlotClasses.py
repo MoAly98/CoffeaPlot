@@ -86,7 +86,7 @@ class CoffeaPlot(object):
             VSpanBox((shade_x1, shade_x2), facecolor='none', edgecolor='grey', hatch="//", alpha=0.5, linewidth=0, label = label).draw(ax)
 
 
-    def plot_main_canvas(self, main_ax):
+    def plot_1d_canvas(self, main_ax):
 
         max_bin_contents = []
         # Loop over stacks being overlaid on the plot
@@ -171,7 +171,7 @@ class CoffeaPlot(object):
             plt.legend(patches, labels, loc=self.settings.main.legendloc, fontsize=self.settings.main.legendfontsize)
 
 
-    def decorate_main_canvas(self, main_ax, max_bin_contents, xrange):
+    def decorate_1d_canvas(self, main_ax, max_bin_contents, xrange):
 
         # ==================== X-axis ==================== #
         # If there are ratio plots, don't use an x-axis label on main plot
@@ -333,15 +333,37 @@ class CoffeaPlot(object):
         # ==================== Grid ==================== #
         ratio_ax.grid(True)
 
+    def plot_2d_canvas(self, main_ax, fig):
+
+        histogram = self.stacks[0].stackatinos[0].sum.h
+        plot = mplhep.hist2dplot(histogram, label = self.stacks[0].stackatinos[0].label, ax = main_ax, cbar=False, cmap=plt.colormaps[self.settings.colormap], **self.stacks[0].stackatinos[0].styling)
+        if self.settings.colorbarpos in ['bottom', 'top']:
+            fig.colorbar(mappable=plot[0], orientation='horizontal')
+        elif self.settings.colorbarpos in ['left', 'right']:
+            fig.colorbar(mappable=plot[0], orientation='vertical')
+
+        sample_label = self.stacks[0].plotid.sample_obj.label
+        region_label = self.stacks[0].plotid.region_obj.label
+        main_ax.set_title(f'{sample_label} in {region_label}', pad=20)
+        if self.stacks[0].plotid.variable_obj.nice_vals is not None:
+
+            nice_xy = self.stacks[0].plotid.variable_obj.nice_vals
+            nice_x = nice_xy[0]
+            nice_y = nice_xy[1] if len(nice_xy) == 2 else None
+
+            main_ax.axvline(x=nice_x, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
+            if nice_y is not None:
+                main_ax.axhline(y=nice_y, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
+
 
     def plot(self, outpath, plot_type='MPLUSR'):
 
         fig, main_ax, rat_axes = self.make_figure()
 
         if plot_type == 'MPLUSR':
-            max_bin_contents, xrange = self.plot_main_canvas(main_ax)
+            max_bin_contents, xrange = self.plot_1d_canvas(main_ax)
 
-            self.decorate_main_canvas(main_ax, max_bin_contents, xrange)
+            self.decorate_1d_canvas(main_ax, max_bin_contents, xrange)
 
             for i, ratio_plot in enumerate(self.ratio_plots):
                 ratio_ax = rat_axes[i]
@@ -355,26 +377,7 @@ class CoffeaPlot(object):
             self.plot_pie_canvas(main_ax)
 
         if plot_type == '2D':
-            histogram = self.stacks[0].stackatinos[0].sum.h
-            plot = mplhep.hist2dplot(histogram, label = self.stacks[0].stackatinos[0].label, ax = main_ax, cbar=False, cmap=plt.colormaps[self.settings.colormap], **self.stacks[0].stackatinos[0].styling)
-            if self.settings.colorbarpos in ['bottom', 'top']:
-                fig.colorbar(mappable=plot[0], orientation='horizontal')
-            elif self.settings.colorbarpos in ['left', 'right']:
-                fig.colorbar(mappable=plot[0], orientation='vertical')
-
-            sample_label = self.stacks[0].plotid.sample_obj.label
-            region_label = self.stacks[0].plotid.region_obj.label
-            main_ax.set_title(f'{sample_label} in {region_label}', pad=20)
-            if self.stacks[0].plotid.variable_obj.nice_vals is not None:
-
-                nice_xy = self.stacks[0].plotid.variable_obj.nice_vals
-                nice_x = nice_xy[0]
-                nice_y = nice_xy[1] if len(nice_xy) == 2 else None
-
-                main_ax.axvline(x=nice_x, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
-                if nice_y is not None:
-                    main_ax.axhline(y=nice_y, color=self.settings.vhlinecolors, linewidth=self.settings.vhlinewidths)
-
+            self.plot_2d_canvas(main_ax, fig)
 
         if plot_type != '2D':
             filename = self.stacks[0].plotid.variable + '__' + self.stacks[0].plotid.region + '__' + self.stacks[0].plotid.rescale
