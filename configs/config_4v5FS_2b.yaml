@@ -82,13 +82,6 @@ Supersamples:
   - Name: ttb_5FS
     NtuplesRgxs: ['410470_user*']
     SubSamples:
-      # - Name: ttb
-      #   Label: '$t\bar{t}+\geq1b$'
-      #   Type: 'BKG'
-      #   Selection:
-      #     - ttb_cut
-      #     - ['leptons_PLIVtight','HF_SimpleClassification']
-      #   Color: 'orange'
 
       - Name: ttb_5FS_2b
         Label: '$t\bar{t}+2b$ (5FS)'
@@ -102,7 +95,6 @@ Supersamples:
   - Name: ttb_4FS
     NtuplesRgxs: ['411180_AFII*','411179_AFII*','411178_AFII*']
     Subsamples:
-
       - Name: ttb_4FS_2b
         Label: '$t\bar{t}+2b$ (4FS)'
         Type: 'BKG'
@@ -111,18 +103,6 @@ Supersamples:
           - ['leptons_PLIVtight','HF_Classification']
         Color: 'darkblue'
 
-
-# Samples:
-
-#   - Name: tH
-#     Label: 'tHjb'
-#     Type: 'SIG'
-#     NtuplesRgxs: ['346676*']
-#     Selection:
-#       - tight_lepton
-#       - ['leptons_PLIVtight']
-#     Color: '#e6194b'
-#     RefMC: True
 
 Regions:
 

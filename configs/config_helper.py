@@ -50,14 +50,11 @@ def obj2_x_gev(x):
     x = ak.fill_none(x, -999, axis=1)
     return x[:,2]/1e3
 
-
-obj0_x_GeV = lambda x:  x[:,0]/1e3
-obj1_x_GeV = lambda x:  x[:,1]/1e3
-obj2_x_GeV = lambda x:  x[:,2]/1e3
-
 flatten_x = lambda x: ak.flatten(x)
 flatten_x_gev = lambda x: ak.flatten(x/1e3)
 
+square = lambda x: x**2
+square_gev = lambda x: (x/1e3)**2
 
 def good_jets(pt, eta, truthflavExt, truthFlav, pcbt, dl1r):
     good_jets = (pt > 25e3) & (abs(eta) < 2.5)

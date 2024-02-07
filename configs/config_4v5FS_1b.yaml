@@ -110,19 +110,6 @@ Supersamples:
           - ['leptons_PLIVtight','HF_Classification']
         Color: 'brown'
 
-# Samples:
-
-#   - Name: tH
-#     Label: 'tHjb'
-#     Type: 'SIG'
-#     NtuplesRgxs: ['346676*']
-#     Selection:
-#       - tight_lepton
-#       - ['leptons_PLIVtight']
-#     Color: '#e6194b'
-#     RefMC: True
-
-
 Regions:
 
   - Name: PR

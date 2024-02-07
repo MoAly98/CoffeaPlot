@@ -19,14 +19,14 @@ General:
 Variables:
   1D:
     - Name: alt_bdt_tH
-      Label: 'NewBDT(tH)'
+      Label: 'AltBDT(tH)'
       Method:
         - bdt_tH
         - ['BDT_alt']
       Binning: [0, 0.3528, 0.6, 0.78, 1]
 
     - Name: alt_bdt_ttb
-      Label: 'NewBDT(ttb)'
+      Label: 'AltBDT(ttb)'
       Method:
         - bdt_ttb
         - ['BDT_alt']

@@ -45,13 +45,13 @@ def validate(indict):
 
     for variable in validated['variables']['1d']:
         if variable['type'] != 'GHOST' and variable["binning"] is None:
-            log.error(f"Variable {variable.name} has no binning specified!")
+            log.error(f"Variable {variable['name']} has no binning specified!")
         if variable['type'] == 'GHOST' and variable["binning"] is not None:
-            log.warning(f"Variable {variable.name} is a ghost variable with binning, this is meaningless!")
+            log.warning(f"Variable {variable['name']} is a ghost variable with binning, this is meaningless!")
 
-    for variable in validated['variables']['1d']:
-        if variable['type'] == 'GHOST':
-            log.error(f"Variable {variable.name} is 2D and cannot be of type GHOST")
+    for variable in validated['variables']['2d']:
+        if variable['type'] == 'EFF':
+            log.error(f"2D efficiency histograms are not supported yet.")
 
     return validated
 

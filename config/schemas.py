@@ -301,6 +301,7 @@ class VariableSchema(object):
                                 'methodx':  Or(str, Use(functor_input)), # Name of branch, or functor args
                                 'methody':  Or(str, Use(functor_input)), # Name of branch, or functor args
                                 Optional('binning', default = None): And([Or(And(str, lambda x: len(x.strip().split(',')) == 3), [Use(float)])], lambda x: len(x)==2),
+                                Optional('type',    default = 'HIST'): And(str, lambda x: x in ['HIST', 'EFF']),
                                 Optional('regions', default = ['.*']): Use(string_to_list),
                                 Optional('label',   default = None): And([str], lambda x: len(x)==2),
                                 Optional('idxby',   default = 'event'): [And(str, lambda x: x in ['event', 'nonevent'])],

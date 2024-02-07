@@ -1,6 +1,6 @@
 General:
-  DumpDir: "/eos/user/m/maly/thbb/CoffeaPlot/outputs/tests/2D_PLOTS_TEST/"
-  InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/tests/2D_PLOTS_TEST/data/data___nominal_Loose.pkl
+  DumpDir: "/eos/user/m/maly/thbb/CoffeaPlot/outputs/tests/2D_plus_GHOST_TEST/"
+  InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/tests/2D_plus_GHOST_TEST/data/data___nominal_Loose.pkl
   Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
   RunProcessor: True
@@ -35,6 +35,21 @@ Variables:
         - 130
         - 0.4
 
+    - Name: tagnonb_topb_m_sq_v_bdt_ttb
+      Label:
+        - '$M_{j_{light-tag},b_{top}}^{2}$'
+        - 'AltBDT(ttb)'
+      MethodX: tagnonb_topb_m_squared
+      MethodY:
+          - bdt_ttb
+          - ['BDT_alt']
+      Binning:
+        - 0,10000,50
+        - 0,1,40
+      InterestingVals:
+        - 2500
+        - 0.4
+
   1D:
     - Name: tagnonb_topb_m
       Label: '$M_{j_{light-tag},b_{top}}$'
@@ -43,6 +58,12 @@ Variables:
           - ['tagnonb_topb_m']
       Binning:  0,600,50
 
+    - Name: tagnonb_topb_m_squared
+      Label: '$M_{j_{light-tag},b_{top}}$'
+      Method:
+          - square_gev
+          - ['tagnonb_topb_m']
+      Type: "GHOST"
 
 Supersamples:
 
