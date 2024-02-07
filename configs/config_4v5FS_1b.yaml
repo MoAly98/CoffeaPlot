@@ -19,18 +19,18 @@ General:
 Variables:
   1D:
     - Name: alt_bdt_tH
-      Label: 'NewBDT(tH)'
+      Label: 'AltBDT(tH)'
       Method:
         - bdt_tH
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.3528, 0.6, 0.78, 1]
       Rebin: [0, 0.31578947, 0.57894737, 0.78947368, 1]
 
     - Name: alt_bdt_ttb
-      Label: 'NewBDT(ttb)'
+      Label: 'AltBDT(ttb)'
       Method:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.2, 0.4, 0.6, 0.8, 1]
 
     - Name: njets
@@ -109,19 +109,6 @@ Supersamples:
           - tt1b_cut
           - ['leptons_PLIVtight','HF_Classification']
         Color: 'brown'
-
-# Samples:
-
-#   - Name: tH
-#     Label: 'tHjb'
-#     Type: 'SIG'
-#     NtuplesRgxs: ['346676*']
-#     Selection:
-#       - tight_lepton
-#       - ['leptons_PLIVtight']
-#     Color: '#e6194b'
-#     RefMC: True
-
 
 Regions:
 

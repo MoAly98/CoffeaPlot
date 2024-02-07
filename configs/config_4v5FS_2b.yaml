@@ -19,18 +19,18 @@ General:
 Variables:
   1D:
     - Name: alt_bdt_tH
-      Label: 'NewBDT(tH)'
+      Label: 'AltBDT(tH)'
       Method:
         - bdt_tH
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.3528, 0.6, 0.78, 1]
       Rebin: [0, 0.31578947, 0.57894737, 0.78947368, 1]
 
     - Name: alt_bdt_ttb
-      Label: 'NewBDT(ttb)'
+      Label: 'AltBDT(ttb)'
       Method:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.2, 0.4, 0.6, 0.8, 1]
 
     - Name: njets
@@ -82,13 +82,6 @@ Supersamples:
   - Name: ttb_5FS
     NtuplesRgxs: ['410470_user*']
     SubSamples:
-      # - Name: ttb
-      #   Label: '$t\bar{t}+\geq1b$'
-      #   Type: 'BKG'
-      #   Selection:
-      #     - ttb_cut
-      #     - ['leptons_PLIVtight','HF_SimpleClassification']
-      #   Color: 'orange'
 
       - Name: ttb_5FS_2b
         Label: '$t\bar{t}+2b$ (5FS)'
@@ -102,7 +95,6 @@ Supersamples:
   - Name: ttb_4FS
     NtuplesRgxs: ['411180_AFII*','411179_AFII*','411178_AFII*']
     Subsamples:
-
       - Name: ttb_4FS_2b
         Label: '$t\bar{t}+2b$ (4FS)'
         Type: 'BKG'
@@ -111,18 +103,6 @@ Supersamples:
           - ['leptons_PLIVtight','HF_Classification']
         Color: 'darkblue'
 
-
-# Samples:
-
-#   - Name: tH
-#     Label: 'tHjb'
-#     Type: 'SIG'
-#     NtuplesRgxs: ['346676*']
-#     Selection:
-#       - tight_lepton
-#       - ['leptons_PLIVtight']
-#     Color: '#e6194b'
-#     RefMC: True
 
 Regions:
 

@@ -17,6 +17,7 @@ bdt_ttl =  lambda x: x[:,3]
 bdt_others = lambda x: x[:,4]
 
 nlights = lambda njets, nbjets: njets - nbjets
+
 x_gev  = lambda x: x/1e3
 
 def obj0_x(x):
@@ -52,12 +53,45 @@ def obj2_x_gev(x):
 flatten_x = lambda x: ak.flatten(x)
 flatten_x_gev = lambda x: ak.flatten(x/1e3)
 
+square = lambda x: x**2
+square_gev = lambda x: (x/1e3)**2
+
+def good_jets(pt, eta, truthflavExt, truthFlav, pcbt, dl1r):
+    good_jets = (pt > 25e3) & (abs(eta) < 2.5)
+    jets = ak.zip({
+        'pt':                ak.where(good_jets, pt, [-999]),
+        'eta':               ak.where(good_jets, eta, [-999]),
+        'truthflavExt':      ak.where(good_jets, truthflavExt, [-999]),
+        'truthFlav':         ak.where(good_jets, truthFlav, [-999]),
+        'pcbt':              ak.where(good_jets, pcbt, [-999]),
+        'DL1r':              ak.where(good_jets, dl1r, [-999]),
+    })
+
+    return jets
+
+get_pt           = lambda x: x.pt
+get_eta          = lambda x: x.eta
+get_truthFlavExt = lambda x: x.truthflavExt
+get_truthFlav    = lambda x: x.truthFlav
+get_pcbt         = lambda x: x.pcbt
+get_dl1r         = lambda x: x.DL1r
+
+
 # ====== Efficiency ====== #
 
 def b_70_pass(jets_truthFlav, jets_tagWeightBin_DL1r_Continuous):
     truthflav = ak.flatten(jets_truthFlav)
     pcbt = ak.flatten(jets_tagWeightBin_DL1r_Continuous)
     return (abs(truthflav) == 5) & (pcbt >= 4)
+
+def b_70_pass_FixedCut(jets_truthFlav, jets_DL1r):
+    try:
+        truthflav = ak.flatten(jets_truthFlav)
+        dl1r      = ak.flatten(jets_DL1r)
+    except ValueError:
+        truthflav = jets_truthFlav
+        dl1r      = jets_DL1r
+    return (abs(truthflav) == 5) & (dl1r >=  2.98 )
 
 def c_70_pass(jets_truthFlav, jets_tagWeightBin_DL1r_Continuous):
     truthflav = ak.flatten(jets_truthFlav)
@@ -70,7 +104,11 @@ def light_70_pass(jets_truthFlav, jets_tagWeightBin_DL1r_Continuous):
     return (abs(truthflav) != 4 & abs(truthflav) != 5) & (pcbt >= 4)
 
 def b_truth(jets_truthFlav):
-    truthflav = ak.flatten(jets_truthFlav)
+    try:
+        truthflav = ak.flatten(jets_truthFlav)
+    except ValueError:
+        truthflav = jets_truthFlav
+
     return (abs(truthflav) == 5)
 
 def c_truth(jets_truthFlav):
@@ -80,7 +118,6 @@ def c_truth(jets_truthFlav):
 def light_truth(jets_truthFlav):
     truthflav = ak.flatten(jets_truthFlav)
     return (abs(truthflav) != 4 & abs(truthflav) != 5)
-
 
 # ===== Selection ===== #
 # Selection
@@ -110,8 +147,22 @@ ttcc_cut  = lambda x, y: (tight_lepton(x)) & (xxx_is_2c(y))
 tt1c_cut = lambda x, y: (tight_lepton(x)) & (xxx_is_1c(y))
 tt1C_cut = lambda x, y: (tight_lepton(x)) & (xxx_is_1C(y))
 
+def at_least_a_jet(jets_pt):
+
+    return ak.count(jets_pt, axis = 1) > 0
 
 # ===== Regions ===== #
+#Inclusive
+
+def INCL_fn(el_Id_TightLH, el_Isol_PLImprovedTight, mu_Id_Medium, mu_Isol_PLImprovedTight, jets_pt):
+
+    lepton_id = ak.where(ak.num(el_Id_TightLH, axis=1) > 0, el_Id_TightLH, mu_Id_Medium)
+    lepton_iso = ak.where(ak.num(el_Isol_PLImprovedTight, axis=1) > 0, el_Isol_PLImprovedTight, mu_Isol_PLImprovedTight)
+    lepton_plivtight = lepton_id*lepton_iso
+
+    return lepton_plivtight[:,0] == 1
+
+
 # PRESEL
 PR_fn     =    lambda njets, nbjets, njets_CBT4, njets_CBT5, nalljets, njets_CBT0, tau_pt, nfwd:  (~((njets>=5) & (nbjets>=4))) & (ak.num(tau_pt, axis=1) == 0)
 # SIGNAL REGIONS

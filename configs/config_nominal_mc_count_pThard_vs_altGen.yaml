@@ -19,7 +19,7 @@ Variables:
       Label: 'NewBDT(tH)'
       Method:
         - bdt_tH
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.3528, 0.6, 0.78, 1]
 
 supersamples:

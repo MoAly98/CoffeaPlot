@@ -131,6 +131,7 @@ def main():
 
     # =========== Setup executor =========== #
     if CoffeaPlotSettings.nworkers != 0:
+        log.info(f"Running FuturesExecutor with {CoffeaPlotSettings.nworkers} workers")
         executor = processor.FuturesExecutor(workers=CoffeaPlotSettings.nworkers)
     else:
         executor = processor.IterativeExecutor()
