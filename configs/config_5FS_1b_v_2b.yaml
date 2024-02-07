@@ -22,14 +22,14 @@ Variables:
       Label: 'NewBDT(tH)'
       Method:
         - bdt_tH
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.3528, 0.6, 0.78, 1]
 
     - Name: alt_bdt_ttb
       Label: 'NewBDT(ttb)'
       Method:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.2, 0.4, 0.6, 0.8, 1]
 
     - Name: njets

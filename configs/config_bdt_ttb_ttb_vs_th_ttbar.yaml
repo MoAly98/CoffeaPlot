@@ -296,7 +296,7 @@ Variables:
         - ['nonbjets_tagWeightBin_DL1r_Continuous']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,6,6
         - 0,1,40
@@ -310,7 +310,7 @@ Variables:
         - ['nonbjets_pt']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,200,30
         - 0,1,40
@@ -324,7 +324,7 @@ Variables:
         - ['nonbjets_eta']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,5,20
         - 0,1,40
@@ -339,7 +339,7 @@ Variables:
         - ['nonbjets_pt']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,200,30
         - 0,1,40
@@ -354,7 +354,7 @@ Variables:
         - ['nonbjets_pt']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,200,30
         - 0,1,40
@@ -368,7 +368,7 @@ Variables:
         - ['nonbjets_eta']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,5,20
         - 0,1,40
@@ -384,7 +384,7 @@ Variables:
       MethodX: tagnonb_eta
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,5,20
         - 0,1,40
@@ -409,7 +409,7 @@ Variables:
       MethodX: n_tophad_jets_CBT0
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,6,6
         - 0,1,40
@@ -421,7 +421,7 @@ Variables:
       MethodX: n_tophad_jets_CBT123_ttAll
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,6,6
         - 0,1,40
@@ -433,7 +433,7 @@ Variables:
       MethodX: n_tophad_jets_CBT4_ttAll
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,6,6
         - 0,1,40
@@ -445,7 +445,7 @@ Variables:
       MethodX: n_tophad_jets_CBT4
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,6,6
         - 0,1,40
@@ -458,7 +458,7 @@ Variables:
       MethodX: n_nontophad_jets_CBT123
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,6,6
         - 0,1,40
@@ -471,7 +471,7 @@ Variables:
       MethodX: njets
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,10,10
         - 0,1,40
@@ -483,7 +483,7 @@ Variables:
       MethodX: njets_CBT5
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,5,5
         - 0,1,40
@@ -495,7 +495,7 @@ Variables:
       MethodX: njets_CBT4
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,5,5
         - 0,1,40
@@ -511,7 +511,7 @@ Variables:
       MethodX: chi2_min_DeltaEta_tH
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,5,20
         - 0,1,40
@@ -526,7 +526,7 @@ Variables:
         - ['chi2_min_tophad_m']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,300,40
         - 0,1,40
@@ -540,7 +540,7 @@ Variables:
         - ['chi2_min_tophad_m_ttAll']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,300,40
         - 0,1,40
@@ -553,7 +553,7 @@ Variables:
       MethodX: chi2_min_deltaRq1q2
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,10,40
         - 0,1,40
@@ -569,7 +569,7 @@ Variables:
       MethodX: sphericity
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,1,30
         - 0,1,40
@@ -584,7 +584,7 @@ Variables:
         - ['Ht']
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,2000,80
         - 0,1,40
@@ -600,7 +600,7 @@ Variables:
       MethodX: chi2_min_ttl
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,15,50
         - 0,1,40
@@ -612,7 +612,7 @@ Variables:
       MethodX: chi2_min_ttAll
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,15,50
         - 0,1,40
@@ -626,7 +626,7 @@ Variables:
       MethodX: tophiggs_chi2_min
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,15,50
         - 0,1,40
@@ -638,7 +638,7 @@ Variables:
       MethodX: chi2_min
       MethodY:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning:
         - 0,15,50
         - 0,1,40

@@ -3,7 +3,7 @@ General:
   InputHistos: /eos/user/m/maly/thbb/CoffeaPlot/outputs/AllProcessedSamples/data/data___nominal_Loose.pkl
   Helpers: '/eos/user/m/maly/thbb/CoffeaPlot/configs/config_helper.py'
   Trees: 'nominal_Loose'
-  RunProcessor: False
+  RunProcessor: True
   RunPlotter: True
   LogLevel: 2
   NTuplesDirs: ['/eos/atlas/atlascerngroupdisk/phys-higgs/HSG8/tH_v34_minintuples_v3/mc16a_nom/',
@@ -22,20 +22,20 @@ Variables:
       Label: 'AltBDT(tH)'
       Method:
         - bdt_tH
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.3528, 0.6, 0.78, 1]
 
     - Name: alt_bdt_ttb
       Label: 'AltBDT(ttb)'
       Method:
         - bdt_ttb
-        - ['BDT']
+        - ['BDT_alt']
       Binning: [0, 0.2, 0.4, 0.6, 0.8, 1]
       Rebin: [0, 0.2, 0.3, 0.4, 0.5, 1]
 
 Supersamples:
 
-  - Name: ttb_5FS
+  - Name: ttbar_5FS
     NtuplesRgxs: ['410470_user*']
     SubSamples:
       - Name: ttb
