@@ -223,6 +223,7 @@ class SampleSchema(object):
                         'ntuplesrgxs': Or(str, [str]),
                         Optional('selection', default = None): Use(functor_input),
                         Optional('ntuplesdirs', default = None): [str],
+                        Optional('ntuplesdirsext', default = None): str,
                         Optional('weight', default = 1.): Or(str, Use(float), Use(functor_input)),
                         Optional('ignoremcweight', default = False): bool,
                         Optional('refmc', default = False): bool,
@@ -240,7 +241,8 @@ class SampleSchema(object):
                                 'name': str,
                                 'subsamples': [subsample_schema],
                                 'ntuplesrgxs': Or(str, [str]),
-                                Optional('ntuplesdirs', default = None): [str]
+                                Optional('ntuplesdirs', default = None): [str],
+                                 Optional('ntuplesdirsext', default = None): str
                             }
 
         # set the schema, no need for defaults dict since one cannot get away without defining any samples

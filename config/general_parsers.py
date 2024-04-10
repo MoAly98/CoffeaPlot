@@ -196,7 +196,7 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
 
             # ============ Check n-tuples dir is available for this sample ============ #
             get_dirs_from = CoffeaPlotSettings
-
+            dirs_ext = None
             # Deal with standalone samples first
             if not is_supersample:
                 # If an ntuples directory is given for this sample, use it
@@ -206,8 +206,11 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
                 elif subsample['ntuplesdirs'] is  None and CoffeaPlotSettings.ntuplesdirs is None:
                     log.error(f"No ntuples directory given for sample {sample_name} and none given in general settings.")
                 else:
+                    print(dirs_ext)
                     # Directory is given in general settings, use it
-                    pass
+                    if subsample['ntuplesdirsext'] is not None:
+                        dirs_ext = subsample['ntuplesdirsext']
+
             # Now deal with supersamples
             else:
                 # If an ntuples directory is given for this subsample, use it
@@ -224,11 +227,17 @@ def parse_samples(samples_cfg: dict, CoffeaPlotSettings: CPS):
 
                 else:
                     # Directory is given in general settings, use it
-                    pass
+                    if subsample['ntuplesdirsext'] is not None:
+                        dirs_ext = subsample['ntuplesdirsext']
+                    elif sample['ntuplesdirsext'] is not None:
+                        dirs_ext = sample['ntuplesdirsext']
 
             # Get the ntuples directory to use
             look_in = get_dirs_from['ntuplesdirs']
-            log.debug(f"Using ntuples directory {look_in} for sample {sample_name}")
+            if dirs_ext is not None:
+                look_in = [adir+dirs_ext for adir in  look_in]
+
+            log.info(f"Using ntuples directory {look_in} for sample {sample_name}")
 
 
             # ======= Prepare functor for sample selector ======= #
